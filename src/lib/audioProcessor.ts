@@ -43,8 +43,11 @@ export const extractAudioFromVideo = async (
           const arrayBuffer = e.target?.result as ArrayBuffer;
           const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
           
-          // Create WAV blob from audio buffer
-          const wavBlob = audioBufferToWav(audioBuffer);
+          // Remove last 3 seconds from audio (Spotify requirement)
+          const trimmedBuffer = trimAudioBuffer(audioContext, audioBuffer, 3);
+          
+          // Create WAV blob from trimmed audio buffer
+          const wavBlob = audioBufferToWav(trimmedBuffer);
           const audioUrl = URL.createObjectURL(wavBlob);
           
           // Create thumbnail blob
@@ -56,11 +59,11 @@ export const extractAudioFromVideo = async (
             
             const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
             
-            // Create track object
+            // Create track object with trimmed duration
             const track: Track = {
               id: crypto.randomUUID(),
               title: videoFile.name.replace(/\.[^/.]+$/, ""), // Remove extension
-              duration: audioBuffer.duration,
+              duration: trimmedBuffer.duration,
               audioUrl,
               thumbnailUrl,
               originalFileName: videoFile.name,
@@ -96,6 +99,36 @@ export const extractAudioFromVideo = async (
     video.load();
   });
 };
+
+// Trim audio buffer by removing specified seconds from the end
+function trimAudioBuffer(audioContext: AudioContext, buffer: AudioBuffer, secondsToRemove: number): AudioBuffer {
+  const sampleRate = buffer.sampleRate;
+  const samplesToRemove = Math.floor(secondsToRemove * sampleRate);
+  const newLength = Math.max(0, buffer.length - samplesToRemove);
+  
+  // If the audio is shorter than the trim amount, return a minimal buffer
+  if (newLength <= 0) {
+    return audioContext.createBuffer(buffer.numberOfChannels, sampleRate, sampleRate);
+  }
+  
+  const trimmedBuffer = audioContext.createBuffer(
+    buffer.numberOfChannels,
+    newLength,
+    sampleRate
+  );
+  
+  // Copy the trimmed audio data
+  for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+    const sourceData = buffer.getChannelData(channel);
+    const trimmedData = trimmedBuffer.getChannelData(channel);
+    
+    for (let i = 0; i < newLength; i++) {
+      trimmedData[i] = sourceData[i];
+    }
+  }
+  
+  return trimmedBuffer;
+}
 
 // Convert AudioBuffer to WAV blob
 function audioBufferToWav(buffer: AudioBuffer): Blob {

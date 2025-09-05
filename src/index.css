@@ -78,13 +78,13 @@
     @apply bg-secondary/80 hover:bg-secondary border border-white/10 backdrop-blur-sm transition-all rounded-full px-4 py-2;
   }
   
-  /* Bottom Navigation */
+  /* Bottom Navigation - Always visible */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-white/10 flex items-center justify-around px-4 py-2 z-50;
+    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-white/10 flex items-center justify-around px-2 py-2 z-50 h-16;
   }
   
   .nav-button {
-    @apply flex flex-col items-center justify-center p-3 text-muted-foreground hover:text-primary transition-colors relative min-w-0 flex-1;
+    @apply flex flex-col items-center justify-center p-2 text-muted-foreground hover:text-primary transition-colors relative min-w-0 flex-1 rounded-lg;
   }
   
   .nav-button.active {

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 interface PlaylistManagerTabProps {
   tracks: Track[];
   playlists: Playlist[];
+  trackRepeatCounts: Record<string, number>;
   onCreatePlaylist: (name: string) => void;
   onRenamePlaylist: (playlistId: string, newName: string) => void;
   onDeletePlaylist: (playlistId: string) => void;
@@ -17,18 +18,21 @@ interface PlaylistManagerTabProps {
   onRemoveFromPlaylist: (playlistId: string, trackId: string) => void;
   onUpdateTrackRepeat: (trackId: string, repeatCount: number) => void;
   onPlayPlaylist: (playlistId: string) => void;
+  onPlayTrack: (track: Track) => void;
 }
 
 export const PlaylistManagerTab = ({
   tracks,
   playlists,
+  trackRepeatCounts,
   onCreatePlaylist,
   onRenamePlaylist,
   onDeletePlaylist,
   onAddToPlaylist,
   onRemoveFromPlaylist,
   onUpdateTrackRepeat,
-  onPlayPlaylist
+  onPlayPlaylist,
+  onPlayTrack
 }: PlaylistManagerTabProps) => {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [editingPlaylist, setEditingPlaylist] = useState<string | null>(null);
@@ -62,7 +66,7 @@ export const PlaylistManagerTab = ({
   return (
     <div className="flex-1 overflow-auto pb-20 p-4 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Playlist Manager</h1>
           <p className="text-muted-foreground">Manage your playlists and song repeats</p>
@@ -195,10 +199,18 @@ export const PlaylistManagerTab = ({
                         </div>
 
                         <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-1">
                             <RotateCcw className="h-3 w-3" />
-                            <span>1x</span>
-                          </Badge>
+                            <input
+                              type="number"
+                              min="1"
+                              max="99"
+                              value={trackRepeatCounts[track.id] || 1}
+                              onChange={(e) => onUpdateTrackRepeat(track.id, parseInt(e.target.value) || 1)}
+                              className="w-12 h-6 text-xs bg-secondary border border-white/10 rounded px-1 text-center"
+                            />
+                            <span className="text-xs text-muted-foreground">x</span>
+                          </div>
                           <Button
                             variant="ghost"
                             size="icon"

@@ -20,7 +20,7 @@ export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
   return (
     <div className="flex-1 overflow-auto pb-20 p-4 space-y-6">
       {/* Header */}
-      <div>
+      <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-muted-foreground">Customize your music experience</p>
       </div>

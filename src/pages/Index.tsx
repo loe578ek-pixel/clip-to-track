@@ -96,11 +96,21 @@ const Index = () => {
   };
 
   const handleAddToPlaylist = (playlistId: string, trackId: string) => {
-    setPlaylists(prev => prev.map(playlist => 
-      playlist.id === playlistId 
-        ? { ...playlist, tracks: [...playlist.tracks, trackId] }
-        : playlist
-    ));
+    const playlist = playlists.find(p => p.id === playlistId);
+    const track = tracks.find(t => t.id === trackId);
+    
+    if (playlist && track) {
+      setPlaylists(prev => prev.map(p => 
+        p.id === playlistId 
+          ? { ...p, tracks: [...p.tracks, trackId] }
+          : p
+      ));
+      
+      toast({
+        title: "Track Added",
+        description: `Added "${track.title}" to "${playlist.name}"`,
+      });
+    }
   };
 
   const handleDeleteTrack = (trackId: string) => {

@@ -106,7 +106,7 @@
   
   /* Track items */
   .track-item {
-    @apply flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/30 transition-all group cursor-pointer;
+    @apply flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/30 transition-all cursor-pointer;
   }
   
   .track-item.playing {

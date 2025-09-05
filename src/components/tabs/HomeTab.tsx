@@ -70,7 +70,7 @@ export const HomeTab = ({
             {recentTracks.map((track, index) => (
               <div
                 key={track.id}
-                className={`track-item ${currentTrack?.id === track.id ? 'playing' : ''}`}
+                className={`group track-item ${currentTrack?.id === track.id ? 'playing' : ''}`}
               >
                 {/* Track Number / Play Button */}
                 <div className="w-8 flex justify-center">

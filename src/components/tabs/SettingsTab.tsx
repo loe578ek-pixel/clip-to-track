@@ -26,7 +26,7 @@ export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
       </div>
 
       {/* Audio Settings */}
-      <Card className="spotify-card border-white/10">
+      <Card className="soundwave-card border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Volume2 className="h-5 w-5 text-primary" />
@@ -99,7 +99,7 @@ export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
       </Card>
 
       {/* Storage & Data */}
-      <Card className="spotify-card border-white/10">
+      <Card className="soundwave-card border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Download className="h-5 w-5 text-primary" />
@@ -143,7 +143,7 @@ export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
       </Card>
 
       {/* App Information */}
-      <Card className="spotify-card border-white/10">
+      <Card className="soundwave-card border-white/10">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Info className="h-5 w-5 text-primary" />
@@ -166,7 +166,7 @@ export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
             </div>
             <div>
               <p className="font-medium">Theme</p>
-              <p className="text-muted-foreground">Spotify Dark</p>
+              <p className="text-muted-foreground">SoundWave Dark</p>
             </div>
           </div>
 
@@ -174,7 +174,7 @@ export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
 
           <div className="text-center">
             <p className="text-sm text-muted-foreground">
-              Built with ❤️ using React & TypeScript
+              SoundWave - Built with ❤️ using React & TypeScript
             </p>
           </div>
         </CardContent>

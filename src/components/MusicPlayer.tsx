@@ -4,14 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Track } from "@/pages/Index";
 
-interface SpotifyPlayerProps {
+interface MusicPlayerProps {
   track: Track;
   onNext?: () => void;
   onPrevious?: () => void;
   onEnded?: () => void;
 }
 
-export const SpotifyPlayer = ({ track, onNext, onPrevious, onEnded }: SpotifyPlayerProps) => {
+export const MusicPlayer = ({ track, onNext, onPrevious, onEnded }: MusicPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState([75]);

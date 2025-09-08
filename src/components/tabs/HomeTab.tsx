@@ -52,7 +52,7 @@ export const HomeTab = ({
                 <Button
                   onClick={() => onPlayPlaylist(playlist.id)}
                   size="icon"
-                  className="spotify-button-primary w-12 h-12 rounded-full"
+                  className="soundwave-button-primary w-12 h-12 rounded-full"
                 >
                   <Play className="h-5 w-5" />
                 </Button>
@@ -136,7 +136,7 @@ export const HomeTab = ({
           <p className="text-muted-foreground mb-6">
             Add your first song to get started
           </p>
-          <Button className="spotify-button-primary">
+          <Button className="soundwave-button-primary">
             Add Music
           </Button>
         </div>

@@ -74,7 +74,7 @@ export const PlaylistManagerTab = ({
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="spotify-button-primary">
+            <Button className="soundwave-button-primary">
               <Plus className="h-4 w-4 mr-2" />
               New Playlist
             </Button>
@@ -102,7 +102,7 @@ export const PlaylistManagerTab = ({
                 <Button 
                   onClick={handleCreatePlaylist}
                   disabled={!newPlaylistName.trim()}
-                  className="spotify-button-primary"
+                  className="soundwave-button-primary"
                 >
                   Create
                 </Button>
@@ -120,7 +120,7 @@ export const PlaylistManagerTab = ({
             const totalDuration = playlistTracks.reduce((sum, track) => sum + track.duration, 0);
 
             return (
-              <div key={playlist.id} className="spotify-card p-6">
+              <div key={playlist.id} className="soundwave-card p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
                     {editingPlaylist === playlist.id ? (
@@ -147,7 +147,7 @@ export const PlaylistManagerTab = ({
                   <div className="flex items-center space-x-2">
                     <Button
                       onClick={() => onPlayPlaylist(playlist.id)}
-                      className="spotify-button-primary"
+                      className="soundwave-button-primary"
                       disabled={playlist.tracks.length === 0}
                     >
                       <Play className="h-4 w-4 mr-2" />
@@ -234,7 +234,7 @@ export const PlaylistManagerTab = ({
           })}
         </div>
       ) : (
-        <div className="text-center py-16 spotify-card">
+        <div className="text-center py-16 soundwave-card">
           <Settings className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-xl font-semibold mb-2">No playlists yet</h3>
           <p className="text-muted-foreground mb-6">
@@ -242,7 +242,7 @@ export const PlaylistManagerTab = ({
           </p>
           <Button 
             onClick={() => setIsCreateDialogOpen(true)}
-            className="spotify-button-primary"
+            className="soundwave-button-primary"
           >
             Create Playlist
           </Button>

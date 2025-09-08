@@ -4,7 +4,7 @@ import { HomeTab } from "@/components/tabs/HomeTab";
 import { AddTab } from "@/components/tabs/AddTab";
 import { PlaylistManagerTab } from "@/components/tabs/PlaylistManagerTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
-import { SpotifyPlayer } from "@/components/SpotifyPlayer";
+import { MusicPlayer } from "@/components/MusicPlayer";
 import { useToast } from "@/hooks/use-toast";
 
 export interface Track {
@@ -37,9 +37,9 @@ const Index = () => {
 
   // Load data from localStorage on mount
   useEffect(() => {
-    const savedTracks = localStorage.getItem('spotify-tracks');
-    const savedPlaylists = localStorage.getItem('spotify-playlists');
-    const savedRepeatCounts = localStorage.getItem('spotify-repeat-counts');
+    const savedTracks = localStorage.getItem('soundwave-tracks');
+    const savedPlaylists = localStorage.getItem('soundwave-playlists');
+    const savedRepeatCounts = localStorage.getItem('soundwave-repeat-counts');
     
     if (savedTracks) {
       try {
@@ -76,15 +76,15 @@ const Index = () => {
 
   // Save to localStorage whenever data changes
   useEffect(() => {
-    localStorage.setItem('spotify-tracks', JSON.stringify(tracks));
+    localStorage.setItem('soundwave-tracks', JSON.stringify(tracks));
   }, [tracks]);
 
   useEffect(() => {
-    localStorage.setItem('spotify-playlists', JSON.stringify(playlists));
+    localStorage.setItem('soundwave-playlists', JSON.stringify(playlists));
   }, [playlists]);
 
   useEffect(() => {
-    localStorage.setItem('spotify-repeat-counts', JSON.stringify(trackRepeatCounts));
+    localStorage.setItem('soundwave-repeat-counts', JSON.stringify(trackRepeatCounts));
   }, [trackRepeatCounts]);
 
   const handleTrackExtracted = (track: Track) => {
@@ -305,7 +305,7 @@ const Index = () => {
       {/* Audio Player - Above Bottom Navigation */}
       {currentTrack && (
         <div className="fixed bottom-16 left-0 right-0 z-40">
-          <SpotifyPlayer 
+          <MusicPlayer 
             track={currentTrack} 
             onNext={handleNextTrack} 
             onPrevious={handlePreviousTrack} 

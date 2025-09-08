@@ -47,7 +47,7 @@ export const AddTab = ({
       </div>
 
       {/* Upload Section */}
-      <div className="spotify-card p-6">
+      <div className="soundwave-card p-6">
         <FileUpload
           onTrackExtracted={onTrackExtracted}
           isProcessing={isProcessing}
@@ -67,7 +67,7 @@ export const AddTab = ({
         {tracks.length > 0 ? (
           <div className="space-y-3">
             {tracks.map((track, index) => (
-              <div key={track.id} className="spotify-card p-4">
+              <div key={track.id} className="soundwave-card p-4">
                 <div className="flex items-center space-x-4">
                   {/* Thumbnail */}
                   <img
@@ -99,7 +99,7 @@ export const AddTab = ({
                     {playlists.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button size="sm" className="spotify-button-secondary">
+                          <Button size="sm" className="soundwave-button-secondary">
                             <Plus className="h-4 w-4 mr-2" />
                             Add to Playlist
                           </Button>
@@ -128,7 +128,7 @@ export const AddTab = ({
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 spotify-card">
+          <div className="text-center py-12 soundwave-card">
             <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="font-medium mb-2">No songs added yet</h3>
             <p className="text-sm text-muted-foreground">

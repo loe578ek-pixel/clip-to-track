@@ -27,7 +27,29 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     if (audioRef.current) {
       audioRef.current.src = track.audioUrl;
       audioRef.current.load();
-      if (isPlaying || autoPlay) {
+      
+      // Always play when autoPlay is true, regardless of current playing state
+      if (autoPlay) {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            setIsPlaying(true);
+          }).catch(error => {
+            console.error('Error playing audio:', error);
+            // Retry after a short delay if autoPlay fails
+            setTimeout(() => {
+              if (audioRef.current) {
+                audioRef.current.play().then(() => {
+                  setIsPlaying(true);
+                }).catch(retryError => {
+                  console.error('Retry failed:', retryError);
+                });
+              }
+            }, 100);
+          });
+        }
+      } else if (isPlaying) {
+        // Manual play when not auto-playing but was already playing
         audioRef.current.play().then(() => {
           setIsPlaying(true);
         }).catch(error => {

@@ -272,7 +272,7 @@ const Index = () => {
     const track = tracks.find(t => t.id === trackId);
     if (track) {
       setCurrentTrack(track);
-      setIsAutoPlaying(false); // Reset autoplay when manually selecting a track
+      setIsAutoPlaying(true); // Enable autoplay to start immediately
       // Reset play count when manually starting a track
       setCurrentTrackPlayCount(prev => ({
         ...prev,
@@ -288,7 +288,7 @@ const Index = () => {
       const firstTrack = tracks.find(t => t.id === playlist.tracks[0]);
       if (firstTrack) {
         setCurrentTrack(firstTrack);
-        setIsAutoPlaying(false); // Reset autoplay when manually starting a playlist
+        setIsAutoPlaying(true); // Enable autoplay to start immediately
         // Reset play count for the track
         setCurrentTrackPlayCount(prev => ({
           ...prev,

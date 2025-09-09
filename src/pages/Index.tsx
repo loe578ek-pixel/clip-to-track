@@ -35,6 +35,7 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string | null>(null);
   const [trackRepeatCounts, setTrackRepeatCounts] = useState<Record<string, number>>({});
+  const [currentTrackPlayCount, setCurrentTrackPlayCount] = useState<Record<string, number>>({});
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const { toast } = useToast();
 
@@ -101,6 +102,11 @@ const Index = () => {
   const handlePlayTrack = (track: Track) => {
     setCurrentTrack(track);
     setIsAutoPlaying(false); // Reset autoplay when manually selecting a track
+    // Reset play count when manually starting a track
+    setCurrentTrackPlayCount(prev => ({
+      ...prev,
+      [track.id]: 0
+    }));
   };
 
   // Initialize default playlists
@@ -190,13 +196,15 @@ const Index = () => {
   const handleTrackEnded = () => {
     if (!currentTrack) return;
     
-    // Check if current track should repeat
-    const repeatCount = trackRepeatCounts[currentTrack.id] || 1;
-    if (repeatCount > 1) {
-      // Decrease repeat count and replay same track
-      setTrackRepeatCounts(prev => ({
+    // Check if current track should repeat (using saved repeat count, not temporary counter)
+    const savedRepeatCount = trackRepeatCounts[currentTrack.id] || 1;
+    const currentPlayCount = currentTrackPlayCount[currentTrack.id] || 0;
+    
+    if (currentPlayCount + 1 < savedRepeatCount) {
+      // Increase play count and replay same track
+      setCurrentTrackPlayCount(prev => ({
         ...prev,
-        [currentTrack.id]: repeatCount - 1
+        [currentTrack.id]: currentPlayCount + 1
       }));
       
       // Replay current track by setting it again with autoplay
@@ -205,7 +213,12 @@ const Index = () => {
       return;
     }
     
-    // Move to next track if repeat count is 1 or less
+    // Reset play count and move to next track
+    setCurrentTrackPlayCount(prev => ({
+      ...prev,
+      [currentTrack.id]: 0
+    }));
+    
     setIsAutoPlaying(true);
     handleNextTrack();
   };
@@ -260,6 +273,11 @@ const Index = () => {
     if (track) {
       setCurrentTrack(track);
       setIsAutoPlaying(false); // Reset autoplay when manually selecting a track
+      // Reset play count when manually starting a track
+      setCurrentTrackPlayCount(prev => ({
+        ...prev,
+        [track.id]: 0
+      }));
     }
   };
 
@@ -271,11 +289,11 @@ const Index = () => {
       if (firstTrack) {
         setCurrentTrack(firstTrack);
         setIsAutoPlaying(false); // Reset autoplay when manually starting a playlist
-        // Reset repeat count for the track if it exists
-        const repeatCount = trackRepeatCounts[firstTrack.id];
-        if (repeatCount) {
-          setTrackRepeatCounts(prev => ({ ...prev, [firstTrack.id]: repeatCount }));
-        }
+        // Reset play count for the track
+        setCurrentTrackPlayCount(prev => ({
+          ...prev,
+          [firstTrack.id]: 0
+        }));
       }
     }
   };

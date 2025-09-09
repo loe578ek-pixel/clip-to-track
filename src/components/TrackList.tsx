@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Play, MoreHorizontal, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Track, Playlist } from "@/pages/Index";
 
@@ -152,13 +153,34 @@ export const TrackList = ({
                 )}
                 
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDeleteTrack(track.id)}
-                  className="text-destructive focus:text-destructive-foreground focus:bg-destructive/90"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem 
+                      onSelect={(e) => e.preventDefault()}
+                      className="text-destructive focus:text-destructive-foreground focus:bg-destructive/90"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <DialogContent className="bg-card border-white/10">
+                    <DialogHeader>
+                      <DialogTitle>Delete Track</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-muted-foreground">
+                      Are you sure you want to delete "{track.title}"? This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end space-x-2 mt-4">
+                      <Button variant="outline">Cancel</Button>
+                      <Button 
+                        variant="destructive" 
+                        onClick={() => onDeleteTrack(track.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

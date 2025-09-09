@@ -163,14 +163,34 @@ export const PlaylistManagerTab = ({
                     >
                       <Edit3 className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDeletePlaylist(playlist.id)}
-                      className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-card border-white/10">
+                        <DialogHeader>
+                          <DialogTitle>Delete Playlist</DialogTitle>
+                        </DialogHeader>
+                        <p className="text-muted-foreground">
+                          Are you sure you want to delete "{playlist.name}"? This will permanently remove the playlist and cannot be undone.
+                        </p>
+                        <div className="flex justify-end space-x-2 mt-4">
+                          <Button variant="outline">Cancel</Button>
+                          <Button 
+                            variant="destructive" 
+                            onClick={() => onDeletePlaylist(playlist.id)}
+                          >
+                            Delete Playlist
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
 
@@ -198,27 +218,47 @@ export const PlaylistManagerTab = ({
                           </p>
                         </div>
 
-                        <div className="flex items-center space-x-2">
-                          <div className="flex items-center space-x-1">
-                            <RotateCcw className="h-3 w-3" />
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2 bg-primary/10 rounded-lg px-3 py-2 border border-primary/20">
+                            <RotateCcw className="h-4 w-4 text-primary" />
                             <input
                               type="number"
                               min="1"
                               max="99"
                               value={trackRepeatCounts[track.id] || 1}
                               onChange={(e) => onUpdateTrackRepeat(track.id, parseInt(e.target.value) || 1)}
-                              className="w-12 h-6 text-xs bg-secondary border border-white/10 rounded px-1 text-center"
+                              className="w-14 h-7 text-sm bg-card border border-primary/30 rounded-md px-2 text-center font-medium text-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
                             />
-                            <span className="text-xs text-muted-foreground">x</span>
+                            <span className="text-sm font-medium text-primary">×</span>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onRemoveFromPlaylist(playlist.id, track.id)}
-                            className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-card border-white/10">
+                              <DialogHeader>
+                                <DialogTitle>Remove Track</DialogTitle>
+                              </DialogHeader>
+                              <p className="text-muted-foreground">
+                                Are you sure you want to remove "{track.title}" from this playlist?
+                              </p>
+                              <div className="flex justify-end space-x-2 mt-4">
+                                <Button variant="outline">Cancel</Button>
+                                <Button 
+                                  variant="destructive" 
+                                  onClick={() => onRemoveFromPlaylist(playlist.id, track.id)}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </div>
                     ))}

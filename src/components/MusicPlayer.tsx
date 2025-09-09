@@ -10,9 +10,10 @@ interface MusicPlayerProps {
   onNext?: () => void;
   onPrevious?: () => void;
   onEnded?: () => void;
+  autoPlay?: boolean;
 }
 
-export const MusicPlayer = ({ track, onNext, onPrevious, onEnded }: MusicPlayerProps) => {
+export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = false }: MusicPlayerProps) => {
   const { masterVolume } = useVolume();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -26,11 +27,15 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded }: MusicPlayerP
     if (audioRef.current) {
       audioRef.current.src = track.audioUrl;
       audioRef.current.load();
-      if (isPlaying) {
-        audioRef.current.play();
+      if (isPlaying || autoPlay) {
+        audioRef.current.play().then(() => {
+          setIsPlaying(true);
+        }).catch(error => {
+          console.error('Error playing audio:', error);
+        });
       }
     }
-  }, [track.audioUrl]);
+  }, [track.audioUrl, autoPlay]);
 
   useEffect(() => {
     const audio = audioRef.current;

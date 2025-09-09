@@ -35,6 +35,7 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string | null>(null);
   const [trackRepeatCounts, setTrackRepeatCounts] = useState<Record<string, number>>({});
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const { toast } = useToast();
 
   // Load data from localStorage on mount
@@ -99,6 +100,7 @@ const Index = () => {
 
   const handlePlayTrack = (track: Track) => {
     setCurrentTrack(track);
+    setIsAutoPlaying(false); // Reset autoplay when manually selecting a track
   };
 
   // Initialize default playlists
@@ -197,12 +199,14 @@ const Index = () => {
         [currentTrack.id]: repeatCount - 1
       }));
       
-      // Replay current track by setting it again (this will trigger useEffect in MusicPlayer)
+      // Replay current track by setting it again with autoplay
+      setIsAutoPlaying(true);
       setCurrentTrack({ ...currentTrack });
       return;
     }
     
     // Move to next track if repeat count is 1 or less
+    setIsAutoPlaying(true);
     handleNextTrack();
   };
 
@@ -221,13 +225,16 @@ const Index = () => {
       const nextTrack = tracks.find(t => t.id === nextTrackId);
       if (nextTrack) {
         setCurrentTrack(nextTrack);
-        // Reset repeat count for new track to its original value
-        // (don't modify the trackRepeatCounts, just use the stored value)
       }
     } else {
-      // End of playlist - stop playing
-      setCurrentTrack(null);
-      setCurrentPlaylistId(null);
+      // End of playlist - loop back to first song
+      const firstTrackId = playlist.tracks[0];
+      if (firstTrackId) {
+        const firstTrack = tracks.find(t => t.id === firstTrackId);
+        if (firstTrack) {
+          setCurrentTrack(firstTrack);
+        }
+      }
     }
   };
 
@@ -250,7 +257,10 @@ const Index = () => {
   const handlePlayPlaylistFromTrack = (playlistId: string, trackId: string) => {
     setCurrentPlaylistId(playlistId);
     const track = tracks.find(t => t.id === trackId);
-    if (track) setCurrentTrack(track);
+    if (track) {
+      setCurrentTrack(track);
+      setIsAutoPlaying(false); // Reset autoplay when manually selecting a track
+    }
   };
 
   const handlePlayPlaylist = (playlistId: string) => {
@@ -260,6 +270,7 @@ const Index = () => {
       const firstTrack = tracks.find(t => t.id === playlist.tracks[0]);
       if (firstTrack) {
         setCurrentTrack(firstTrack);
+        setIsAutoPlaying(false); // Reset autoplay when manually starting a playlist
         // Reset repeat count for the track if it exists
         const repeatCount = trackRepeatCounts[firstTrack.id];
         if (repeatCount) {
@@ -282,7 +293,7 @@ const Index = () => {
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={setCurrentTrack} onPlayPlaylist={handlePlayPlaylist} />;
+        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} />;
       case 'add':
         return <AddTab tracks={tracks} playlists={playlists} isProcessing={isProcessing} setIsProcessing={setIsProcessing} onTrackExtracted={handleTrackExtracted} onAddToPlaylist={handleAddToPlaylist} />;
       case 'playlists':
@@ -304,7 +315,7 @@ const Index = () => {
       case 'settings':
         return <SettingsTab onClearAllData={handleClearAllData} />;
       default:
-        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={setCurrentTrack} onPlayPlaylist={handlePlayPlaylist} />;
+        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} />;
     }
   };
 
@@ -324,6 +335,7 @@ const Index = () => {
               onNext={handleNextTrack} 
               onPrevious={handlePreviousTrack} 
               onEnded={handleTrackEnded}
+              autoPlay={isAutoPlaying}
             />
           </div>
         )}

@@ -6,13 +6,14 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
+import { useVolume } from "@/contexts/VolumeContext";
 
 interface SettingsTabProps {
   onClearAllData: () => void;
 }
 
 export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
-  const [masterVolume, setMasterVolume] = useState([75]);
+  const { masterVolume, setMasterVolume } = useVolume();
   const [autoPlay, setAutoPlay] = useState(true);
   const [crossfade, setCrossfade] = useState(false);
   const [highQuality, setHighQuality] = useState(true);
@@ -42,14 +43,14 @@ export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
             <div className="px-3">
               <Slider
                 id="volume"
-                value={masterVolume}
-                onValueChange={setMasterVolume}
+                value={[masterVolume]}
+                onValueChange={(value) => setMasterVolume(value[0])}
                 max={100}
                 step={1}
                 className="w-full"
               />
             </div>
-            <p className="text-sm text-muted-foreground">{masterVolume[0]}%</p>
+            <p className="text-sm text-muted-foreground">{masterVolume}%</p>
           </div>
 
           <Separator className="bg-white/10" />

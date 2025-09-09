@@ -6,6 +6,8 @@ import { PlaylistManagerTab } from "@/components/tabs/PlaylistManagerTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { useToast } from "@/hooks/use-toast";
+import { VolumeProvider } from "@/contexts/VolumeContext";
+import { Toaster } from "@/components/ui/toaster";
 
 export interface Track {
   id: string;
@@ -296,23 +298,27 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-16">
-      {renderActiveTab()}
-      
-      {/* Bottom Navigation - Always Visible */}
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      
-      {/* Audio Player - Above Bottom Navigation */}
-      {currentTrack && (
-        <div className="fixed bottom-16 left-0 right-0 z-40">
-          <MusicPlayer 
-            track={currentTrack} 
-            onNext={handleNextTrack} 
-            onPrevious={handlePreviousTrack} 
-          />
-        </div>
-      )}
-    </div>
+    <VolumeProvider>
+      <div className="min-h-screen bg-background text-foreground pb-16">
+        {renderActiveTab()}
+        
+        {/* Bottom Navigation - Always Visible */}
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        
+        {/* Audio Player - Above Bottom Navigation */}
+        {currentTrack && (
+          <div className="fixed bottom-16 left-0 right-0 z-40">
+            <MusicPlayer 
+              track={currentTrack} 
+              onNext={handleNextTrack} 
+              onPrevious={handlePreviousTrack} 
+            />
+          </div>
+        )}
+        
+        <Toaster />
+      </div>
+    </VolumeProvider>
   );
 };
 

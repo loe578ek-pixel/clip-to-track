@@ -3,6 +3,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, Shuffle }
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Track } from "@/pages/Index";
+import { useVolume } from "@/contexts/VolumeContext";
 
 interface MusicPlayerProps {
   track: Track;
@@ -12,6 +13,7 @@ interface MusicPlayerProps {
 }
 
 export const MusicPlayer = ({ track, onNext, onPrevious, onEnded }: MusicPlayerProps) => {
+  const { masterVolume } = useVolume();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState([75]);
@@ -60,9 +62,10 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded }: MusicPlayerP
 
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : volume[0] / 100;
+      const finalVolume = isMuted ? 0 : (volume[0] / 100) * (masterVolume / 100);
+      audioRef.current.volume = finalVolume;
     }
-  }, [volume, isMuted]);
+  }, [volume, isMuted, masterVolume]);
 
   const togglePlayPause = async () => {
     if (!audioRef.current) return;

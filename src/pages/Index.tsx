@@ -185,6 +185,27 @@ const Index = () => {
     }));
   };
 
+  const handleTrackEnded = () => {
+    if (!currentTrack) return;
+    
+    // Check if current track should repeat
+    const repeatCount = trackRepeatCounts[currentTrack.id] || 1;
+    if (repeatCount > 1) {
+      // Decrease repeat count and replay same track
+      setTrackRepeatCounts(prev => ({
+        ...prev,
+        [currentTrack.id]: repeatCount - 1
+      }));
+      
+      // Replay current track by setting it again (this will trigger useEffect in MusicPlayer)
+      setCurrentTrack({ ...currentTrack });
+      return;
+    }
+    
+    // Move to next track if repeat count is 1 or less
+    handleNextTrack();
+  };
+
   const handleNextTrack = () => {
     if (!currentTrack || !currentPlaylistId) return;
     
@@ -194,29 +215,19 @@ const Index = () => {
     const currentIndex = playlist.tracks.findIndex(id => id === currentTrack.id);
     if (currentIndex === -1) return;
     
-    // Check if current track should repeat
-    const repeatCount = trackRepeatCounts[currentTrack.id] || 1;
-    if (repeatCount > 1) {
-      // Decrease repeat count and replay
-      setTrackRepeatCounts(prev => ({
-        ...prev,
-        [currentTrack.id]: repeatCount - 1
-      }));
-      // Replay current track
-      return;
-    }
-    
     // Move to next track
     const nextTrackId = playlist.tracks[currentIndex + 1];
     if (nextTrackId) {
       const nextTrack = tracks.find(t => t.id === nextTrackId);
       if (nextTrack) {
         setCurrentTrack(nextTrack);
-        // Reset repeat count for new track
-        if (trackRepeatCounts[nextTrackId]) {
-          setTrackRepeatCounts(prev => ({ ...prev, [nextTrackId]: trackRepeatCounts[nextTrackId] }));
-        }
+        // Reset repeat count for new track to its original value
+        // (don't modify the trackRepeatCounts, just use the stored value)
       }
+    } else {
+      // End of playlist - stop playing
+      setCurrentTrack(null);
+      setCurrentPlaylistId(null);
     }
   };
 
@@ -312,6 +323,7 @@ const Index = () => {
               track={currentTrack} 
               onNext={handleNextTrack} 
               onPrevious={handlePreviousTrack} 
+              onEnded={handleTrackEnded}
             />
           </div>
         )}

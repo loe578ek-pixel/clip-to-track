@@ -40,14 +40,9 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded }: MusicPlayerP
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
-      if (repeatMode === 'one') {
-        audio.currentTime = 0;
-        audio.play();
-        setIsPlaying(true);
-      } else if (onEnded) {
+      // Always call onEnded to let parent handle repeat logic and next track
+      if (onEnded) {
         onEnded();
-      } else if (onNext && repeatMode === 'all') {
-        onNext();
       }
     };
 
@@ -58,7 +53,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded }: MusicPlayerP
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [onEnded, onNext, repeatMode]);
+  }, [onEnded]);
 
   useEffect(() => {
     if (audioRef.current) {

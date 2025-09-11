@@ -81,6 +81,9 @@
   /* Bottom Navigation - Always visible */
   .bottom-nav {
     @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-white/10 flex items-center justify-around px-2 py-2 z-50 h-16;
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
   
   .nav-button {
@@ -128,7 +131,24 @@
     @apply border-border;
   }
 
-  body {
+  html, body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Mobile app optimizations */
+  body {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  #root {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
   }
 }

@@ -339,8 +339,10 @@ const Index = () => {
 
   return (
     <VolumeProvider>
-      <div className="min-h-screen bg-background text-foreground pb-16">
-        {renderActiveTab()}
+      <div className="h-full max-h-screen bg-background text-foreground pb-16 overflow-hidden">
+        <div className="h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20">
+          {renderActiveTab()}
+        </div>
         
         {/* Bottom Navigation - Always Visible */}
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />

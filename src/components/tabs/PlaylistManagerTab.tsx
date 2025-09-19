@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Edit3, Plus, Trash2, GripVertical, RotateCcw, Play, Settings } from "lucide-react";
+import { Edit3, Plus, Trash2, GripVertical, RotateCcw, Play, Settings, ChevronDown, ChevronUp } from "lucide-react";
 import { Track, Playlist } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ export const PlaylistManagerTab = ({
   const [editingPlaylist, setEditingPlaylist] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [expandedPlaylists, setExpandedPlaylists] = useState<Set<string>>(new Set());
 
   const handleCreatePlaylist = () => {
     if (newPlaylistName.trim()) {
@@ -61,6 +62,18 @@ export const PlaylistManagerTab = ({
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const togglePlaylistExpansion = (playlistId: string) => {
+    setExpandedPlaylists(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(playlistId)) {
+        newSet.delete(playlistId);
+      } else {
+        newSet.add(playlistId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -197,71 +210,100 @@ export const PlaylistManagerTab = ({
                 {/* Playlist Tracks */}
                 {playlistTracks.length > 0 ? (
                   <div className="space-y-2">
-                    {playlistTracks.map((track, index) => (
-                      <div key={`${playlist.id}-${track.id}`} className="flex items-center space-x-4 p-3 rounded-lg bg-secondary/30">
-                        <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        
-                        <span className="w-8 text-sm text-muted-foreground text-center">
-                          {index + 1}
-                        </span>
+                    {/* Display tracks based on expansion state */}
+                    {(() => {
+                      const isExpanded = expandedPlaylists.has(playlist.id);
+                      const tracksToShow = isExpanded ? playlistTracks : playlistTracks.slice(0, 2);
+                      
+                      return tracksToShow.map((track, index) => (
+                        <div key={`${playlist.id}-${track.id}`} className="flex items-center space-x-4 p-3 rounded-lg bg-secondary/30">
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          
+                          <span className="w-8 text-sm text-muted-foreground text-center">
+                            {index + 1}
+                          </span>
 
-                        <img
-                          src={track.thumbnailUrl}
-                          alt={track.title}
-                          className="w-10 h-10 rounded object-cover"
-                        />
+                          <img
+                            src={track.thumbnailUrl}
+                            alt={track.title}
+                            className="w-10 h-10 rounded object-cover"
+                          />
 
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium truncate">{track.title}</h4>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {formatTime(track.duration)}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2 bg-primary/10 rounded-lg px-3 py-2 border border-primary/20">
-                            <RotateCcw className="h-4 w-4 text-primary" />
-                            <input
-                              type="number"
-                              min="1"
-                              max="99"
-                              value={trackRepeatCounts[track.id] || 1}
-                              onChange={(e) => onUpdateTrackRepeat(track.id, parseInt(e.target.value) || 1)}
-                              className="w-14 h-7 text-sm bg-card border border-primary/30 rounded-md px-2 text-center font-medium text-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            />
-                            <span className="text-sm font-medium text-primary">×</span>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium truncate">{track.title}</h4>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {formatTime(track.duration)}
+                            </p>
                           </div>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-card border-white/10">
-                              <DialogHeader>
-                                <DialogTitle>Remove Track</DialogTitle>
-                              </DialogHeader>
-                              <p className="text-muted-foreground">
-                                Are you sure you want to remove "{track.title}" from this playlist?
-                              </p>
-                              <div className="flex justify-end space-x-2 mt-4">
-                                <Button variant="outline">Cancel</Button>
-                                <Button 
-                                  variant="destructive" 
-                                  onClick={() => onRemoveFromPlaylist(playlist.id, track.id)}
+
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-2 bg-primary/10 rounded-lg px-3 py-2 border border-primary/20">
+                              <RotateCcw className="h-4 w-4 text-primary" />
+                              <input
+                                type="number"
+                                min="1"
+                                max="99"
+                                value={trackRepeatCounts[track.id] || 1}
+                                onChange={(e) => onUpdateTrackRepeat(track.id, parseInt(e.target.value) || 1)}
+                                className="w-14 h-7 text-sm bg-card border border-primary/30 rounded-md px-2 text-center font-medium text-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                              />
+                              <span className="text-sm font-medium text-primary">×</span>
+                            </div>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
                                 >
-                                  Remove
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                              </DialogTrigger>
+                              <DialogContent className="bg-card border-white/10">
+                                <DialogHeader>
+                                  <DialogTitle>Remove Track</DialogTitle>
+                                </DialogHeader>
+                                <p className="text-muted-foreground">
+                                  Are you sure you want to remove "{track.title}" from this playlist?
+                                </p>
+                                <div className="flex justify-end space-x-2 mt-4">
+                                  <Button variant="outline">Cancel</Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    onClick={() => onRemoveFromPlaylist(playlist.id, track.id)}
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
                         </div>
+                      ));
+                    })()}
+                    
+                    {/* Expand/Collapse Button */}
+                    {playlistTracks.length > 2 && (
+                      <div className="flex justify-center pt-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => togglePlaylistExpansion(playlist.id)}
+                          className="flex items-center space-x-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all rounded-full px-4 py-2 text-sm font-medium"
+                        >
+                          {expandedPlaylists.has(playlist.id) ? (
+                            <>
+                              <ChevronUp className="h-4 w-4" />
+                              <span>Less</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="h-4 w-4" />
+                              <span>More ({playlistTracks.length - 2} more songs)</span>
+                            </>
+                          )}
+                        </Button>
                       </div>
-                    ))}
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">

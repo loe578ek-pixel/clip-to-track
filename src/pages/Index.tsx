@@ -8,6 +8,7 @@ import { MusicPlayer } from "@/components/MusicPlayer";
 import { useToast } from "@/hooks/use-toast";
 import { VolumeProvider } from "@/contexts/VolumeContext";
 import { Toaster } from "@/components/ui/toaster";
+import { storageService } from "@/lib/storageService";
 
 export interface Track {
   id: string;
@@ -19,6 +20,7 @@ export interface Track {
   createdAt: Date;
   repeatCount?: number; // For repeat functionality
   playbackKey?: string; // Force re-render for repeats
+  localFilePath?: string; // Local storage path for offline access
 }
 
 export interface Playlist {
@@ -38,59 +40,148 @@ const Index = () => {
   const [trackRepeatCounts, setTrackRepeatCounts] = useState<Record<string, number>>({});
   const [currentTrackPlayCount, setCurrentTrackPlayCount] = useState<Record<string, number>>({});
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const { toast } = useToast();
 
-  // Load data from localStorage on mount
+  // Load data from Capacitor native storage on mount
   useEffect(() => {
-    const savedTracks = localStorage.getItem('soundwave-tracks');
-    const savedPlaylists = localStorage.getItem('soundwave-playlists');
-    const savedRepeatCounts = localStorage.getItem('soundwave-repeat-counts');
+    const loadAppData = async () => {
+      try {
+        console.log('Loading app data from native storage...');
+        
+        // First, try to migrate from localStorage if needed
+        await storageService.migrateFromLocalStorage();
+        
+        // Load all data from native storage
+        const [loadedTracks, loadedPlaylists, loadedRepeatCounts] = await Promise.all([
+          storageService.loadTracks(),
+          storageService.loadPlaylists(),
+          storageService.loadRepeatCounts()
+        ]);
+        
+        // Update audio URLs to use local storage paths for offline access
+        const tracksWithLocalPaths = await Promise.all(
+          loadedTracks.map(async (track) => {
+            if (track.localFilePath) {
+              try {
+                const localAudioUrl = await storageService.getAudioFile(track.localFilePath);
+                return { ...track, audioUrl: localAudioUrl };
+              } catch (error) {
+                console.warn(`Could not load local audio for track ${track.id}:`, error);
+                return track;
+              }
+            }
+            return track;
+          })
+        );
+        
+        setTracks(tracksWithLocalPaths);
+        setPlaylists(loadedPlaylists);
+        setTrackRepeatCounts(loadedRepeatCounts);
+        
+        console.log(`Loaded ${tracksWithLocalPaths.length} tracks, ${loadedPlaylists.length} playlists`);
+        
+        // Get storage info for debugging
+        const storageInfo = await storageService.getStorageInfo();
+        console.log('Storage info:', storageInfo);
+        
+        setIsDataLoaded(true);
+      } catch (error) {
+        console.error('Error loading app data:', error);
+        // Fallback to localStorage if native storage fails
+        console.log('Falling back to localStorage...');
+        
+        const savedTracks = localStorage.getItem('soundwave-tracks');
+        const savedPlaylists = localStorage.getItem('soundwave-playlists');
+        const savedRepeatCounts = localStorage.getItem('soundwave-repeat-counts');
+        
+        if (savedTracks) {
+          try {
+            const parsedTracks = JSON.parse(savedTracks).map((track: any) => ({
+              ...track,
+              createdAt: new Date(track.createdAt)
+            }));
+            setTracks(parsedTracks);
+          } catch (error) {
+            console.error('Error loading tracks from localStorage:', error);
+          }
+        }
+        
+        if (savedPlaylists) {
+          try {
+            const parsedPlaylists = JSON.parse(savedPlaylists).map((playlist: any) => ({
+              ...playlist,
+              createdAt: new Date(playlist.createdAt)
+            }));
+            setPlaylists(parsedPlaylists);
+          } catch (error) {
+            console.error('Error loading playlists from localStorage:', error);
+          }
+        }
+        
+        if (savedRepeatCounts) {
+          try {
+            setTrackRepeatCounts(JSON.parse(savedRepeatCounts));
+          } catch (error) {
+            console.error('Error loading repeat counts from localStorage:', error);
+          }
+        }
+        
+        setIsDataLoaded(true);
+      }
+    };
     
-    if (savedTracks) {
-      try {
-        const parsedTracks = JSON.parse(savedTracks).map((track: any) => ({
-          ...track,
-          createdAt: new Date(track.createdAt)
-        }));
-        setTracks(parsedTracks);
-      } catch (error) {
-        console.error('Error loading tracks:', error);
-      }
-    }
-    
-    if (savedPlaylists) {
-      try {
-        const parsedPlaylists = JSON.parse(savedPlaylists).map((playlist: any) => ({
-          ...playlist,
-          createdAt: new Date(playlist.createdAt)
-        }));
-        setPlaylists(parsedPlaylists);
-      } catch (error) {
-        console.error('Error loading playlists:', error);
-      }
-    }
-
-    if (savedRepeatCounts) {
-      try {
-        setTrackRepeatCounts(JSON.parse(savedRepeatCounts));
-      } catch (error) {
-        console.error('Error loading repeat counts:', error);
-      }
-    }
+    loadAppData();
   }, []);
 
-  // Save to localStorage whenever data changes
+  // Save to native storage whenever data changes
   useEffect(() => {
-    localStorage.setItem('soundwave-tracks', JSON.stringify(tracks));
-  }, [tracks]);
+    if (!isDataLoaded) return; // Don't save during initial load
+    
+    const saveData = async () => {
+      try {
+        await storageService.saveTracks(tracks);
+      } catch (error) {
+        console.error('Error saving tracks:', error);
+        // Fallback to localStorage
+        localStorage.setItem('soundwave-tracks', JSON.stringify(tracks));
+      }
+    };
+    
+    saveData();
+  }, [tracks, isDataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('soundwave-playlists', JSON.stringify(playlists));
-  }, [playlists]);
+    if (!isDataLoaded) return; // Don't save during initial load
+    
+    const saveData = async () => {
+      try {
+        await storageService.savePlaylists(playlists);
+      } catch (error) {
+        console.error('Error saving playlists:', error);
+        // Fallback to localStorage
+        localStorage.setItem('soundwave-playlists', JSON.stringify(playlists));
+      }
+    };
+    
+    saveData();
+  }, [playlists, isDataLoaded]);
 
   useEffect(() => {
-    localStorage.setItem('soundwave-repeat-counts', JSON.stringify(trackRepeatCounts));
-  }, [trackRepeatCounts]);
+    if (!isDataLoaded) return; // Don't save during initial load
+    
+    const saveData = async () => {
+      try {
+        await storageService.saveRepeatCounts(trackRepeatCounts);
+      } catch (error) {
+        console.error('Error saving repeat counts:', error);
+        // Fallback to localStorage
+        localStorage.setItem('soundwave-repeat-counts', JSON.stringify(trackRepeatCounts));
+      }
+    };
+    
+    saveData();
+  }, [trackRepeatCounts, isDataLoaded]);
 
   const handleTrackExtracted = (track: Track) => {
     setTracks(prev => [track, ...prev]);
@@ -302,14 +393,39 @@ const Index = () => {
     }
   };
 
-  const handleClearAllData = () => {
-    setTracks([]);
-    setPlaylists([]);
-    setCurrentTrack(null);
-    setCurrentPlaylistId(null);
-    setTrackRepeatCounts({});
-    localStorage.clear();
-    toast({ title: "Data Cleared", description: "All data has been removed" });
+  const handleClearAllData = async () => {
+    try {
+      // Clear from native storage
+      await storageService.clearAllData();
+      
+      // Clear state
+      setTracks([]);
+      setPlaylists([]);
+      setCurrentTrack(null);
+      setCurrentPlaylistId(null);
+      setTrackRepeatCounts({});
+      
+      // Clear localStorage as fallback
+      localStorage.clear();
+      
+      toast({ title: "Data Cleared", description: "All data has been removed" });
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      
+      // Fallback to localStorage clearing
+      setTracks([]);
+      setPlaylists([]);
+      setCurrentTrack(null);
+      setCurrentPlaylistId(null);
+      setTrackRepeatCounts({});
+      localStorage.clear();
+      
+      toast({ 
+        title: "Data Cleared", 
+        description: "All data has been removed",
+        variant: "destructive"
+      });
+    }
   };
 
   const renderActiveTab = () => {

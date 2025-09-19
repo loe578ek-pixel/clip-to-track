@@ -1,4 +1,5 @@
 import { Track } from "@/pages/Index";
+import { audioStorageService } from "./audioStorage";
 
 export const extractAudioFromVideo = async (
   videoFile: File,
@@ -48,30 +49,50 @@ export const extractAudioFromVideo = async (
           
           // Create WAV blob from trimmed audio buffer
           const wavBlob = audioBufferToWav(trimmedBuffer);
-          const audioUrl = URL.createObjectURL(wavBlob);
           
           // Create thumbnail blob
-          canvas.toBlob((thumbnailBlob) => {
+          canvas.toBlob(async (thumbnailBlob) => {
             if (!thumbnailBlob) {
               reject(new Error('Failed to create thumbnail'));
               return;
             }
             
-            const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
-            
-            // Create track object with trimmed duration
-            const track: Track = {
-              id: crypto.randomUUID(),
-              title: videoFile.name.replace(/\.[^/.]+$/, ""), // Remove extension
-              duration: trimmedBuffer.duration,
-              audioUrl,
-              thumbnailUrl,
-              originalFileName: videoFile.name,
-              createdAt: new Date()
-            };
-            
-            onProgress(100);
-            resolve(track);
+            try {
+              const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
+              
+              // Create basic track data (without audio URL and local path)
+              const trackData = {
+                id: crypto.randomUUID(),
+                title: videoFile.name.replace(/\.[^/.]+$/, ""), // Remove extension
+                duration: trimmedBuffer.duration,
+                thumbnailUrl,
+                originalFileName: videoFile.name,
+                createdAt: new Date()
+              };
+              
+              // Save audio file to local storage and get complete track
+              const track = await audioStorageService.saveAudioTrack(wavBlob, trackData);
+              
+              onProgress(100);
+              resolve(track);
+            } catch (error) {
+              // Fallback: create track with blob URL only (no persistence)
+              const audioUrl = URL.createObjectURL(wavBlob);
+              const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
+              
+              const track: Track = {
+                id: crypto.randomUUID(),
+                title: videoFile.name.replace(/\.[^/.]+$/, ""),
+                duration: trimmedBuffer.duration,
+                audioUrl,
+                thumbnailUrl,
+                originalFileName: videoFile.name,
+                createdAt: new Date()
+              };
+              
+              onProgress(100);
+              resolve(track);
+            }
           }, 'image/jpeg', 0.8);
           
         } catch (error) {

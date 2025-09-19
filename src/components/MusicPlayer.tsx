@@ -57,7 +57,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         });
       }
     }
-  }, [track.audioUrl, autoPlay]);
+  }, [track.audioUrl, track.playbackKey, autoPlay]);
 
   useEffect(() => {
     const audio = audioRef.current;

@@ -18,6 +18,7 @@ export interface Track {
   originalFileName: string;
   createdAt: Date;
   repeatCount?: number; // For repeat functionality
+  playbackKey?: string; // Force re-render for repeats
 }
 
 export interface Playlist {
@@ -207,9 +208,12 @@ const Index = () => {
         [currentTrack.id]: currentPlayCount + 1
       }));
       
-      // Replay current track by setting it again with autoplay
+      // Replay current track with new playback key to force re-render and autoplay
       setIsAutoPlaying(true);
-      setCurrentTrack({ ...currentTrack });
+      setCurrentTrack({ 
+        ...currentTrack, 
+        playbackKey: crypto.randomUUID() // Force re-render for autoplay
+      });
       return;
     }
     

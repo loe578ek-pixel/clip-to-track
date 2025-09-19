@@ -253,29 +253,38 @@ class StorageService {
       ]);
       
       // Clear audio directory
-      try {
-        const audioFiles = await Filesystem.readdir({
-          path: this.AUDIO_DIR,
-          directory: Directory.Data
-        });
-        
-        await Promise.all(
-          audioFiles.files.map(file => 
-            Filesystem.deleteFile({
-              path: `${this.AUDIO_DIR}/${file.name}`,
-              directory: Directory.Data
-            })
-          )
-        );
-      } catch (error) {
-        // Audio directory might not exist, which is fine
-        console.log('No audio files to clear');
-      }
+      await this.clearAudioFiles();
       
       console.log('All data cleared successfully');
     } catch (error) {
       console.error('Error clearing data:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Clear only audio files directory (keep preferences)
+   */
+  async clearAudioFiles(): Promise<void> {
+    try {
+      const audioFiles = await Filesystem.readdir({
+        path: this.AUDIO_DIR,
+        directory: Directory.Data
+      });
+      
+      await Promise.all(
+        audioFiles.files.map(file => 
+          Filesystem.deleteFile({
+            path: `${this.AUDIO_DIR}/${file.name}`,
+            directory: Directory.Data
+          })
+        )
+      );
+      
+      console.log('Audio files cleared successfully');
+    } catch (error) {
+      // Audio directory might not exist, which is fine
+      console.log('No audio files to clear or directory does not exist');
     }
   }
 

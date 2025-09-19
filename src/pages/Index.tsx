@@ -428,6 +428,55 @@ const Index = () => {
     }
   };
 
+  const handleClearMusicFiles = async () => {
+    try {
+      // Clear only music-related data from native storage (keep app settings)
+      await Promise.all([
+        storageService.saveTracks([]),
+        storageService.savePlaylists([]),
+        storageService.clearAudioFiles()
+      ]);
+      
+      // Clear state (but keep settings-related state)
+      setTracks([]);
+      setPlaylists([]);
+      setCurrentTrack(null);
+      setCurrentPlaylistId(null);
+      setTrackRepeatCounts({});
+      setCurrentTrackPlayCount({});
+      
+      // Clear music-related localStorage as fallback (keep other settings)
+      localStorage.removeItem('soundwave-tracks');
+      localStorage.removeItem('soundwave-playlists');
+      localStorage.removeItem('soundwave-repeat-counts');
+      
+      toast({ 
+        title: "Musiques supprimées", 
+        description: "Tous les fichiers musicaux ont été supprimés" 
+      });
+    } catch (error) {
+      console.error('Error clearing music files:', error);
+      
+      // Fallback to clearing state and localStorage
+      setTracks([]);
+      setPlaylists([]);
+      setCurrentTrack(null);
+      setCurrentPlaylistId(null);
+      setTrackRepeatCounts({});
+      setCurrentTrackPlayCount({});
+      
+      localStorage.removeItem('soundwave-tracks');
+      localStorage.removeItem('soundwave-playlists');
+      localStorage.removeItem('soundwave-repeat-counts');
+      
+      toast({ 
+        title: "Musiques supprimées", 
+        description: "Tous les fichiers musicaux ont été supprimés",
+        variant: "destructive"
+      });
+    }
+  };
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'home':
@@ -451,7 +500,7 @@ const Index = () => {
           />
         );
       case 'settings':
-        return <SettingsTab onClearAllData={handleClearAllData} />;
+        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} />;
       default:
         return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} />;
     }

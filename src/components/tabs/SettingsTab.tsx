@@ -1,26 +1,31 @@
-import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive } from "lucide-react";
+import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState, useEffect } from "react";
 import { useVolume } from "@/contexts/VolumeContext";
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
+import { useToast } from "@/hooks/use-toast";
 
 interface SettingsTabProps {
   onClearAllData: () => void;
+  onClearMusicFiles?: () => void;
 }
 
-export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
+export const SettingsTab = ({ onClearAllData, onClearMusicFiles }: SettingsTabProps) => {
   const { masterVolume, setMasterVolume } = useVolume();
   const [autoPlay, setAutoPlay] = useState(true);
   const [crossfade, setCrossfade] = useState(false);
   const [highQuality, setHighQuality] = useState(true);
   const [storageInfo, setStorageInfo] = useState({ tracks: 0, playlists: 0, audioFiles: 0 });
   const [audioStats, setAudioStats] = useState({ totalFiles: 0, estimatedSizeMB: 0 });
+  const [isClearMusicDialogOpen, setIsClearMusicDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   // Load storage information
   useEffect(() => {
@@ -40,6 +45,44 @@ export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
 
     loadStorageInfo();
   }, []);
+
+  const handleClearMusicFiles = async () => {
+    try {
+      // Clear only music-related data, keep app settings
+      await Promise.all([
+        storageService.saveTracks([]),
+        storageService.savePlaylists([]),
+        storageService.clearAudioFiles() // We'll need to add this method
+      ]);
+      
+      // Update storage info
+      const [storage, audio] = await Promise.all([
+        storageService.getStorageInfo(),
+        audioStorageService.getAudioStorageStats()
+      ]);
+      setStorageInfo(storage);
+      setAudioStats(audio);
+      
+      // Call parent callback if provided
+      if (onClearMusicFiles) {
+        onClearMusicFiles();
+      }
+      
+      setIsClearMusicDialogOpen(false);
+      
+      toast({
+        title: "Musiques supprimées",
+        description: "Tous les fichiers musicaux ont été supprimés"
+      });
+    } catch (error) {
+      console.error('Error clearing music files:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer les fichiers musicaux",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="flex-1 overflow-auto pb-20 p-4 space-y-6">
@@ -160,6 +203,49 @@ export const SettingsTab = ({ onClearAllData }: SettingsTabProps) => {
                 ✓ All data saved locally for offline access
               </p>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30">
+            <div>
+              <h4 className="font-medium">Clear Downloaded Music</h4>
+              <p className="text-sm text-muted-foreground">
+                Remove all music files and playlists, keep app settings
+              </p>
+            </div>
+            <Dialog open={isClearMusicDialogOpen} onOpenChange={setIsClearMusicDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                >
+                  <Music className="h-4 w-4 mr-2" />
+                  Clear Music Files
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-white/10">
+                <DialogHeader>
+                  <DialogTitle>Supprimer les musiques</DialogTitle>
+                  <DialogDescription className="text-muted-foreground">
+                    Voulez-vous supprimer les musiques téléchargées de l'application ?
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex justify-end space-x-2 mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsClearMusicDialogOpen(false)}
+                  >
+                    Annuler
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleClearMusicFiles}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Oui
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30">

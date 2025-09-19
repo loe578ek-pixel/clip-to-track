@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { VolumeProvider } from "@/contexts/VolumeContext";
 import { Toaster } from "@/components/ui/toaster";
 import { storageService } from "@/lib/storageService";
+import { audioStorageService } from "@/lib/audioStorage";
 
 export interface Track {
   id: string;
@@ -477,6 +478,41 @@ const Index = () => {
     }
   };
 
+  const handleDeleteTrack = (trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (track) {
+      // Remove track from storage and delete audio file
+      audioStorageService.deleteAudioTrack(track).catch(error => {
+        console.error('Error deleting audio file:', error);
+      });
+      
+      // Update tracks state
+      setTracks(prev => prev.filter(t => t.id !== trackId));
+      
+      // Remove track from all playlists
+      setPlaylists(prev => prev.map(playlist => ({
+        ...playlist,
+        tracks: playlist.tracks.filter(id => id !== trackId)
+      })));
+      
+      // Clear track repeat count
+      setTrackRepeatCounts(prev => {
+        const { [trackId]: _, ...rest } = prev;
+        return rest;
+      });
+      
+      // Clear current track if it's the deleted one
+      if (currentTrack?.id === trackId) {
+        setCurrentTrack(null);
+      }
+      
+      toast({
+        title: "Musique supprimée",
+        description: `"${track.title}" a été supprimé de votre bibliothèque`
+      });
+    }
+  };
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'home':
@@ -500,7 +536,7 @@ const Index = () => {
           />
         );
       case 'settings':
-        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} />;
+        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} />;
       default:
         return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} />;
     }

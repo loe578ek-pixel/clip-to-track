@@ -1,4 +1,4 @@
-import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music } from "lucide-react";
+import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -11,13 +11,17 @@ import { useVolume } from "@/contexts/VolumeContext";
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
 import { useToast } from "@/hooks/use-toast";
+import { MusicManagementDialog } from "@/components/MusicManagementDialog";
+import { Track } from "@/pages/Index";
 
 interface SettingsTabProps {
   onClearAllData: () => void;
   onClearMusicFiles?: () => void;
+  tracks: Track[];
+  onDeleteTrack: (trackId: string) => void;
 }
 
-export const SettingsTab = ({ onClearAllData, onClearMusicFiles }: SettingsTabProps) => {
+export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDeleteTrack }: SettingsTabProps) => {
   const { masterVolume, setMasterVolume } = useVolume();
   const [autoPlay, setAutoPlay] = useState(true);
   const [crossfade, setCrossfade] = useState(false);
@@ -25,6 +29,7 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles }: SettingsTabPr
   const [storageInfo, setStorageInfo] = useState({ tracks: 0, playlists: 0, audioFiles: 0 });
   const [audioStats, setAudioStats] = useState({ totalFiles: 0, estimatedSizeMB: 0 });
   const [isClearMusicDialogOpen, setIsClearMusicDialogOpen] = useState(false);
+  const [isMusicManagementOpen, setIsMusicManagementOpen] = useState(false);
   const { toast } = useToast();
 
   // Load storage information
@@ -45,6 +50,20 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles }: SettingsTabPr
 
     loadStorageInfo();
   }, []);
+
+  const handleDeleteIndividualTrack = (trackId: string) => {
+    // Update local storage info after deletion
+    setStorageInfo(prev => ({ ...prev, tracks: prev.tracks - 1 }));
+    setAudioStats(prev => ({ ...prev, totalFiles: Math.max(0, prev.totalFiles - 1) }));
+    
+    // Call parent callback
+    onDeleteTrack(trackId);
+    
+    toast({
+      title: "Musique supprimée",
+      description: "Le fichier musical a été supprimé avec succès"
+    });
+  };
 
   const handleClearMusicFiles = async () => {
     try {
@@ -207,6 +226,24 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles }: SettingsTabPr
 
           <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30">
             <div>
+              <h4 className="font-medium">Manage Music Files</h4>
+              <p className="text-sm text-muted-foreground">
+                View and selectively delete individual songs
+              </p>
+            </div>
+            <Button
+              onClick={() => setIsMusicManagementOpen(true)}
+              variant="outline"
+              size="sm"
+              className="bg-primary/10 border-primary/30 hover:bg-primary/20"
+            >
+              <FileMusic className="h-4 w-4 mr-2" />
+              Gérer les musiques
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30">
+            <div>
               <h4 className="font-medium">Clear Downloaded Music</h4>
               <p className="text-sm text-muted-foreground">
                 Remove all music files and playlists, keep app settings
@@ -290,6 +327,14 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles }: SettingsTabPr
           </div>
         </CardContent>
       </Card>
+
+      {/* Music Management Dialog */}
+      <MusicManagementDialog
+        isOpen={isMusicManagementOpen}
+        onClose={() => setIsMusicManagementOpen(false)}
+        tracks={tracks}
+        onDeleteTrack={handleDeleteIndividualTrack}
+      />
 
       {/* App Information */}
       <Card className="soundwave-card border-white/10">

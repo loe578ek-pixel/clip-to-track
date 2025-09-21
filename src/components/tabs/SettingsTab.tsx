@@ -10,7 +10,6 @@ import { useState, useEffect } from "react";
 import { useVolume } from "@/contexts/VolumeContext";
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
-import { useToast } from "@/hooks/use-toast";
 import { MusicManagementDialog } from "@/components/MusicManagementDialog";
 import { Track } from "@/pages/Index";
 
@@ -30,7 +29,6 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
   const [audioStats, setAudioStats] = useState({ totalFiles: 0, estimatedSizeMB: 0 });
   const [isClearMusicDialogOpen, setIsClearMusicDialogOpen] = useState(false);
   const [isMusicManagementOpen, setIsMusicManagementOpen] = useState(false);
-  const { toast } = useToast();
 
   // Load storage information
   useEffect(() => {
@@ -58,11 +56,6 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
     
     // Call parent callback
     onDeleteTrack(trackId);
-    
-    toast({
-      title: "Musique supprimée",
-      description: "Le fichier musical a été supprimé avec succès"
-    });
   };
 
   const handleClearMusicFiles = async () => {
@@ -88,18 +81,8 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
       }
       
       setIsClearMusicDialogOpen(false);
-      
-      toast({
-        title: "Musiques supprimées",
-        description: "Tous les fichiers musicaux ont été supprimés"
-      });
     } catch (error) {
       console.error('Error clearing music files:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer les fichiers musicaux",
-        variant: "destructive"
-      });
     }
   };
 

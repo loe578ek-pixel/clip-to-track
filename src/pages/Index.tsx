@@ -5,9 +5,8 @@ import { AddTab } from "@/components/tabs/AddTab";
 import { PlaylistManagerTab } from "@/components/tabs/PlaylistManagerTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
-import { useToast } from "@/hooks/use-toast";
 import { VolumeProvider } from "@/contexts/VolumeContext";
-import { Toaster } from "@/components/ui/toaster";
+
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
 
@@ -42,7 +41,6 @@ const Index = () => {
   const [currentTrackPlayCount, setCurrentTrackPlayCount] = useState<Record<string, number>>({});
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const { toast } = useToast();
 
   // Load data from Capacitor native storage on mount
   useEffect(() => {
@@ -186,10 +184,6 @@ const Index = () => {
 
   const handleTrackExtracted = (track: Track) => {
     setTracks(prev => [track, ...prev]);
-    toast({
-      title: "Audio Extracted",
-      description: `Successfully extracted audio from ${track.originalFileName}`,
-    });
   };
 
   const handlePlayTrack = (track: Track) => {
@@ -222,7 +216,6 @@ const Index = () => {
       createdAt: new Date()
     };
     setPlaylists(prev => [newPlaylist, ...prev]);
-    toast({ title: "Playlist Created", description: `Created "${name}"` });
   };
 
   const handleAddToPlaylist = (playlistId: string, trackId: string) => {
@@ -234,10 +227,6 @@ const Index = () => {
       setPlaylists(prev => prev.map(p => 
         p.id === playlistId ? { ...p, tracks: [...p.tracks, trackId] } : p
       ));
-      toast({ 
-        title: "Track Added", 
-        description: `Added "${track.title}" to "${playlist.name}"` 
-      });
     }
   };
 
@@ -251,10 +240,6 @@ const Index = () => {
           ? { ...p, tracks: p.tracks.filter(id => id !== trackId) }
           : p
       ));
-      toast({ 
-        title: "Track Removed", 
-        description: `Removed "${track.title}" from "${playlist.name}"` 
-      });
     }
   };
 
@@ -262,20 +247,12 @@ const Index = () => {
     setPlaylists(prev => prev.map(p => 
       p.id === playlistId ? { ...p, name: newName } : p
     ));
-    toast({ 
-      title: "Playlist Renamed", 
-      description: `Renamed to "${newName}"` 
-    });
   };
 
   const handleDeletePlaylist = (playlistId: string) => {
     const playlist = playlists.find(p => p.id === playlistId);
     if (playlist) {
       setPlaylists(prev => prev.filter(p => p.id !== playlistId));
-      toast({ 
-        title: "Playlist Deleted", 
-        description: `Deleted "${playlist.name}"` 
-      });
     }
   };
 
@@ -408,8 +385,6 @@ const Index = () => {
       
       // Clear localStorage as fallback
       localStorage.clear();
-      
-      toast({ title: "Data Cleared", description: "All data has been removed" });
     } catch (error) {
       console.error('Error clearing data:', error);
       
@@ -420,12 +395,6 @@ const Index = () => {
       setCurrentPlaylistId(null);
       setTrackRepeatCounts({});
       localStorage.clear();
-      
-      toast({ 
-        title: "Data Cleared", 
-        description: "All data has been removed",
-        variant: "destructive"
-      });
     }
   };
 
@@ -450,11 +419,6 @@ const Index = () => {
       localStorage.removeItem('soundwave-tracks');
       localStorage.removeItem('soundwave-playlists');
       localStorage.removeItem('soundwave-repeat-counts');
-      
-      toast({ 
-        title: "Musiques supprimées", 
-        description: "Tous les fichiers musicaux ont été supprimés" 
-      });
     } catch (error) {
       console.error('Error clearing music files:', error);
       
@@ -469,12 +433,6 @@ const Index = () => {
       localStorage.removeItem('soundwave-tracks');
       localStorage.removeItem('soundwave-playlists');
       localStorage.removeItem('soundwave-repeat-counts');
-      
-      toast({ 
-        title: "Musiques supprimées", 
-        description: "Tous les fichiers musicaux ont été supprimés",
-        variant: "destructive"
-      });
     }
   };
 
@@ -505,11 +463,6 @@ const Index = () => {
       if (currentTrack?.id === trackId) {
         setCurrentTrack(null);
       }
-      
-      toast({
-        title: "Musique supprimée",
-        description: `"${track.title}" a été supprimé de votre bibliothèque`
-      });
     }
   };
 
@@ -565,7 +518,7 @@ const Index = () => {
           </div>
         )}
         
-        <Toaster />
+        
       </div>
     </VolumeProvider>
   );

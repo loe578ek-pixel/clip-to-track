@@ -12,21 +12,34 @@ import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
 import { MusicManagementDialog } from "@/components/MusicManagementDialog";
 import { Track } from "@/pages/Index";
-
 interface SettingsTabProps {
   onClearAllData: () => void;
   onClearMusicFiles?: () => void;
   tracks: Track[];
   onDeleteTrack: (trackId: string) => void;
 }
-
-export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDeleteTrack }: SettingsTabProps) => {
-  const { masterVolume, setMasterVolume } = useVolume();
+export const SettingsTab = ({
+  onClearAllData,
+  onClearMusicFiles,
+  tracks,
+  onDeleteTrack
+}: SettingsTabProps) => {
+  const {
+    masterVolume,
+    setMasterVolume
+  } = useVolume();
   const [autoPlay, setAutoPlay] = useState(true);
   const [crossfade, setCrossfade] = useState(false);
   const [highQuality, setHighQuality] = useState(true);
-  const [storageInfo, setStorageInfo] = useState({ tracks: 0, playlists: 0, audioFiles: 0 });
-  const [audioStats, setAudioStats] = useState({ totalFiles: 0, estimatedSizeMB: 0 });
+  const [storageInfo, setStorageInfo] = useState({
+    tracks: 0,
+    playlists: 0,
+    audioFiles: 0
+  });
+  const [audioStats, setAudioStats] = useState({
+    totalFiles: 0,
+    estimatedSizeMB: 0
+  });
   const [isClearMusicDialogOpen, setIsClearMusicDialogOpen] = useState(false);
   const [isMusicManagementOpen, setIsMusicManagementOpen] = useState(false);
 
@@ -34,60 +47,50 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
   useEffect(() => {
     const loadStorageInfo = async () => {
       try {
-        const [storage, audio] = await Promise.all([
-          storageService.getStorageInfo(),
-          audioStorageService.getAudioStorageStats()
-        ]);
-        
+        const [storage, audio] = await Promise.all([storageService.getStorageInfo(), audioStorageService.getAudioStorageStats()]);
         setStorageInfo(storage);
         setAudioStats(audio);
       } catch (error) {
         console.error('Error loading storage info:', error);
       }
     };
-
     loadStorageInfo();
   }, []);
-
   const handleDeleteIndividualTrack = (trackId: string) => {
     // Update local storage info after deletion
-    setStorageInfo(prev => ({ ...prev, tracks: prev.tracks - 1 }));
-    setAudioStats(prev => ({ ...prev, totalFiles: Math.max(0, prev.totalFiles - 1) }));
-    
+    setStorageInfo(prev => ({
+      ...prev,
+      tracks: prev.tracks - 1
+    }));
+    setAudioStats(prev => ({
+      ...prev,
+      totalFiles: Math.max(0, prev.totalFiles - 1)
+    }));
+
     // Call parent callback
     onDeleteTrack(trackId);
   };
-
   const handleClearMusicFiles = async () => {
     try {
       // Clear only music-related data, keep app settings
-      await Promise.all([
-        storageService.saveTracks([]),
-        storageService.savePlaylists([]),
-        storageService.clearAudioFiles() // We'll need to add this method
+      await Promise.all([storageService.saveTracks([]), storageService.savePlaylists([]), storageService.clearAudioFiles() // We'll need to add this method
       ]);
-      
+
       // Update storage info
-      const [storage, audio] = await Promise.all([
-        storageService.getStorageInfo(),
-        audioStorageService.getAudioStorageStats()
-      ]);
+      const [storage, audio] = await Promise.all([storageService.getStorageInfo(), audioStorageService.getAudioStorageStats()]);
       setStorageInfo(storage);
       setAudioStats(audio);
-      
+
       // Call parent callback if provided
       if (onClearMusicFiles) {
         onClearMusicFiles();
       }
-      
       setIsClearMusicDialogOpen(false);
     } catch (error) {
       console.error('Error clearing music files:', error);
     }
   };
-
-  return (
-    <div className="flex-1 overflow-auto pb-20 p-4 space-y-6">
+  return <div className="flex-1 overflow-auto pb-20 p-4 space-y-6">
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
@@ -109,14 +112,7 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
           <div className="space-y-2">
             <Label htmlFor="volume">Master Volume</Label>
             <div className="px-3">
-              <Slider
-                id="volume"
-                value={[masterVolume]}
-                onValueChange={(value) => setMasterVolume(value[0])}
-                max={100}
-                step={1}
-                className="w-full"
-              />
+              <Slider id="volume" value={[masterVolume]} onValueChange={value => setMasterVolume(value[0])} max={100} step={1} className="w-full" />
             </div>
             <p className="text-sm text-muted-foreground">{masterVolume}%</p>
           </div>
@@ -130,11 +126,7 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
                 Automatically play next song when current ends
               </p>
             </div>
-            <Switch
-              id="autoplay"
-              checked={autoPlay}
-              onCheckedChange={setAutoPlay}
-            />
+            <Switch id="autoplay" checked={autoPlay} onCheckedChange={setAutoPlay} />
           </div>
 
           <div className="flex items-center justify-between">
@@ -144,11 +136,7 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
                 Smooth transitions between tracks
               </p>
             </div>
-            <Switch
-              id="crossfade"
-              checked={crossfade}
-              onCheckedChange={setCrossfade}
-            />
+            <Switch id="crossfade" checked={crossfade} onCheckedChange={setCrossfade} />
           </div>
 
           <div className="flex items-center justify-between">
@@ -158,11 +146,7 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
                 Better audio quality, more storage usage
               </p>
             </div>
-            <Switch
-              id="quality"
-              checked={highQuality}
-              onCheckedChange={setHighQuality}
-            />
+            <Switch id="quality" checked={highQuality} onCheckedChange={setHighQuality} />
           </div>
         </CardContent>
       </Card>
@@ -214,12 +198,7 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
                 View and selectively delete individual songs
               </p>
             </div>
-            <Button
-              onClick={() => setIsMusicManagementOpen(true)}
-              variant="outline"
-              size="sm"
-              className="bg-primary/10 border-primary/30 hover:bg-primary/20"
-            >
+            <Button onClick={() => setIsMusicManagementOpen(true)} variant="outline" size="sm" className="bg-primary/10 border-primary/30 hover:bg-primary/20">
               <FileMusic className="h-4 w-4 mr-2" />
               Gérer les musiques
             </Button>
@@ -234,10 +213,7 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
             </div>
             <Dialog open={isClearMusicDialogOpen} onOpenChange={setIsClearMusicDialogOpen}>
               <DialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                >
+                <Button variant="destructive" size="sm">
                   <Music className="h-4 w-4 mr-2" />
                   Clear Music Files
                 </Button>
@@ -250,17 +226,10 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex justify-end space-x-2 mt-6">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsClearMusicDialogOpen(false)}
-                  >
+                  <Button variant="outline" onClick={() => setIsClearMusicDialogOpen(false)}>
                     Annuler
                   </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={handleClearMusicFiles}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
+                  <Button variant="destructive" onClick={handleClearMusicFiles} className="bg-red-600 hover:bg-red-700 text-white">
                     Oui
                   </Button>
                 </div>
@@ -268,22 +237,7 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
             </Dialog>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30">
-            <div>
-              <h4 className="font-medium">Clear All Data</h4>
-              <p className="text-sm text-muted-foreground">
-                Remove all songs, playlists, and settings from device
-              </p>
-            </div>
-            <Button
-              onClick={onClearAllData}
-              variant="destructive"
-              size="sm"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear
-            </Button>
-          </div>
+          
 
           <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30">
             <div>
@@ -292,18 +246,11 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
                 Update storage statistics and cache
               </p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={async () => {
-                const [storage, audio] = await Promise.all([
-                  storageService.getStorageInfo(),
-                  audioStorageService.getAudioStorageStats()
-                ]);
-                setStorageInfo(storage);
-                setAudioStats(audio);
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={async () => {
+            const [storage, audio] = await Promise.all([storageService.getStorageInfo(), audioStorageService.getAudioStorageStats()]);
+            setStorageInfo(storage);
+            setAudioStats(audio);
+          }}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
@@ -312,12 +259,7 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
       </Card>
 
       {/* Music Management Dialog */}
-      <MusicManagementDialog
-        isOpen={isMusicManagementOpen}
-        onClose={() => setIsMusicManagementOpen(false)}
-        tracks={tracks}
-        onDeleteTrack={handleDeleteIndividualTrack}
-      />
+      <MusicManagementDialog isOpen={isMusicManagementOpen} onClose={() => setIsMusicManagementOpen(false)} tracks={tracks} onDeleteTrack={handleDeleteIndividualTrack} />
 
       {/* App Information */}
       <Card className="soundwave-card border-white/10">
@@ -360,6 +302,5 @@ export const SettingsTab = ({ onClearAllData, onClearMusicFiles, tracks, onDelet
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };

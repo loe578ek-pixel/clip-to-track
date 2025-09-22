@@ -119,35 +119,11 @@ export const SettingsTab = ({
 
           <Separator className="bg-white/10" />
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="autoplay">Autoplay</Label>
-              <p className="text-sm text-muted-foreground">
-                Automatically play next song when current ends
-              </p>
-            </div>
-            <Switch id="autoplay" checked={autoPlay} onCheckedChange={setAutoPlay} />
-          </div>
+          
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="crossfade">Crossfade</Label>
-              <p className="text-sm text-muted-foreground">
-                Smooth transitions between tracks
-              </p>
-            </div>
-            <Switch id="crossfade" checked={crossfade} onCheckedChange={setCrossfade} />
-          </div>
+          
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="quality">High Quality Audio</Label>
-              <p className="text-sm text-muted-foreground">
-                Better audio quality, more storage usage
-              </p>
-            </div>
-            <Switch id="quality" checked={highQuality} onCheckedChange={setHighQuality} />
-          </div>
+          
         </CardContent>
       </Card>
 

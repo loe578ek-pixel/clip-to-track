@@ -133,29 +133,29 @@ export const MusicManagementDialog = ({
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 border border-red-200 dark:border-red-800 shrink-0"
+                        variant="destructive"
+                        size="sm"
+                        className="h-10 w-10 p-0 bg-red-500 hover:bg-red-600 text-white border-0 shrink-0"
                         disabled={deletingTrackId === track.id}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-card border-white/10">
+                    <AlertDialogContent className="bg-card border-white/10 mx-4">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer cette musique ?</AlertDialogTitle>
+                        <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cette musique ?</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
                           Cette action supprimera définitivement "{track.title}" de votre appareil et de toutes les playlists.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => {
                             setDeletingTrackId(track.id);
                             handleDeleteTrack(track.id);
                           }}
-                          className="bg-red-600 hover:bg-red-700"
+                          className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
                         >
                           Supprimer
                         </AlertDialogAction>

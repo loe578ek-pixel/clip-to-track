@@ -1,6 +1,24 @@
-import { Play, MoreHorizontal, Clock, Calendar } from "lucide-react";
+import { Play, Plus, Trash2, Clock, Calendar } from "lucide-react";
 import { Track, Playlist } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle,
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 
 interface HomeTabProps {
   tracks: Track[];
@@ -8,6 +26,8 @@ interface HomeTabProps {
   currentTrack: Track | null;
   onPlayTrack: (track: Track) => void;
   onPlayPlaylist: (playlistId: string) => void;
+  onAddToPlaylist: (trackId: string, playlistId: string) => void;
+  onDeleteTrack: (trackId: string) => void;
 }
 
 export const HomeTab = ({ 
@@ -15,8 +35,11 @@ export const HomeTab = ({
   playlists, 
   currentTrack, 
   onPlayTrack, 
-  onPlayPlaylist 
+  onPlayPlaylist,
+  onAddToPlaylist,
+  onDeleteTrack
 }: HomeTabProps) => {
+  const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -122,13 +145,70 @@ export const HomeTab = ({
                   >
                     <Play className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  
+                  {/* Add to Playlist Button */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-card border-white/10">
+                      {playlists.length > 0 ? (
+                        playlists.map((playlist) => (
+                          <DropdownMenuItem
+                            key={playlist.id}
+                            onClick={() => onAddToPlaylist(track.id, playlist.id)}
+                            className="cursor-pointer"
+                          >
+                            {playlist.name}
+                          </DropdownMenuItem>
+                        ))
+                      ) : (
+                        <DropdownMenuItem disabled>
+                          Aucune playlist disponible
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  {/* Delete Button */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                        disabled={deletingTrackId === track.id}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-card border-white/10 mx-4">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer cette musique de l'application ?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                          Cette action supprimera définitivement "{track.title}" de votre appareil et de toutes les playlists.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
+                        <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            setDeletingTrackId(track.id);
+                            onDeleteTrack(track.id);
+                          }}
+                          className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
+                        >
+                          Supprimer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))}

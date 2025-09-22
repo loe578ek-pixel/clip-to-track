@@ -469,7 +469,7 @@ const Index = () => {
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} />;
+        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} onAddToPlaylist={handleAddToPlaylist} onDeleteTrack={handleDeleteTrack} />;
       case 'add':
         return <AddTab tracks={tracks} playlists={playlists} isProcessing={isProcessing} setIsProcessing={setIsProcessing} onTrackExtracted={handleTrackExtracted} onAddToPlaylist={handleAddToPlaylist} />;
       case 'playlists':
@@ -491,7 +491,7 @@ const Index = () => {
       case 'settings':
         return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} />;
       default:
-        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} />;
+        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} onAddToPlaylist={handleAddToPlaylist} onDeleteTrack={handleDeleteTrack} />;
     }
   };
 

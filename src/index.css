@@ -80,14 +80,17 @@
   
   /* Bottom Navigation - Always visible */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-white/10 flex items-center justify-around px-2 py-2 z-50 h-16;
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-white/10 flex items-center justify-around px-1 py-2 z-50;
+    height: 4.5rem; /* 72px - increased for better mobile touch */
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+    padding-left: max(env(safe-area-inset-left), 0.25rem);
+    padding-right: max(env(safe-area-inset-right), 0.25rem);
   }
   
   .nav-button {
-    @apply flex flex-col items-center justify-center p-2 text-muted-foreground hover:text-primary transition-colors relative min-w-0 flex-1 rounded-lg;
+    @apply flex flex-col items-center justify-center p-1.5 text-muted-foreground hover:text-primary transition-colors relative min-w-0 flex-1 rounded-lg;
+    min-height: 3rem; /* Ensure touch-friendly height */
+    gap: 0.25rem; /* Space between icon and text */
   }
   
   .nav-button.active {
@@ -100,7 +103,8 @@
   
   /* Playlist items */
   .playlist-item {
-    @apply flex items-center space-x-3 p-3 rounded-lg hover:bg-secondary/50 transition-all cursor-pointer;
+    @apply flex items-center gap-3 p-4 rounded-lg hover:bg-secondary/50 transition-all cursor-pointer;
+    min-height: 4rem; /* Touch-friendly height */
   }
   
   .playlist-item.active {
@@ -109,11 +113,25 @@
   
   /* Track items */
   .track-item {
-    @apply flex items-center space-x-4 p-3 rounded-lg hover:bg-secondary/30 transition-all cursor-pointer;
+    @apply flex items-center gap-3 p-4 rounded-lg hover:bg-secondary/30 transition-all cursor-pointer;
+    min-height: 4.5rem; /* Touch-friendly height */
   }
   
   .track-item.playing {
     @apply bg-primary/10 border border-primary/20;
+  }
+  
+  /* Mobile responsive improvements */
+  @media (max-width: 640px) {
+    .track-item {
+      @apply gap-2 p-3;
+      min-height: 4rem;
+    }
+    
+    .playlist-item {
+      @apply gap-2 p-3;
+      min-height: 3.5rem;
+    }
   }
   
   /* Progress bars */
@@ -150,5 +168,30 @@
   #root {
     height: 100vh;
     height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+  
+  /* Mobile layout improvements */
+  @media (max-width: 640px) {
+    .soundwave-card {
+      @apply mx-0 p-3;
+    }
+    
+    /* Ensure buttons don't overlap */
+    .btn-group {
+      @apply flex flex-col gap-2 w-full;
+    }
+    
+    .btn-group > * {
+      @apply w-full justify-center;
+    }
+    
+    /* Better mobile spacing */
+    .mobile-spacing {
+      @apply space-y-3;
+    }
+    
+    .mobile-spacing > * {
+      @apply mb-3;
+    }
   }
 }

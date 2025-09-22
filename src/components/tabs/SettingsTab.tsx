@@ -90,7 +90,7 @@ export const SettingsTab = ({
       console.error('Error clearing music files:', error);
     }
   };
-  return <div className="flex-1 overflow-auto pb-20 p-4 space-y-6">
+  return <div className="flex-1 overflow-auto p-4 space-y-6" style={{ paddingBottom: '6rem' }}>
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
@@ -167,21 +167,26 @@ export const SettingsTab = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg bg-secondary/30 gap-3">
+            <div className="flex-1">
               <h4 className="font-medium">Manage Music Files</h4>
               <p className="text-sm text-muted-foreground">
                 View and selectively delete individual songs
               </p>
             </div>
-            <Button onClick={() => setIsMusicManagementOpen(true)} variant="outline" size="sm" className="bg-primary/10 border-primary/30 hover:bg-primary/20">
+            <Button 
+              onClick={() => setIsMusicManagementOpen(true)} 
+              variant="outline" 
+              size="sm" 
+              className="bg-primary/10 border-primary/30 hover:bg-primary/20 w-full sm:w-auto"
+            >
               <FileMusic className="h-4 w-4 mr-2" />
               Gérer les musiques
             </Button>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg bg-secondary/30 gap-3">
+            <div className="flex-1">
               <h4 className="font-medium">Clear Downloaded Music</h4>
               <p className="text-sm text-muted-foreground">
                 Remove all music files and playlists, keep app settings
@@ -189,23 +194,31 @@ export const SettingsTab = ({
             </div>
             <Dialog open={isClearMusicDialogOpen} onOpenChange={setIsClearMusicDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button variant="destructive" size="sm" className="w-full sm:w-auto">
                   <Music className="h-4 w-4 mr-2" />
                   Clear Music Files
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-card border-white/10">
+              <DialogContent className="bg-card border-white/10 mx-4">
                 <DialogHeader>
                   <DialogTitle>Supprimer les musiques</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
                     Voulez-vous supprimer les musiques téléchargées de l'application ?
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex justify-end space-x-2 mt-6">
-                  <Button variant="outline" onClick={() => setIsClearMusicDialogOpen(false)}>
+                <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsClearMusicDialogOpen(false)}
+                    className="w-full sm:w-auto"
+                  >
                     Annuler
                   </Button>
-                  <Button variant="destructive" onClick={handleClearMusicFiles} className="bg-red-600 hover:bg-red-700 text-white">
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleClearMusicFiles} 
+                    className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
+                  >
                     Oui
                   </Button>
                 </div>
@@ -215,18 +228,23 @@ export const SettingsTab = ({
 
           
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/30">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg bg-secondary/30 gap-3">
+            <div className="flex-1">
               <h4 className="font-medium">Refresh Storage Info</h4>
               <p className="text-sm text-muted-foreground">
                 Update storage statistics and cache
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={async () => {
-            const [storage, audio] = await Promise.all([storageService.getStorageInfo(), audioStorageService.getAudioStorageStats()]);
-            setStorageInfo(storage);
-            setAudioStats(audio);
-          }}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full sm:w-auto"
+              onClick={async () => {
+                const [storage, audio] = await Promise.all([storageService.getStorageInfo(), audioStorageService.getAudioStorageStats()]);
+                setStorageInfo(storage);
+                setAudioStats(audio);
+              }}
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>

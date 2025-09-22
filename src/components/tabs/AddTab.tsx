@@ -39,7 +39,7 @@ export const AddTab = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto pb-20 p-4 space-y-6">
+    <div className="flex-1 overflow-auto p-4 space-y-6" style={{ paddingBottom: '6rem' }}>
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
         <h1 className="text-3xl font-bold mb-2">Add Music</h1>
@@ -68,48 +68,51 @@ export const AddTab = ({
           <div className="space-y-3">
             {tracks.map((track, index) => (
               <div key={track.id} className="soundwave-card p-4">
-                <div className="flex items-center space-x-4">
-                  {/* Thumbnail */}
-                  <img
-                    src={track.thumbnailUrl}
-                    alt={track.title}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    {/* Thumbnail */}
+                    <img
+                      src={track.thumbnailUrl}
+                      alt={track.title}
+                      className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                    />
 
-                  {/* Track Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium truncate">{track.title}</h3>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {track.originalFileName}
-                    </p>
-                    <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-2">
-                      <span className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {formatTime(track.duration)}
-                      </span>
-                      <span className="flex items-center">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {formatDate(track.createdAt)}
-                      </span>
+                    {/* Track Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium truncate text-base">{track.title}</h3>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {track.originalFileName}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                        <span className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {formatTime(track.duration)}
+                        </span>
+                        <span className="flex items-center">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {formatDate(track.createdAt)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex justify-end sm:justify-start">
                     {playlists.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button size="sm" className="soundwave-button-secondary">
+                          <Button size="sm" className="soundwave-button-secondary w-full sm:w-auto">
                             <Plus className="h-4 w-4 mr-2" />
-                            Add to Playlist
+                            <span className="truncate">Add to Playlist</span>
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-card border-white/10">
+                        <DropdownMenuContent align="end" className="bg-card border-white/10 z-50">
                           {playlists.map((playlist) => (
                             <DropdownMenuItem
                               key={playlist.id}
                               onClick={() => onAddToPlaylist(playlist.id, track.id)}
                               disabled={playlist.tracks.includes(track.id)}
+                              className="focus:bg-primary/20"
                             >
                               {playlist.name}
                               {playlist.tracks.includes(track.id) && (

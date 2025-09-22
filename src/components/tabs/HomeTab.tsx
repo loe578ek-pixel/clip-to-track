@@ -26,7 +26,7 @@ export const HomeTab = ({
   const recentTracks = tracks.slice(0, 6);
 
   return (
-    <div className="flex-1 overflow-auto pb-20 p-4 space-y-6">
+    <div className="flex-1 overflow-auto p-4 space-y-6" style={{ paddingBottom: '6rem' }}>
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
         <h1 className="text-3xl font-bold mb-2">Good evening</h1>
@@ -40,11 +40,11 @@ export const HomeTab = ({
           <div className="grid grid-cols-1 gap-3">
             {playlists.slice(0, 3).map((playlist) => (
               <div key={playlist.id} className="playlist-item">
-                <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
                   <Play className="h-6 w-6 text-white" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{playlist.name}</h3>
+                <div className="flex-1 min-w-0 mr-3">
+                  <h3 className="font-medium truncate text-base">{playlist.name}</h3>
                   <p className="text-sm text-muted-foreground">
                     {playlist.tracks.length} songs
                   </p>
@@ -52,7 +52,7 @@ export const HomeTab = ({
                 <Button
                   onClick={() => onPlayPlaylist(playlist.id)}
                   size="icon"
-                  className="soundwave-button-primary w-12 h-12 rounded-full"
+                  className="soundwave-button-primary w-12 h-12 rounded-full flex-shrink-0"
                 >
                   <Play className="h-5 w-5" />
                 </Button>
@@ -73,49 +73,59 @@ export const HomeTab = ({
                 className={`group track-item ${currentTrack?.id === track.id ? 'playing' : ''}`}
               >
                 {/* Track Number / Play Button */}
-                <div className="w-8 flex justify-center">
+                <div className="w-10 flex justify-center items-center flex-shrink-0">
                   {currentTrack?.id === track.id ? (
                     <div className="w-4 h-4 bg-primary rounded-sm animate-pulse" />
                   ) : (
-                    <span className="text-muted-foreground text-sm group-hover:hidden">
-                      {index + 1}
-                    </span>
+                    <>
+                      <span className="text-muted-foreground text-sm group-hover:hidden">
+                        {index + 1}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onPlayTrack(track)}
+                        className="hidden group-hover:flex w-8 h-8 hover:bg-primary/20"
+                      >
+                        <Play className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onPlayTrack(track)}
-                    className="hidden group-hover:flex w-8 h-8 hover:bg-primary/20"
-                  >
-                    <Play className="h-4 w-4" />
-                  </Button>
                 </div>
 
                 {/* Thumbnail */}
                 <img
                   src={track.thumbnailUrl}
                   alt={track.title}
-                  className="w-12 h-12 rounded-lg object-cover"
+                  className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                 />
 
                 {/* Track Info */}
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium truncate">{track.title}</h4>
+                <div className="flex-1 min-w-0 mr-2">
+                  <h4 className="font-medium truncate text-base leading-tight">{track.title}</h4>
                   <p className="text-sm text-muted-foreground truncate">
                     {track.originalFileName}
                   </p>
                 </div>
 
-                {/* Duration */}
-                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                  <span className="flex items-center">
+                {/* Duration & Actions */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="hidden sm:flex items-center text-sm text-muted-foreground">
                     <Clock className="h-4 w-4 mr-1" />
-                    {formatTime(track.duration)}
-                  </span>
+                    <span>{formatTime(track.duration)}</span>
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="w-8 h-8 opacity-60 group-hover:opacity-100 transition-opacity sm:hidden"
+                    onClick={() => onPlayTrack(track)}
+                  >
+                    <Play className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex"
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>

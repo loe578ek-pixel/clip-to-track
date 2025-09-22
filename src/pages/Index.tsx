@@ -497,7 +497,7 @@ const Index = () => {
 
   return (
     <VolumeProvider>
-      <div className="h-full max-h-screen bg-background text-foreground pb-16 overflow-hidden">
+      <div className="h-full max-h-screen bg-background text-foreground overflow-hidden" style={{ paddingBottom: '4.5rem' }}>
         <div className="h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20">
           {renderActiveTab()}
         </div>

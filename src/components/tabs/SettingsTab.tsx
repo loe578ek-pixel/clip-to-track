@@ -90,7 +90,9 @@ export const SettingsTab = ({
       console.error('Error clearing music files:', error);
     }
   };
-  return <div className="flex-1 overflow-auto p-4 space-y-6" style={{ paddingBottom: '6rem' }}>
+  return <div className="flex-1 overflow-auto p-4 space-y-6" style={{
+    paddingBottom: '6rem'
+  }}>
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
@@ -174,12 +176,7 @@ export const SettingsTab = ({
                 View and selectively delete individual songs
               </p>
             </div>
-            <Button 
-              onClick={() => setIsMusicManagementOpen(true)} 
-              variant="outline" 
-              size="sm" 
-              className="bg-primary/10 border-primary/30 hover:bg-primary/20 w-full sm:w-auto"
-            >
+            <Button onClick={() => setIsMusicManagementOpen(true)} variant="outline" size="sm" className="bg-primary/10 border-primary/30 hover:bg-primary/20 w-full sm:w-auto">
               <FileMusic className="h-4 w-4 mr-2" />
               Gérer les musiques
             </Button>
@@ -207,18 +204,10 @@ export const SettingsTab = ({
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsClearMusicDialogOpen(false)}
-                    className="w-full sm:w-auto"
-                  >
+                  <Button variant="outline" onClick={() => setIsClearMusicDialogOpen(false)} className="w-full sm:w-auto">
                     Annuler
                   </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={handleClearMusicFiles} 
-                    className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
-                  >
+                  <Button variant="destructive" onClick={handleClearMusicFiles} className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto">
                     Oui
                   </Button>
                 </div>
@@ -228,27 +217,7 @@ export const SettingsTab = ({
 
           
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg bg-secondary/30 gap-3">
-            <div className="flex-1">
-              <h4 className="font-medium">Refresh Storage Info</h4>
-              <p className="text-sm text-muted-foreground">
-                Update storage statistics and cache
-              </p>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full sm:w-auto"
-              onClick={async () => {
-                const [storage, audio] = await Promise.all([storageService.getStorageInfo(), audioStorageService.getAudioStorageStats()]);
-                setStorageInfo(storage);
-                setAudioStats(audio);
-              }}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
+          
         </CardContent>
       </Card>
 

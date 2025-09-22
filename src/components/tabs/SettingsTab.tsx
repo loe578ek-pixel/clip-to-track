@@ -17,12 +17,16 @@ interface SettingsTabProps {
   onClearMusicFiles?: () => void;
   tracks: Track[];
   onDeleteTrack: (trackId: string) => void;
+  likedTracks: Set<string>;
+  onToggleLike: (trackId: string) => void;
 }
 export const SettingsTab = ({
   onClearAllData,
   onClearMusicFiles,
   tracks,
-  onDeleteTrack
+  onDeleteTrack,
+  likedTracks,
+  onToggleLike
 }: SettingsTabProps) => {
   const {
     masterVolume,
@@ -222,7 +226,14 @@ export const SettingsTab = ({
       </Card>
 
       {/* Music Management Dialog */}
-      <MusicManagementDialog isOpen={isMusicManagementOpen} onClose={() => setIsMusicManagementOpen(false)} tracks={tracks} onDeleteTrack={handleDeleteIndividualTrack} />
+      <MusicManagementDialog 
+        isOpen={isMusicManagementOpen} 
+        onClose={() => setIsMusicManagementOpen(false)} 
+        tracks={tracks} 
+        onDeleteTrack={handleDeleteIndividualTrack}
+        likedTracks={likedTracks}
+        onToggleLike={onToggleLike}
+      />
 
       {/* App Information */}
       <Card className="soundwave-card border-white/10">

@@ -4,6 +4,7 @@ import { Track, Playlist } from "@/pages/Index";
 import { FileUpload } from "@/components/FileUpload";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { HeartButton } from "@/components/HeartButton";
 
 interface AddTabProps {
   tracks: Track[];
@@ -12,6 +13,8 @@ interface AddTabProps {
   setIsProcessing: (processing: boolean) => void;
   onTrackExtracted: (track: Track) => void;
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
+  likedTracks: Set<string>;
+  onToggleLike: (trackId: string) => void;
 }
 
 export const AddTab = ({ 
@@ -20,7 +23,9 @@ export const AddTab = ({
   isProcessing, 
   setIsProcessing, 
   onTrackExtracted, 
-  onAddToPlaylist 
+  onAddToPlaylist,
+  likedTracks,
+  onToggleLike
 }: AddTabProps) => {
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -97,7 +102,12 @@ export const AddTab = ({
                   </div>
 
                   {/* Actions */}
-                  <div className="flex justify-end sm:justify-start">
+                  <div className="flex justify-end sm:justify-start gap-2">
+                    <HeartButton
+                      isLiked={likedTracks.has(track.id)}
+                      onToggle={() => onToggleLike(track.id)}
+                      size="sm"
+                    />
                     {playlists.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

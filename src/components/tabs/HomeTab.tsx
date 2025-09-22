@@ -1,4 +1,7 @@
 import { Play, Plus, Trash2, Clock, Calendar } from "lucide-react";
+import { LikedMusicSection } from "@/components/LikedMusicSection";
+import { HeartButton } from "@/components/HeartButton";
+import { ManageLikedMusic } from "@/components/ManageLikedMusic";
 import { Track, Playlist } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
 import { 
@@ -28,6 +31,9 @@ interface HomeTabProps {
   onPlayPlaylist: (playlistId: string) => void;
   onAddToPlaylist: (trackId: string, playlistId: string) => void;
   onDeleteTrack: (trackId: string) => void;
+  likedTracks: Set<string>;
+  onToggleLike: (trackId: string) => void;
+  onPlayLikedMusic: () => void;
 }
 
 export const HomeTab = ({ 
@@ -37,9 +43,13 @@ export const HomeTab = ({
   onPlayTrack, 
   onPlayPlaylist,
   onAddToPlaylist,
-  onDeleteTrack
+  onDeleteTrack,
+  likedTracks,
+  onToggleLike,
+  onPlayLikedMusic
 }: HomeTabProps) => {
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
+  const [showManageLikedMusic, setShowManageLikedMusic] = useState(false);
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -47,6 +57,20 @@ export const HomeTab = ({
   };
 
   const recentTracks = tracks.slice(0, 6);
+
+  if (showManageLikedMusic) {
+    return (
+      <ManageLikedMusic 
+        tracks={tracks}
+        likedTracks={likedTracks}
+        trackRepeatCounts={{}} // You might want to pass actual repeat counts if needed
+        onToggleLike={onToggleLike}
+        onPlayTrack={onPlayTrack}
+        onUpdateTrackRepeat={() => {}} // Add repeat functionality if needed
+        onBack={() => setShowManageLikedMusic(false)}
+      />
+    );
+  }
 
   return (
     <div className="flex-1 overflow-auto p-4 space-y-6" style={{ paddingBottom: '6rem' }}>
@@ -84,6 +108,14 @@ export const HomeTab = ({
           </div>
         </div>
       )}
+
+      {/* Liked Music Section */}
+      <LikedMusicSection 
+        tracks={tracks}
+        likedTracks={likedTracks}
+        onPlayLikedMusic={onPlayLikedMusic}
+        onManageLikedMusic={() => setShowManageLikedMusic(true)}
+      />
 
       {/* Recently Added */}
       {recentTracks.length > 0 && (
@@ -137,6 +169,15 @@ export const HomeTab = ({
                     <Clock className="h-4 w-4 mr-1" />
                     <span>{formatTime(track.duration)}</span>
                   </div>
+                  
+                  {/* Heart Button */}
+                  <HeartButton
+                    isLiked={likedTracks.has(track.id)}
+                    onToggle={() => onToggleLike(track.id)}
+                    size="sm"
+                    className="opacity-60 group-hover:opacity-100 transition-opacity"
+                  />
+                  
                   <Button
                     variant="ghost"
                     size="icon"

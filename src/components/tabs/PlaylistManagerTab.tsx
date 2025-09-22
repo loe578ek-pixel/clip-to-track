@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { HeartButton } from "@/components/HeartButton";
 
 interface PlaylistManagerTabProps {
   tracks: Track[];
@@ -19,6 +20,8 @@ interface PlaylistManagerTabProps {
   onUpdateTrackRepeat: (trackId: string, repeatCount: number) => void;
   onPlayPlaylist: (playlistId: string) => void;
   onPlayTrack: (track: Track) => void;
+  likedTracks: Set<string>;
+  onToggleLike: (trackId: string) => void;
 }
 
 export const PlaylistManagerTab = ({
@@ -32,7 +35,9 @@ export const PlaylistManagerTab = ({
   onRemoveFromPlaylist,
   onUpdateTrackRepeat,
   onPlayPlaylist,
-  onPlayTrack
+  onPlayTrack,
+  likedTracks,
+  onToggleLike
 }: PlaylistManagerTabProps) => {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [editingPlaylist, setEditingPlaylist] = useState<string | null>(null);
@@ -249,6 +254,11 @@ export const PlaylistManagerTab = ({
                               />
                               <span className="text-sm font-medium text-primary">×</span>
                             </div>
+                            <HeartButton
+                              isLiked={likedTracks.has(track.id)}
+                              onToggle={() => onToggleLike(track.id)}
+                              size="sm"
+                            />
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button

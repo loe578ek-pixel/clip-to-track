@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Track, Playlist } from "@/pages/Index";
+import { HeartButton } from "@/components/HeartButton";
 
 interface TrackListProps {
   tracks: Track[];
@@ -12,6 +13,8 @@ interface TrackListProps {
   onPlayTrack: (track: Track) => void;
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
   onDeleteTrack: (trackId: string) => void;
+  likedTracks?: Set<string>;
+  onToggleLike?: (trackId: string) => void;
 }
 
 export const TrackList = ({
@@ -20,7 +23,9 @@ export const TrackList = ({
   playlists,
   onPlayTrack,
   onAddToPlaylist,
-  onDeleteTrack
+  onDeleteTrack,
+  likedTracks,
+  onToggleLike
 }: TrackListProps) => {
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -109,6 +114,16 @@ export const TrackList = ({
             <div className="text-sm text-muted-foreground hidden md:block">
               {formatDate(track.createdAt)}
             </div>
+
+            {/* Heart Button */}
+            {likedTracks && onToggleLike && (
+              <HeartButton
+                isLiked={likedTracks.has(track.id)}
+                onToggle={() => onToggleLike(track.id)}
+                size="sm"
+                className="opacity-0 group-hover:opacity-100 transition-opacity mr-2"
+              />
+            )}
 
             {/* Actions */}
             <DropdownMenu>

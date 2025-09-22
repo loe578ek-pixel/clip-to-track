@@ -21,6 +21,7 @@ export interface Track {
   repeatCount?: number; // For repeat functionality
   playbackKey?: string; // Force re-render for repeats
   localFilePath?: string; // Local storage path for offline access
+  isLiked?: boolean; // Like status for heart system
 }
 
 export interface Playlist {
@@ -41,6 +42,7 @@ const Index = () => {
   const [currentTrackPlayCount, setCurrentTrackPlayCount] = useState<Record<string, number>>({});
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set());
 
   // Load data from Capacitor native storage on mount
   useEffect(() => {
@@ -52,10 +54,11 @@ const Index = () => {
         await storageService.migrateFromLocalStorage();
         
         // Load all data from native storage
-        const [loadedTracks, loadedPlaylists, loadedRepeatCounts] = await Promise.all([
+        const [loadedTracks, loadedPlaylists, loadedRepeatCounts, loadedLikedTracks] = await Promise.all([
           storageService.loadTracks(),
           storageService.loadPlaylists(),
-          storageService.loadRepeatCounts()
+          storageService.loadRepeatCounts(),
+          storageService.loadLikedTracks()
         ]);
         
         // Update audio URLs to use local storage paths for offline access
@@ -77,6 +80,7 @@ const Index = () => {
         setTracks(tracksWithLocalPaths);
         setPlaylists(loadedPlaylists);
         setTrackRepeatCounts(loadedRepeatCounts);
+        setLikedTracks(new Set(loadedLikedTracks));
         
         console.log(`Loaded ${tracksWithLocalPaths.length} tracks, ${loadedPlaylists.length} playlists`);
         
@@ -93,6 +97,7 @@ const Index = () => {
         const savedTracks = localStorage.getItem('soundwave-tracks');
         const savedPlaylists = localStorage.getItem('soundwave-playlists');
         const savedRepeatCounts = localStorage.getItem('soundwave-repeat-counts');
+        const savedLikedTracks = localStorage.getItem('soundwave-liked-tracks');
         
         if (savedTracks) {
           try {
@@ -123,6 +128,14 @@ const Index = () => {
             setTrackRepeatCounts(JSON.parse(savedRepeatCounts));
           } catch (error) {
             console.error('Error loading repeat counts from localStorage:', error);
+          }
+        }
+        
+        if (savedLikedTracks) {
+          try {
+            setLikedTracks(new Set(JSON.parse(savedLikedTracks)));
+          } catch (error) {
+            console.error('Error loading liked tracks from localStorage:', error);
           }
         }
         
@@ -181,6 +194,22 @@ const Index = () => {
     
     saveData();
   }, [trackRepeatCounts, isDataLoaded]);
+
+  useEffect(() => {
+    if (!isDataLoaded) return; // Don't save during initial load
+    
+    const saveData = async () => {
+      try {
+        await storageService.saveLikedTracks(Array.from(likedTracks));
+      } catch (error) {
+        console.error('Error saving liked tracks:', error);
+        // Fallback to localStorage
+        localStorage.setItem('soundwave-liked-tracks', JSON.stringify(Array.from(likedTracks)));
+      }
+    };
+    
+    saveData();
+  }, [likedTracks, isDataLoaded]);
 
   const handleTrackExtracted = (track: Track) => {
     setTracks(prev => [track, ...prev]);
@@ -297,7 +326,30 @@ const Index = () => {
   };
 
   const handleNextTrack = () => {
-    if (!currentTrack || !currentPlaylistId) return;
+    if (!currentTrack) return;
+    
+    // Handle liked music playlist
+    if (currentPlaylistId === 'liked-music') {
+      const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
+      const currentIndex = likedTracksList.findIndex(track => track.id === currentTrack.id);
+      
+      if (currentIndex !== -1) {
+        const nextTrackId = likedTracksList[currentIndex + 1];
+        if (nextTrackId) {
+          setCurrentTrack(nextTrackId);
+        } else {
+          // Loop back to first liked track
+          const firstTrack = likedTracksList[0];
+          if (firstTrack) {
+            setCurrentTrack(firstTrack);
+          }
+        }
+      }
+      return;
+    }
+    
+    // Handle regular playlists
+    if (!currentPlaylistId) return;
     
     const playlist = playlists.find(p => p.id === currentPlaylistId);
     if (!playlist) return;
@@ -325,7 +377,24 @@ const Index = () => {
   };
 
   const handlePreviousTrack = () => {
-    if (!currentTrack || !currentPlaylistId) return;
+    if (!currentTrack) return;
+    
+    // Handle liked music playlist
+    if (currentPlaylistId === 'liked-music') {
+      const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
+      const currentIndex = likedTracksList.findIndex(track => track.id === currentTrack.id);
+      
+      if (currentIndex !== -1) {
+        const prevTrack = likedTracksList[currentIndex - 1];
+        if (prevTrack) {
+          setCurrentTrack(prevTrack);
+        }
+      }
+      return;
+    }
+    
+    // Handle regular playlists
+    if (!currentPlaylistId) return;
     
     const playlist = playlists.find(p => p.id === currentPlaylistId);
     if (!playlist) return;
@@ -382,6 +451,7 @@ const Index = () => {
       setCurrentTrack(null);
       setCurrentPlaylistId(null);
       setTrackRepeatCounts({});
+      setLikedTracks(new Set());
       
       // Clear localStorage as fallback
       localStorage.clear();
@@ -394,6 +464,7 @@ const Index = () => {
       setCurrentTrack(null);
       setCurrentPlaylistId(null);
       setTrackRepeatCounts({});
+      setLikedTracks(new Set());
       localStorage.clear();
     }
   };
@@ -414,6 +485,7 @@ const Index = () => {
       setCurrentPlaylistId(null);
       setTrackRepeatCounts({});
       setCurrentTrackPlayCount({});
+      setLikedTracks(new Set());
       
       // Clear music-related localStorage as fallback (keep other settings)
       localStorage.removeItem('soundwave-tracks');
@@ -429,10 +501,12 @@ const Index = () => {
       setCurrentPlaylistId(null);
       setTrackRepeatCounts({});
       setCurrentTrackPlayCount({});
+      setLikedTracks(new Set());
       
       localStorage.removeItem('soundwave-tracks');
       localStorage.removeItem('soundwave-playlists');
       localStorage.removeItem('soundwave-repeat-counts');
+      localStorage.removeItem('soundwave-liked-tracks');
     }
   };
 
@@ -466,12 +540,37 @@ const Index = () => {
     }
   };
 
+  const handleToggleLike = (trackId: string) => {
+    setLikedTracks(prev => {
+      const newLikedTracks = new Set(prev);
+      if (newLikedTracks.has(trackId)) {
+        newLikedTracks.delete(trackId);
+      } else {
+        newLikedTracks.add(trackId);
+      }
+      return newLikedTracks;
+    });
+  };
+
+  const handlePlayLikedMusic = () => {
+    const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
+    if (likedTracksList.length > 0) {
+      setCurrentTrack(likedTracksList[0]);
+      setCurrentPlaylistId('liked-music');
+      setIsAutoPlaying(true);
+      setCurrentTrackPlayCount(prev => ({
+        ...prev,
+        [likedTracksList[0].id]: 0
+      }));
+    }
+  };
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} onAddToPlaylist={handleAddToPlaylist} onDeleteTrack={handleDeleteTrack} />;
+        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} onAddToPlaylist={handleAddToPlaylist} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} onPlayLikedMusic={handlePlayLikedMusic} />;
       case 'add':
-        return <AddTab tracks={tracks} playlists={playlists} isProcessing={isProcessing} setIsProcessing={setIsProcessing} onTrackExtracted={handleTrackExtracted} onAddToPlaylist={handleAddToPlaylist} />;
+        return <AddTab tracks={tracks} playlists={playlists} isProcessing={isProcessing} setIsProcessing={setIsProcessing} onTrackExtracted={handleTrackExtracted} onAddToPlaylist={handleAddToPlaylist} likedTracks={likedTracks} onToggleLike={handleToggleLike} />;
       case 'playlists':
         return (
           <PlaylistManagerTab 
@@ -486,12 +585,14 @@ const Index = () => {
             onUpdateTrackRepeat={handleUpdateTrackRepeat} 
             onPlayPlaylist={handlePlayPlaylist}
             onPlayTrack={handlePlayTrack}
+            likedTracks={likedTracks}
+            onToggleLike={handleToggleLike}
           />
         );
       case 'settings':
-        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} />;
+        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} />;
       default:
-        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} onAddToPlaylist={handleAddToPlaylist} onDeleteTrack={handleDeleteTrack} />;
+        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} onAddToPlaylist={handleAddToPlaylist} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} onPlayLikedMusic={handlePlayLikedMusic} />;
     }
   };
 

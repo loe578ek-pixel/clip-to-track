@@ -6,6 +6,7 @@ interface StorageData {
   tracks: Track[];
   playlists: Playlist[];
   trackRepeatCounts: Record<string, number>;
+  likedTracks: string[];
   appSettings: Record<string, any>;
 }
 
@@ -14,6 +15,7 @@ class StorageService {
     TRACKS: 'soundwave-tracks',
     PLAYLISTS: 'soundwave-playlists',
     REPEAT_COUNTS: 'soundwave-repeat-counts',
+    LIKED_TRACKS: 'soundwave-liked-tracks',
     APP_SETTINGS: 'soundwave-app-settings'
   };
 
@@ -137,6 +139,39 @@ class StorageService {
   }
 
   /**
+   * Save liked tracks
+   */
+  async saveLikedTracks(likedTracks: string[]): Promise<void> {
+    try {
+      await Preferences.set({
+        key: this.STORAGE_KEYS.LIKED_TRACKS,
+        value: JSON.stringify(likedTracks)
+      });
+      
+      console.log('Liked tracks saved successfully');
+    } catch (error) {
+      console.error('Error saving liked tracks:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Load liked tracks
+   */
+  async loadLikedTracks(): Promise<string[]> {
+    try {
+      const { value } = await Preferences.get({ key: this.STORAGE_KEYS.LIKED_TRACKS });
+      
+      if (!value) return [];
+      
+      return JSON.parse(value);
+    } catch (error) {
+      console.error('Error loading liked tracks:', error);
+      return [];
+    }
+  }
+
+  /**
    * Save app settings
    */
   async saveAppSettings(settings: Record<string, any>): Promise<void> {
@@ -249,6 +284,7 @@ class StorageService {
         Preferences.remove({ key: this.STORAGE_KEYS.TRACKS }),
         Preferences.remove({ key: this.STORAGE_KEYS.PLAYLISTS }),
         Preferences.remove({ key: this.STORAGE_KEYS.REPEAT_COUNTS }),
+        Preferences.remove({ key: this.STORAGE_KEYS.LIKED_TRACKS }),
         Preferences.remove({ key: this.STORAGE_KEYS.APP_SETTINGS })
       ]);
       
@@ -387,6 +423,13 @@ class StorageService {
       if (localRepeatCounts) {
         await this.saveRepeatCounts(JSON.parse(localRepeatCounts));
         console.log('Migrated repeat counts');
+      }
+      
+      // Migrate liked tracks
+      const localLikedTracks = localStorage.getItem('soundwave-liked-tracks');
+      if (localLikedTracks) {
+        await this.saveLikedTracks(JSON.parse(localLikedTracks));
+        console.log('Migrated liked tracks');
       }
       
       console.log('Migration completed successfully');

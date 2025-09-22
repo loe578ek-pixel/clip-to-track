@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { HeartButton } from "@/components/HeartButton";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -23,13 +24,17 @@ interface MusicManagementDialogProps {
   onClose: () => void;
   tracks: Track[];
   onDeleteTrack: (trackId: string) => void;
+  likedTracks: Set<string>;
+  onToggleLike: (trackId: string) => void;
 }
 
 export const MusicManagementDialog = ({ 
   isOpen, 
   onClose, 
   tracks, 
-  onDeleteTrack 
+  onDeleteTrack,
+  likedTracks,
+  onToggleLike
 }: MusicManagementDialogProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
@@ -129,8 +134,16 @@ export const MusicManagementDialog = ({
                     </div>
                   </div>
 
-                  {/* Delete Button */}
-                  <AlertDialog>
+                  {/* Actions */}
+                  <div className="flex items-center space-x-2">
+                    <HeartButton
+                      isLiked={likedTracks.has(track.id)}
+                      onToggle={() => onToggleLike(track.id)}
+                      size="sm"
+                    />
+                    
+                    {/* Delete Button */}
+                    <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="destructive"
@@ -161,7 +174,8 @@ export const MusicManagementDialog = ({
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
-                  </AlertDialog>
+                    </AlertDialog>
+                  </div>
                 </div>
               ))
             ) : (

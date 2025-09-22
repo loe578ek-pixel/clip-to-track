@@ -178,7 +178,7 @@ export const SettingsTab = ({
             </div>
             <Button onClick={() => setIsMusicManagementOpen(true)} variant="outline" size="sm" className="bg-primary/10 border-primary/30 hover:bg-primary/20 w-full sm:w-auto">
               <FileMusic className="h-4 w-4 mr-2" />
-              Gérer les musiques
+              Manage Music
             </Button>
           </div>
 

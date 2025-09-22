@@ -83,7 +83,7 @@ export const MusicManagementDialog = ({
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <DialogTitle className="text-lg font-semibold">Gérer les musiques</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">Manage Music</DialogTitle>
           </div>
         </DialogHeader>
 
@@ -92,7 +92,7 @@ export const MusicManagementDialog = ({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher une musique..."
+              placeholder="Search for music..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-secondary border-white/10"
@@ -143,13 +143,13 @@ export const MusicManagementDialog = ({
                     </AlertDialogTrigger>
                     <AlertDialogContent className="bg-card border-white/10 mx-4">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer cette musique ?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you sure you want to delete this song?</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                          Cette action supprimera définitivement "{track.title}" de votre appareil et de toutes les playlists.
+                          This action will permanently delete "{track.title}" from your device and all playlists.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
-                        <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
+                        <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => {
                             setDeletingTrackId(track.id);
@@ -157,7 +157,7 @@ export const MusicManagementDialog = ({
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
                         >
-                          Supprimer
+                          Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -169,14 +169,14 @@ export const MusicManagementDialog = ({
                 {searchQuery ? (
                   <div>
                     <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">Aucune musique trouvée pour "{searchQuery}"</p>
+                    <p className="text-muted-foreground">No music found for "{searchQuery}"</p>
                   </div>
                 ) : (
                   <div>
                     <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">Aucune musique dans la bibliothèque</p>
+                    <p className="text-muted-foreground">No music in library</p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Ajoutez des musiques depuis l'onglet "Ajouter"
+                      Add music from the "Add" tab
                     </p>
                   </div>
                 )}
@@ -189,9 +189,9 @@ export const MusicManagementDialog = ({
         {tracks.length > 0 && (
           <div className="p-4 border-t border-white/10 bg-secondary/20">
             <p className="text-sm text-center text-muted-foreground">
-              {filteredTracks.length} musique{filteredTracks.length !== 1 ? 's' : ''} 
-              {searchQuery && ` trouvée${filteredTracks.length !== 1 ? 's' : ''}`}
-              {!searchQuery && ` au total`}
+              {filteredTracks.length} song{filteredTracks.length !== 1 ? 's' : ''} 
+              {searchQuery && ` found`}
+              {!searchQuery && ` total`}
             </p>
           </div>
         )}

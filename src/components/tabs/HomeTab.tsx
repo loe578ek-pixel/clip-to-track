@@ -170,7 +170,7 @@ export const HomeTab = ({
                         ))
                       ) : (
                         <DropdownMenuItem disabled>
-                          Aucune playlist disponible
+                          No playlists available
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
@@ -190,13 +190,13 @@ export const HomeTab = ({
                     </AlertDialogTrigger>
                     <AlertDialogContent className="bg-card border-white/10 mx-4">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer cette musique de l'application ?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete this song from the app?</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                          Cette action supprimera définitivement "{track.title}" de votre appareil et de toutes les playlists.
+                          This action will permanently delete "{track.title}" from your device and all playlists.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
-                        <AlertDialogCancel className="w-full sm:w-auto">Annuler</AlertDialogCancel>
+                        <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => {
                             setDeletingTrackId(track.id);
@@ -204,7 +204,7 @@ export const HomeTab = ({
                           }}
                           className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
                         >
-                          Supprimer
+                          Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

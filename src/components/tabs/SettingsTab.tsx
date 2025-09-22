@@ -198,17 +198,17 @@ export const SettingsTab = ({
               </DialogTrigger>
               <DialogContent className="bg-card border-white/10 mx-4">
                 <DialogHeader>
-                  <DialogTitle>Supprimer les musiques</DialogTitle>
+                  <DialogTitle>Delete Music</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
-                    Voulez-vous supprimer les musiques téléchargées de l'application ?
+                    Do you want to delete downloaded music from the app?
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6">
                   <Button variant="outline" onClick={() => setIsClearMusicDialogOpen(false)} className="w-full sm:w-auto">
-                    Annuler
+                    Cancel
                   </Button>
                   <Button variant="destructive" onClick={handleClearMusicFiles} className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto">
-                    Oui
+                    Yes
                   </Button>
                 </div>
               </DialogContent>

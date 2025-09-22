@@ -135,7 +135,7 @@ export const MusicManagementDialog = ({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
+                        className="h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 border border-red-200 dark:border-red-800 shrink-0"
                         disabled={deletingTrackId === track.id}
                       >
                         <Trash2 className="h-4 w-4" />

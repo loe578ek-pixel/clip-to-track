@@ -410,34 +410,48 @@ const Index = () => {
   };
 
   const handlePlayPlaylistFromTrack = (playlistId: string, trackId: string) => {
-    setCurrentPlaylistId(playlistId);
-    const track = tracks.find(t => t.id === trackId);
-    if (track) {
-      setCurrentTrack(track);
-      setIsAutoPlaying(true); // Enable autoplay to start immediately
-      // Reset play count when manually starting a track
-      setCurrentTrackPlayCount(prev => ({
-        ...prev,
-        [track.id]: 0
-      }));
-    }
+    // Force stop current playback by briefly clearing track
+    setCurrentTrack(null);
+    setIsAutoPlaying(false);
+    
+    // Use setTimeout to ensure state updates and then start new track
+    setTimeout(() => {
+      setCurrentPlaylistId(playlistId);
+      const track = tracks.find(t => t.id === trackId);
+      if (track) {
+        setCurrentTrack(track);
+        setIsAutoPlaying(true); // Enable autoplay to start immediately
+        // Reset play count when manually starting a track
+        setCurrentTrackPlayCount(prev => ({
+          ...prev,
+          [track.id]: 0
+        }));
+      }
+    }, 10);
   };
 
   const handlePlayPlaylist = (playlistId: string) => {
-    setCurrentPlaylistId(playlistId);
-    const playlist = playlists.find(p => p.id === playlistId);
-    if (playlist && playlist.tracks.length > 0) {
-      const firstTrack = tracks.find(t => t.id === playlist.tracks[0]);
-      if (firstTrack) {
-        setCurrentTrack(firstTrack);
-        setIsAutoPlaying(true); // Enable autoplay to start immediately
-        // Reset play count for the track
-        setCurrentTrackPlayCount(prev => ({
-          ...prev,
-          [firstTrack.id]: 0
-        }));
+    // Force stop current playback by briefly clearing track
+    setCurrentTrack(null);
+    setIsAutoPlaying(false);
+    
+    // Use setTimeout to ensure state updates and then start new playlist
+    setTimeout(() => {
+      setCurrentPlaylistId(playlistId);
+      const playlist = playlists.find(p => p.id === playlistId);
+      if (playlist && playlist.tracks.length > 0) {
+        const firstTrack = tracks.find(t => t.id === playlist.tracks[0]);
+        if (firstTrack) {
+          setCurrentTrack(firstTrack);
+          setIsAutoPlaying(true); // Enable autoplay to start immediately
+          // Reset play count for the track
+          setCurrentTrackPlayCount(prev => ({
+            ...prev,
+            [firstTrack.id]: 0
+          }));
+        }
       }
-    }
+    }, 10);
   };
 
   const handleClearAllData = async () => {
@@ -555,13 +569,20 @@ const Index = () => {
   const handlePlayLikedMusic = () => {
     const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
     if (likedTracksList.length > 0) {
-      setCurrentTrack(likedTracksList[0]);
-      setCurrentPlaylistId('liked-music');
-      setIsAutoPlaying(true);
-      setCurrentTrackPlayCount(prev => ({
-        ...prev,
-        [likedTracksList[0].id]: 0
-      }));
+      // Force stop current playback by briefly clearing track
+      setCurrentTrack(null);
+      setIsAutoPlaying(false);
+      
+      // Use setTimeout to ensure state updates and then start liked music
+      setTimeout(() => {
+        setCurrentTrack(likedTracksList[0]);
+        setCurrentPlaylistId('liked-music');
+        setIsAutoPlaying(true);
+        setCurrentTrackPlayCount(prev => ({
+          ...prev,
+          [likedTracksList[0].id]: 0
+        }));
+      }, 10);
     }
   };
 

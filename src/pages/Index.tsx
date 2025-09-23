@@ -43,6 +43,7 @@ const Index = () => {
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set());
+  const [likedTracksOrder, setLikedTracksOrder] = useState<string[]>([]);
 
   // Load data from Capacitor native storage on mount
   useEffect(() => {
@@ -81,6 +82,7 @@ const Index = () => {
         setPlaylists(loadedPlaylists);
         setTrackRepeatCounts(loadedRepeatCounts);
         setLikedTracks(new Set(loadedLikedTracks));
+        setLikedTracksOrder(loadedLikedTracks); // Initialize order from loaded liked tracks
         
         console.log(`Loaded ${tracksWithLocalPaths.length} tracks, ${loadedPlaylists.length} playlists`);
         
@@ -586,10 +588,30 @@ const Index = () => {
     }
   };
 
+  const handleReorderLikedTracks = async (trackIds: string[]) => {
+    setLikedTracksOrder(trackIds);
+    await storageService.reorderLikedTracks(trackIds);
+  };
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} onAddToPlaylist={handleAddToPlaylist} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} onPlayLikedMusic={handlePlayLikedMusic} />;
+        return <HomeTab 
+          tracks={tracks} 
+          playlists={playlists} 
+          currentTrack={currentTrack} 
+          onPlayTrack={handlePlayTrack} 
+          onPlayPlaylist={handlePlayPlaylist} 
+          onAddToPlaylist={handleAddToPlaylist} 
+          onDeleteTrack={handleDeleteTrack} 
+          likedTracks={likedTracks} 
+          likedTracksOrder={likedTracksOrder}
+          onToggleLike={handleToggleLike} 
+          onPlayLikedMusic={handlePlayLikedMusic} 
+          trackRepeatCounts={trackRepeatCounts}
+          onUpdateTrackRepeat={handleUpdateTrackRepeat}
+          onReorderLikedTracks={handleReorderLikedTracks}
+        />;
       case 'add':
         return <AddTab tracks={tracks} playlists={playlists} isProcessing={isProcessing} setIsProcessing={setIsProcessing} onTrackExtracted={handleTrackExtracted} onAddToPlaylist={handleAddToPlaylist} likedTracks={likedTracks} onToggleLike={handleToggleLike} />;
       case 'playlists':
@@ -613,7 +635,22 @@ const Index = () => {
       case 'settings':
         return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} />;
       default:
-        return <HomeTab tracks={tracks} playlists={playlists} currentTrack={currentTrack} onPlayTrack={handlePlayTrack} onPlayPlaylist={handlePlayPlaylist} onAddToPlaylist={handleAddToPlaylist} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} onPlayLikedMusic={handlePlayLikedMusic} />;
+        return <HomeTab 
+          tracks={tracks} 
+          playlists={playlists} 
+          currentTrack={currentTrack} 
+          onPlayTrack={handlePlayTrack} 
+          onPlayPlaylist={handlePlayPlaylist} 
+          onAddToPlaylist={handleAddToPlaylist} 
+          onDeleteTrack={handleDeleteTrack} 
+          likedTracks={likedTracks} 
+          likedTracksOrder={likedTracksOrder}
+          onToggleLike={handleToggleLike} 
+          onPlayLikedMusic={handlePlayLikedMusic} 
+          trackRepeatCounts={trackRepeatCounts}
+          onUpdateTrackRepeat={handleUpdateTrackRepeat}
+          onReorderLikedTracks={handleReorderLikedTracks}
+        />;
     }
   };
 

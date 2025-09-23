@@ -29,11 +29,15 @@ interface HomeTabProps {
   currentTrack: Track | null;
   onPlayTrack: (track: Track) => void;
   onPlayPlaylist: (playlistId: string) => void;
-  onAddToPlaylist: (trackId: string, playlistId: string) => void;
+  onAddToPlaylist: (playlistId: string, trackId: string) => void;
   onDeleteTrack: (trackId: string) => void;
   likedTracks: Set<string>;
+  likedTracksOrder: string[];
   onToggleLike: (trackId: string) => void;
   onPlayLikedMusic: () => void;
+  trackRepeatCounts: Record<string, number>;
+  onUpdateTrackRepeat: (trackId: string, repeatCount: number) => void;
+  onReorderLikedTracks: (trackIds: string[]) => void;
 }
 
 export const HomeTab = ({ 
@@ -45,8 +49,12 @@ export const HomeTab = ({
   onAddToPlaylist,
   onDeleteTrack,
   likedTracks,
+  likedTracksOrder,
   onToggleLike,
-  onPlayLikedMusic
+  onPlayLikedMusic,
+  trackRepeatCounts,
+  onUpdateTrackRepeat,
+  onReorderLikedTracks
 }: HomeTabProps) => {
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
   const [showManageLikedMusic, setShowManageLikedMusic] = useState(false);
@@ -63,10 +71,12 @@ export const HomeTab = ({
       <ManageLikedMusic 
         tracks={tracks}
         likedTracks={likedTracks}
-        trackRepeatCounts={{}} // You might want to pass actual repeat counts if needed
+        likedTracksOrder={likedTracksOrder}
+        trackRepeatCounts={trackRepeatCounts}
         onToggleLike={onToggleLike}
         onPlayTrack={onPlayTrack}
-        onUpdateTrackRepeat={() => {}} // Add repeat functionality if needed
+        onUpdateTrackRepeat={onUpdateTrackRepeat}
+        onReorderLikedTracks={onReorderLikedTracks}
         onBack={() => setShowManageLikedMusic(false)}
       />
     );
@@ -82,168 +92,144 @@ export const HomeTab = ({
 
       {/* Quick Access Playlists */}
       {playlists.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Your Playlists</h2>
-          <div className="grid grid-cols-1 gap-3">
-            {playlists.slice(0, 3).map((playlist) => (
-              <div key={playlist.id} className="playlist-item">
-                <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Play className="h-6 w-6 text-white" />
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Your Playlists</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {playlists.slice(0, 3).map((playlist) => {
+              const playlistTracks = playlist.tracks
+                .map(trackId => tracks.find(track => track.id === trackId))
+                .filter(Boolean) as Track[];
+              
+              const totalDuration = playlistTracks.reduce((sum, track) => sum + track.duration, 0);
+              const firstTrack = playlistTracks[0];
+              
+              return (
+                <div key={playlist.id} className="bg-card rounded-lg p-4 border hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="w-8 h-8 bg-primary/20 rounded-md flex items-center justify-center flex-shrink-0">
+                        <Play className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-medium truncate">{playlist.name}</h3>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onPlayPlaylist(playlist.id)}
+                      className="w-8 h-8 hover:bg-primary/20 flex-shrink-0"
+                      disabled={playlistTracks.length === 0}
+                    >
+                      <Play className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>{playlist.tracks.length} songs</div>
+                    <div>{formatTime(totalDuration)}</div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0 mr-3">
-                  <h3 className="font-medium truncate text-base">{playlist.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {playlist.tracks.length} songs
-                  </p>
-                </div>
-                <Button
-                  onClick={() => onPlayPlaylist(playlist.id)}
-                  size="icon"
-                  className="soundwave-button-primary w-12 h-12 rounded-full flex-shrink-0"
-                >
-                  <Play className="h-5 w-5" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* Liked Music Section */}
       <LikedMusicSection 
-        tracks={tracks}
         likedTracks={likedTracks}
+        tracks={tracks}
         onPlayLikedMusic={onPlayLikedMusic}
         onManageLikedMusic={() => setShowManageLikedMusic(true)}
       />
 
       {/* Recently Added */}
       {recentTracks.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Recently Added</h2>
-          <div className="space-y-2">
-            {recentTracks.map((track, index) => (
-              <div
-                key={track.id}
-                className={`group track-item ${currentTrack?.id === track.id ? 'playing' : ''}`}
-              >
-                {/* Track Number / Play Button */}
-                <div className="w-10 flex justify-center items-center flex-shrink-0">
-                  {currentTrack?.id === track.id ? (
-                    <div className="w-4 h-4 bg-primary rounded-sm animate-pulse" />
-                  ) : (
-                    <>
-                      <span className="text-muted-foreground text-sm group-hover:hidden">
-                        {index + 1}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onPlayTrack(track)}
-                        className="hidden group-hover:flex w-8 h-8 hover:bg-primary/20"
-                      >
-                        <Play className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-
-                {/* Thumbnail */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Recently Added</h2>
+          <div className="space-y-3">
+            {recentTracks.map((track) => (
+              <div key={track.id} className="group track-item">
                 <img
                   src={track.thumbnailUrl}
                   alt={track.title}
                   className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
                 />
-
-                {/* Track Info */}
                 <div className="flex-1 min-w-0 mr-2">
                   <h4 className="font-medium truncate text-base leading-tight">{track.title}</h4>
                   <p className="text-sm text-muted-foreground truncate">
                     {track.originalFileName}
                   </p>
                 </div>
+                <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-4">
+                  <Clock className="w-4 h-4 mr-1" />
+                  <span>{formatTime(track.duration)}</span>
+                </div>
+                
+                {/* Heart Button */}
+                <HeartButton
+                  isLiked={likedTracks.has(track.id)}
+                  onToggle={() => onToggleLike(track.id)}
+                  size="sm"
+                  className="mr-2"
+                />
 
-                {/* Duration & Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="hidden sm:flex items-center text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4 mr-1" />
-                    <span>{formatTime(track.duration)}</span>
-                  </div>
-                  
-                  {/* Heart Button */}
-                  <HeartButton
-                    isLiked={likedTracks.has(track.id)}
-                    onToggle={() => onToggleLike(track.id)}
-                    size="sm"
-                    className="opacity-60 group-hover:opacity-100 transition-opacity"
-                  />
-                  
+                <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="w-8 h-8 opacity-60 group-hover:opacity-100 transition-opacity sm:hidden"
                     onClick={() => onPlayTrack(track)}
+                    className="w-8 h-8 hover:bg-primary/20"
                   >
                     <Play className="h-4 w-4" />
                   </Button>
                   
-                  {/* Add to Playlist Button */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                      >
+                      <Button variant="ghost" size="icon" className="w-8 h-8">
                         <Plus className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-card border-white/10">
-                      {playlists.length > 0 ? (
-                        playlists.map((playlist) => (
-                          <DropdownMenuItem
-                            key={playlist.id}
-                            onClick={() => onAddToPlaylist(track.id, playlist.id)}
-                            className="cursor-pointer"
-                          >
-                            {playlist.name}
-                          </DropdownMenuItem>
-                        ))
-                      ) : (
-                        <DropdownMenuItem disabled>
-                          No playlists available
+                    <DropdownMenuContent align="end">
+                      {playlists.map((playlist) => (
+                        <DropdownMenuItem
+                          key={playlist.id}
+                          onClick={() => onAddToPlaylist(playlist.id, track.id)}
+                        >
+                          Add to {playlist.name}
                         </DropdownMenuItem>
-                      )}
+                      ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-
-                  {/* Delete Button */}
+                  
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                        disabled={deletingTrackId === track.id}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="w-8 h-8 hover:bg-destructive/20 text-destructive"
+                        onClick={() => setDeletingTrackId(track.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-card border-white/10 mx-4">
+                    <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete this song from the app?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-muted-foreground">
-                          This action will permanently delete "{track.title}" from your device and all playlists.
+                        <AlertDialogTitle>Delete Song</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{track.title}"? This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
-                        <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeletingTrackId(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => {
-                            setDeletingTrackId(track.id);
-                            onDeleteTrack(track.id);
+                            if (deletingTrackId) {
+                              onDeleteTrack(deletingTrackId);
+                              setDeletingTrackId(null);
+                            }
                           }}
-                          className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                           Delete
                         </AlertDialogAction>
@@ -260,14 +246,15 @@ export const HomeTab = ({
       {/* Empty State */}
       {tracks.length === 0 && playlists.length === 0 && (
         <div className="text-center py-16">
-          <div className="mx-auto w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mb-6 shadow-glow">
-            <Play className="h-12 w-12 text-white" />
+          <div className="mx-auto w-24 h-24 bg-gradient-to-br from-primary to-primary-foreground rounded-full flex items-center justify-center mb-6 shadow-glow">
+            <Play className="h-12 w-12 text-primary-foreground" />
           </div>
-          <h3 className="text-xl font-semibold mb-2">Start your music journey</h3>
+          <h3 className="text-xl font-semibold mb-2">No music yet</h3>
           <p className="text-muted-foreground mb-6">
-            Add your first song to get started
+            Start by adding some music to your collection
           </p>
-          <Button className="soundwave-button-primary">
+          <Button onClick={() => {}} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-2" />
             Add Music
           </Button>
         </div>

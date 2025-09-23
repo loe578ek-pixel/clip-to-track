@@ -156,6 +156,39 @@ class StorageService {
   }
 
   /**
+   * Reorder liked tracks
+   */
+  async reorderLikedTracks(trackIds: string[]): Promise<void> {
+    try {
+      await this.saveLikedTracks(trackIds);
+      console.log('Liked tracks reordered successfully');
+    } catch (error) {
+      console.error('Error reordering liked tracks:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reorder tracks in a playlist
+   */
+  async reorderPlaylistTracks(playlistId: string, trackIds: string[]): Promise<void> {
+    try {
+      const playlists = await this.loadPlaylists();
+      const updatedPlaylists = playlists.map(playlist => 
+        playlist.id === playlistId 
+          ? { ...playlist, tracks: trackIds }
+          : playlist
+      );
+      
+      await this.savePlaylists(updatedPlaylists);
+      console.log('Playlist tracks reordered successfully');
+    } catch (error) {
+      console.error('Error reordering playlist tracks:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Load liked tracks
    */
   async loadLikedTracks(): Promise<string[]> {

@@ -21,7 +21,7 @@ interface PlaylistManagerTabProps {
   onPlayPlaylist: (playlistId: string) => void;
   onPlayTrack: (track: Track) => void;
   likedTracks: Set<string>;
-  onToggleLike: (trackId: string) => void;
+  onReorderPlaylistTracks: (playlistId: string, trackIds: string[]) => void;
 }
 
 export const PlaylistManagerTab = ({

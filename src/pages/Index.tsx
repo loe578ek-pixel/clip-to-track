@@ -593,6 +593,18 @@ const Index = () => {
     await storageService.reorderLikedTracks(trackIds);
   };
 
+  const handleReorderPlaylistTracks = async (playlistId: string, trackIds: string[]) => {
+    // Update playlist in state
+    setPlaylists(prev => prev.map(playlist => 
+      playlist.id === playlistId 
+        ? { ...playlist, tracks: trackIds }
+        : playlist
+    ));
+    
+    // Save to storage
+    await storageService.reorderPlaylistTracks(playlistId, trackIds);
+  };
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'home':
@@ -630,6 +642,7 @@ const Index = () => {
             onPlayTrack={handlePlayTrack}
             likedTracks={likedTracks}
             onToggleLike={handleToggleLike}
+            onReorderPlaylistTracks={handleReorderPlaylistTracks}
           />
         );
       case 'settings':

@@ -21,6 +21,7 @@ interface PlaylistManagerTabProps {
   onPlayPlaylist: (playlistId: string) => void;
   onPlayTrack: (track: Track) => void;
   likedTracks: Set<string>;
+  onToggleLike: (trackId: string) => void; // Add this missing property
   onReorderPlaylistTracks: (playlistId: string, trackIds: string[]) => void;
 }
 
@@ -37,7 +38,8 @@ export const PlaylistManagerTab = ({
   onPlayPlaylist,
   onPlayTrack,
   likedTracks,
-  onToggleLike
+  onToggleLike,
+  onReorderPlaylistTracks
 }: PlaylistManagerTabProps) => {
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [editingPlaylist, setEditingPlaylist] = useState<string | null>(null);

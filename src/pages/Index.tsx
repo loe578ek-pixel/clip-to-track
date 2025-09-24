@@ -6,6 +6,7 @@ import { PlaylistManagerTab } from "@/components/tabs/PlaylistManagerTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { VolumeProvider } from "@/contexts/VolumeContext";
+import { useToast } from "@/hooks/use-toast";
 
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
@@ -32,6 +33,7 @@ export interface Playlist {
 }
 
 const Index = () => {
+  const { toast } = useToast();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -240,6 +242,15 @@ const Index = () => {
   }, []);
 
   const handleCreatePlaylist = (name: string) => {
+    if (playlists.length >= 3) {
+      toast({
+        title: "Maximum playlists reached",
+        description: "Maximum 3 playlists allowed",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const newPlaylist: Playlist = {
       id: crypto.randomUUID(),
       name,
@@ -247,6 +258,11 @@ const Index = () => {
       createdAt: new Date()
     };
     setPlaylists(prev => [newPlaylist, ...prev]);
+    
+    toast({
+      title: "Playlist created",
+      description: `"${name}" has been created successfully.`,
+    });
   };
 
   const handleAddToPlaylist = (playlistId: string, trackId: string) => {

@@ -40,9 +40,12 @@ export const PlaylistSidebar = ({
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full bg-gradient-primary hover:scale-105 transition-transform shadow-glow border-0">
+            <Button 
+              className="w-full bg-gradient-primary hover:scale-105 transition-transform shadow-glow border-0" 
+              disabled={playlists.length >= 3}
+            >
               <Plus className="mr-2 h-4 w-4" />
-              New Playlist
+              New Playlist {playlists.length >= 3 && "(3/3)"}
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-card border-glass">

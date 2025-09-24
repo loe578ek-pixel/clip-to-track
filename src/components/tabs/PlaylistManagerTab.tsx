@@ -94,9 +94,12 @@ export const PlaylistManagerTab = ({
         
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="soundwave-button-primary">
+            <Button 
+              className="soundwave-button-primary" 
+              disabled={playlists.length >= 3}
+            >
               <Plus className="h-4 w-4 mr-2" />
-              New Playlist
+              New Playlist {playlists.length >= 3 && "(3/3)"}
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-card border-white/10">
@@ -332,11 +335,12 @@ export const PlaylistManagerTab = ({
           <Settings className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h3 className="text-xl font-semibold mb-2">No playlists yet</h3>
           <p className="text-muted-foreground mb-6">
-            Create your first playlist to organize your music
+            Create your first playlist to organize your music (max 3 playlists)
           </p>
           <Button 
             onClick={() => setIsCreateDialogOpen(true)}
             className="soundwave-button-primary"
+            disabled={playlists.length >= 3}
           >
             Create Playlist
           </Button>

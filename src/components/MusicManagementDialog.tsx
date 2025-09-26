@@ -114,36 +114,8 @@ export const MusicManagementDialog = ({
                   key={track.id}
                   className="flex items-center space-x-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
                 >
-                  {/* Thumbnail */}
-                  <img
-                    src={track.thumbnailUrl}
-                    alt={track.title}
-                    className="w-12 h-12 rounded-lg object-cover"
-                  />
-
-                  {/* Track Info */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium truncate text-sm">{track.title}</h4>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {track.originalFileName}
-                    </p>
-                    <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
-                      <span>{formatTime(track.duration)}</span>
-                      <span>•</span>
-                      <span>{formatFileSize()}</span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center space-x-2">
-                    <HeartButton
-                      isLiked={likedTracks.has(track.id)}
-                      onToggle={() => onToggleLike(track.id)}
-                      size="sm"
-                    />
-                    
-                    {/* Delete Button */}
-                    <AlertDialog>
+                  {/* Delete Button - Positioned on the left */}
+                  <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="destructive"
@@ -174,8 +146,34 @@ export const MusicManagementDialog = ({
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
-                    </AlertDialog>
+                  </AlertDialog>
+
+                  {/* Thumbnail */}
+                  <img
+                    src={track.thumbnailUrl}
+                    alt={track.title}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+
+                  {/* Track Info */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium truncate text-sm">{track.title}</h4>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {track.originalFileName}
+                    </p>
+                    <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
+                      <span>{formatTime(track.duration)}</span>
+                      <span>•</span>
+                      <span>{formatFileSize()}</span>
+                    </div>
                   </div>
+
+                  {/* Heart Button - Now on the right */}
+                  <HeartButton
+                    isLiked={likedTracks.has(track.id)}
+                    onToggle={() => onToggleLike(track.id)}
+                    size="sm"
+                  />
                 </div>
               ))
             ) : (

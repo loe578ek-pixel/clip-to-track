@@ -80,30 +80,32 @@ const SortableTrackItem = ({
       {...listeners}
       className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center p-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
     >
-      {/* Track Number / Play Button */}
-      <div className="w-10 flex justify-center items-center flex-shrink-0 mr-3">
-        <span className="text-muted-foreground text-sm group-hover:hidden">
+      {/* Song Number */}
+      <div className="w-6 flex justify-center items-center flex-shrink-0 mr-2">
+        <span className="text-muted-foreground text-sm font-medium">
           {index + 1}
         </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onPlayTrack(track)}
-          className="hidden group-hover:flex w-8 h-8 hover:bg-primary/20"
-        >
-          <Play className="h-4 w-4" />
-        </Button>
       </div>
+
+      {/* Play Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onPlayTrack(track)}
+        className="w-8 h-8 flex-shrink-0 hover:bg-primary/20 mr-1"
+      >
+        <Play className="h-4 w-4" />
+      </Button>
 
       {/* Thumbnail */}
       <img
         src={track.thumbnailUrl}
         alt={track.title}
-        className="w-12 h-12 rounded-lg object-cover flex-shrink-0 mr-3"
+        className="w-10 h-10 rounded-lg object-cover flex-shrink-0 mr-3"
       />
 
-      {/* Track Info */}
-      <div className="flex-1 min-w-0">
+      {/* Song Title - Right next to thumbnail */}
+      <div className="flex-1 min-w-0 mr-4">
         <h4 className="font-medium truncate text-base leading-tight">{track.title}</h4>
         <p className="text-sm text-muted-foreground truncate">
           {track.originalFileName}
@@ -111,42 +113,42 @@ const SortableTrackItem = ({
       </div>
 
       {/* Duration - Hidden on small screens */}
-      <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-2">
+      <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-4">
         <span>{formatTime(track.duration)}</span>
       </div>
 
-      {/* Compact Right Side Buttons */}
-      <div className="flex items-center gap-1">
-        {/* Heart Button */}
-        <HeartButton
-          isLiked={isLiked}
-          onToggle={() => onToggleLike(track.id)}
-          size="sm"
-        />
-
-        {/* Repeat Count Controls */}
-        <div className="flex items-center gap-0.5 ml-1">
+      {/* Right Side Buttons */}
+      <div className="flex items-center gap-2">
+        {/* Repeat Controls */}
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onUpdateTrackRepeat(track.id, Math.max(1, repeatCount - 1))}
-            className="w-5 h-5 text-muted-foreground hover:text-foreground"
+            className="w-6 h-6 text-muted-foreground hover:text-foreground"
             disabled={repeatCount <= 1}
           >
             -
           </Button>
-          <div className="flex items-center gap-1 min-w-[32px] justify-center">
+          <div className="flex items-center justify-center min-w-[28px]">
             <span className="text-xs font-medium">{repeatCount}×</span>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onUpdateTrackRepeat(track.id, repeatCount + 1)}
-            className="w-5 h-5 text-muted-foreground hover:text-foreground"
+            className="w-6 h-6 text-muted-foreground hover:text-foreground"
           >
             +
           </Button>
         </div>
+
+        {/* Like Button */}
+        <HeartButton
+          isLiked={isLiked}
+          onToggle={() => onToggleLike(track.id)}
+          size="sm"
+        />
       </div>
     </div>
   );

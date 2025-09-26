@@ -53,39 +53,65 @@ export const PlaylistSortableTrackItem = ({
       {...listeners}
       className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center p-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
     >
-      {/* Track Number / Play Button */}
-      <div className="w-8 flex justify-center items-center flex-shrink-0 mr-3">
-        <span className="text-muted-foreground text-sm group-hover:hidden">
+      {/* Song Number */}
+      <div className="w-6 flex justify-center items-center flex-shrink-0 mr-2">
+        <span className="text-muted-foreground text-sm font-medium">
           {index + 1}
         </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onPlayTrack(track)}
-          className="hidden group-hover:flex w-6 h-6 hover:bg-primary/20"
-        >
-          <Play className="h-3 w-3" />
-        </Button>
       </div>
 
-      {/* Track Info */}
-      <div className="flex-1 min-w-0">
+      {/* Play Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onPlayTrack(track)}
+        className="w-8 h-8 flex-shrink-0 hover:bg-primary/20 mr-1"
+      >
+        <Play className="h-4 w-4" />
+      </Button>
+
+      {/* Song Title - Right next to play button */}
+      <div className="flex-1 min-w-0 mr-4">
         <h4 className="font-medium text-sm truncate leading-tight">{track.title}</h4>
         <p className="text-xs text-muted-foreground truncate">
           {formatTime(track.duration)}
         </p>
       </div>
 
-      {/* Compact Right Side Buttons */}
-      <div className="flex items-center gap-1">
-        {/* Heart Button */}
+      {/* Right Side Buttons */}
+      <div className="flex items-center gap-2">
+        {/* Repeat Controls */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onUpdateTrackRepeat(track.id, Math.max(1, repeatCount - 1))}
+            className="w-6 h-6 text-xs text-muted-foreground hover:text-foreground"
+            disabled={repeatCount <= 1}
+          >
+            -
+          </Button>
+          <div className="flex items-center justify-center min-w-[28px]">
+            <span className="text-xs font-medium">{repeatCount}×</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onUpdateTrackRepeat(track.id, repeatCount + 1)}
+            className="w-6 h-6 text-xs text-muted-foreground hover:text-foreground"
+          >
+            +
+          </Button>
+        </div>
+
+        {/* Like Button */}
         <HeartButton
           isLiked={isLiked}
           onToggle={() => onToggleLike(track.id)}
           size="sm"
         />
 
-        {/* Remove Button */}
+        {/* Delete Button */}
         <Button
           variant="ghost"
           size="icon"
@@ -94,30 +120,6 @@ export const PlaylistSortableTrackItem = ({
         >
           <Trash2 className="h-3 w-3" />
         </Button>
-
-        {/* Repeat Count */}
-        <div className="flex items-center gap-0.5 ml-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onUpdateTrackRepeat(track.id, Math.max(1, repeatCount - 1))}
-            className="w-5 h-5 text-xs text-muted-foreground hover:text-foreground"
-            disabled={repeatCount <= 1}
-          >
-            -
-          </Button>
-          <div className="flex items-center gap-1 min-w-[32px] justify-center">
-            <span className="text-xs font-medium">{repeatCount}×</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onUpdateTrackRepeat(track.id, repeatCount + 1)}
-            className="w-5 h-5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            +
-          </Button>
-        </div>
       </div>
     </div>
   );

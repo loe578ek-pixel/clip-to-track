@@ -51,29 +51,29 @@ export const PlaylistSortableTrackItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center p-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
+      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center pl-2 pr-3 py-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
     >
       {/* Tight Left Section: Number + Play + Title */}
       <div className="flex items-center flex-1 min-w-0 mr-4">
-        {/* Song Number - No right margin */}
-        <div className="w-4 flex justify-center items-center flex-shrink-0">
+        {/* Song Number - Close to left edge */}
+        <div className="w-3 flex justify-start items-center flex-shrink-0">
           <span className="text-muted-foreground text-sm font-medium">
             {index + 1}
           </span>
         </div>
 
-        {/* Play Button - No margins */}
+        {/* Play Button - Minimal gap from number */}
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onPlayTrack(track)}
-          className="w-6 h-6 flex-shrink-0 hover:bg-primary/20 p-0"
+          className="w-6 h-6 flex-shrink-0 hover:bg-primary/20 p-0 ml-1"
         >
           <Play className="h-3 w-3" />
         </Button>
 
-        {/* Song Title - No left margin, takes remaining space */}
-        <div className="flex-1 min-w-0">
+        {/* Song Title - Maximum space available */}
+        <div className="flex-1 min-w-0 ml-1">
           <h4 className="font-medium text-sm truncate leading-tight">{track.title}</h4>
           <p className="text-xs text-muted-foreground truncate">
             {formatTime(track.duration)}

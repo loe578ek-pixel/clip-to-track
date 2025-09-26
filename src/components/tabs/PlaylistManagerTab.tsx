@@ -7,6 +7,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { HeartButton } from "@/components/HeartButton";
+import { PlaylistSortableTrackItem } from "@/components/PlaylistSortableTrackItem";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 interface PlaylistManagerTabProps {
   tracks: Track[];
@@ -81,6 +97,36 @@ export const PlaylistManagerTab = ({
       }
       return newSet;
     });
+  };
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 500,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end for playlist tracks
+  const handleDragEnd = (event: DragEndEvent, playlistId: string) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const playlist = playlists.find(p => p.id === playlistId);
+      if (!playlist) return;
+
+      const trackIds = playlist.tracks;
+      const oldIndex = trackIds.findIndex((id: string) => id === active.id);
+      const newIndex = trackIds.findIndex((id: string) => id === over?.id);
+
+      const newTrackIds = arrayMove(trackIds, oldIndex, newIndex);
+      onReorderPlaylistTracks(playlistId, newTrackIds);
+    }
   };
 
   return (
@@ -219,83 +265,37 @@ export const PlaylistManagerTab = ({
 
                 {/* Playlist Tracks */}
                 {playlistTracks.length > 0 ? (
-                  <div className="space-y-2">
-                    {/* Display tracks based on expansion state */}
-                    {(() => {
-                      const isExpanded = expandedPlaylists.has(playlist.id);
-                      const tracksToShow = isExpanded ? playlistTracks : playlistTracks.slice(0, 2);
-                      
-                      return tracksToShow.map((track, index) => (
-                        <div key={`${playlist.id}-${track.id}`} className="flex items-center space-x-4 p-3 rounded-lg bg-secondary/30">
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                          
-                          <span className="w-8 text-sm text-muted-foreground text-center">
-                            {index + 1}
-                          </span>
-
-                          <img
-                            src={track.thumbnailUrl}
-                            alt={track.title}
-                            className="w-10 h-10 rounded object-cover"
-                          />
-
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium truncate">{track.title}</h4>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {formatTime(track.duration)}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2 bg-primary/10 rounded-lg px-3 py-2 border border-primary/20">
-                              <RotateCcw className="h-4 w-4 text-primary" />
-                              <input
-                                type="number"
-                                min="1"
-                                max="99"
-                                value={trackRepeatCounts[track.id] || 1}
-                                onChange={(e) => onUpdateTrackRepeat(track.id, parseInt(e.target.value) || 1)}
-                                className="w-14 h-7 text-sm bg-card border border-primary/30 rounded-md px-2 text-center font-medium text-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(event) => handleDragEnd(event, playlist.id)}
+                  >
+                    <div className="space-y-2">
+                      {/* Display tracks based on expansion state */}
+                      {(() => {
+                        const isExpanded = expandedPlaylists.has(playlist.id);
+                        const tracksToShow = isExpanded ? playlistTracks : playlistTracks.slice(0, 2);
+                        const trackIdsToShow = tracksToShow.map(track => track.id);
+                        
+                        return (
+                          <SortableContext items={trackIdsToShow} strategy={verticalListSortingStrategy}>
+                            {tracksToShow.map((track, index) => (
+                              <PlaylistSortableTrackItem
+                                key={track.id}
+                                track={track}
+                                index={index}
+                                isLiked={likedTracks.has(track.id)}
+                                repeatCount={trackRepeatCounts[track.id] || 1}
+                                onPlayTrack={onPlayTrack}
+                                onToggleLike={onToggleLike}
+                                onUpdateTrackRepeat={onUpdateTrackRepeat}
+                                onRemoveFromPlaylist={() => onRemoveFromPlaylist(playlist.id, track.id)}
+                                formatTime={formatTime}
                               />
-                              <span className="text-sm font-medium text-primary">×</span>
-                            </div>
-                            <HeartButton
-                              isLiked={likedTracks.has(track.id)}
-                              onToggle={() => onToggleLike(track.id)}
-                              size="sm"
-                            />
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="bg-card border-white/10">
-                                <DialogHeader>
-                                  <DialogTitle>Remove Track</DialogTitle>
-                                </DialogHeader>
-                                <p className="text-muted-foreground">
-                                  Are you sure you want to remove "{track.title}" from this playlist?
-                                </p>
-                                <div className="flex justify-end space-x-2 mt-4">
-                                  <Button variant="outline">Cancel</Button>
-                                  <Button 
-                                    variant="destructive" 
-                                    onClick={() => onRemoveFromPlaylist(playlist.id, track.id)}
-                                  >
-                                    Remove
-                                  </Button>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-                        </div>
-                      ));
-                    })()}
+                            ))}
+                          </SortableContext>
+                        );
+                      })()}
                     
                     {/* Expand/Collapse Button */}
                     {playlistTracks.length > 2 && (
@@ -319,7 +319,8 @@ export const PlaylistManagerTab = ({
                         </Button>
                       </div>
                     )}
-                  </div>
+                    </div>
+                  </DndContext>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <p className="text-sm">This playlist is empty</p>

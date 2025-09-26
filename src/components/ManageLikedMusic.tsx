@@ -78,10 +78,10 @@ const SortableTrackItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center pr-3 py-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
+      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center py-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
     >
       {/* Tight Left Section: Number + Play + Title */}
-      <div className="flex items-center flex-1 min-w-0 mr-4">
+      <div className="flex items-center flex-1 min-w-0 mr-2">
         {/* Song Number - Close to left edge */}
         <div className="w-3 flex justify-start items-center flex-shrink-0">
           <span className="text-muted-foreground text-sm font-medium">
@@ -116,31 +116,31 @@ const SortableTrackItem = ({
       </div>
 
       {/* Duration - Hidden on small screens */}
-      <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-2">
+      <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-1">
         <span>{formatTime(track.duration)}</span>
       </div>
 
-      {/* Right Side Buttons - Proper spacing */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+      {/* Right Side Buttons - Flush to right edge */}
+      <div className="flex items-center gap-1 flex-shrink-0">
         {/* Repeat Controls */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onUpdateTrackRepeat(track.id, Math.max(1, repeatCount - 1))}
-            className="w-6 h-6 text-muted-foreground hover:text-foreground"
+            className="w-5 h-5 text-muted-foreground hover:text-foreground"
             disabled={repeatCount <= 1}
           >
             -
           </Button>
-          <div className="flex items-center justify-center min-w-[28px]">
+          <div className="flex items-center justify-center min-w-[24px]">
             <span className="text-xs font-medium">{repeatCount}×</span>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onUpdateTrackRepeat(track.id, repeatCount + 1)}
-            className="w-6 h-6 text-muted-foreground hover:text-foreground"
+            className="w-5 h-5 text-muted-foreground hover:text-foreground"
           >
             +
           </Button>
@@ -211,7 +211,7 @@ export const ManageLikedMusic = ({
 
   if (likedTracksList.length === 0) {
     return (
-      <div className="flex-1 overflow-auto pr-4 pt-4 space-y-6" style={{ paddingBottom: '6rem' }}>
+      <div className="flex-1 overflow-auto pt-4 space-y-6" style={{ paddingBottom: '6rem' }}>
         <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4 pl-4">
           <div className="flex items-center gap-3 mb-4">
             <Button variant="ghost" size="icon" onClick={onBack}>
@@ -240,7 +240,7 @@ export const ManageLikedMusic = ({
   }
 
   return (
-    <div className="flex-1 overflow-auto pr-4 pt-4 space-y-6" style={{ paddingBottom: '6rem' }}>
+    <div className="flex-1 overflow-auto pt-4 space-y-6" style={{ paddingBottom: '6rem' }}>
       <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4 pl-4">
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={onBack}>

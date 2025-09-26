@@ -130,7 +130,7 @@ export const PlaylistManagerTab = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto pb-20 pr-4 pt-4 space-y-6">
+    <div className="flex-1 overflow-auto pt-4 space-y-6">
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4 pl-4 flex items-center justify-between">
         <div>
@@ -189,7 +189,7 @@ export const PlaylistManagerTab = ({
             const totalDuration = playlistTracks.reduce((sum, track) => sum + track.duration, 0);
 
             return (
-              <div key={playlist.id} className="soundwave-card p-6 pl-0">
+              <div key={playlist.id} className="soundwave-card py-6 pl-0 pr-2">
                 <div className="flex items-center justify-between mb-4 pl-4">
                   <div className="flex items-center space-x-4">
                     {editingPlaylist === playlist.id ? (

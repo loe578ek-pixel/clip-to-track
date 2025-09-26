@@ -1,4 +1,5 @@
 import { Play, Plus, Trash2, Clock, Calendar } from "lucide-react";
+import { EditableTitle } from "@/components/EditableTitle";
 import { LikedMusicSection } from "@/components/LikedMusicSection";
 import { HeartButton } from "@/components/HeartButton";
 import { ManageLikedMusic } from "@/components/ManageLikedMusic";
@@ -22,6 +23,7 @@ interface HomeTabProps {
   trackRepeatCounts: Record<string, number>;
   onUpdateTrackRepeat: (trackId: string, repeatCount: number) => void;
   onReorderLikedTracks: (trackIds: string[]) => void;
+  onRenameTrack: (trackId: string, newTitle: string) => void;
 }
 export const HomeTab = ({
   tracks,
@@ -37,7 +39,8 @@ export const HomeTab = ({
   onPlayLikedMusic,
   trackRepeatCounts,
   onUpdateTrackRepeat,
-  onReorderLikedTracks
+  onReorderLikedTracks,
+  onRenameTrack
 }: HomeTabProps) => {
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
   const [showManageLikedMusic, setShowManageLikedMusic] = useState(false);
@@ -97,7 +100,12 @@ export const HomeTab = ({
             {recentTracks.map(track => <div key={track.id} className="group track-item">
                 <img src={track.thumbnailUrl} alt={track.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0 mr-2">
-                  <h4 className="font-medium truncate text-base leading-tight">{track.title}</h4>
+                  <EditableTitle
+                    title={track.title}
+                    onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
+                    className="font-medium truncate text-base leading-tight"
+                    inputClassName="h-8"
+                  />
                   <p className="text-sm text-muted-foreground truncate">
                     {track.originalFileName}
                   </p>

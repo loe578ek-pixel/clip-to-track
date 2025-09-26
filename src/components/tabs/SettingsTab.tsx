@@ -19,6 +19,7 @@ interface SettingsTabProps {
   onDeleteTrack: (trackId: string) => void;
   likedTracks: Set<string>;
   onToggleLike: (trackId: string) => void;
+  onRenameTrack: (trackId: string, newTitle: string) => void;
 }
 export const SettingsTab = ({
   onClearAllData,
@@ -26,7 +27,8 @@ export const SettingsTab = ({
   tracks,
   onDeleteTrack,
   likedTracks,
-  onToggleLike
+  onToggleLike,
+  onRenameTrack
 }: SettingsTabProps) => {
   const {
     masterVolume,
@@ -233,6 +235,7 @@ export const SettingsTab = ({
         onDeleteTrack={handleDeleteIndividualTrack}
         likedTracks={likedTracks}
         onToggleLike={onToggleLike}
+        onRenameTrack={onRenameTrack}
       />
 
       {/* App Information */}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HeartButton } from "@/components/HeartButton";
+import { EditableTitle } from "@/components/EditableTitle";
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -26,6 +27,7 @@ interface MusicManagementDialogProps {
   onDeleteTrack: (trackId: string) => void;
   likedTracks: Set<string>;
   onToggleLike: (trackId: string) => void;
+  onRenameTrack: (trackId: string, newTitle: string) => void;
 }
 
 export const MusicManagementDialog = ({ 
@@ -34,7 +36,8 @@ export const MusicManagementDialog = ({
   tracks, 
   onDeleteTrack,
   likedTracks,
-  onToggleLike
+  onToggleLike,
+  onRenameTrack
 }: MusicManagementDialogProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
@@ -112,7 +115,7 @@ export const MusicManagementDialog = ({
               filteredTracks.map((track) => (
                 <div
                   key={track.id}
-                  className="flex items-center space-x-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                  className="group flex items-center space-x-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
                 >
                   {/* Delete Button - Positioned on the left */}
                   <AlertDialog>
@@ -157,7 +160,12 @@ export const MusicManagementDialog = ({
 
                   {/* Track Info */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium truncate text-sm">{track.title}</h4>
+                    <EditableTitle
+                      title={track.title}
+                      onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
+                      className="font-medium truncate text-sm"
+                      inputClassName="h-7 text-sm"
+                    />
                     <p className="text-xs text-muted-foreground truncate">
                       {track.originalFileName}
                     </p>

@@ -632,6 +632,14 @@ const Index = () => {
     await storageService.reorderPlaylistTracks(playlistId, trackIds);
   };
 
+  const handleRenameTrack = async (trackId: string, newTitle: string) => {
+    setTracks(prev => prev.map(track => 
+      track.id === trackId 
+        ? { ...track, title: newTitle }
+        : track
+    ));
+  };
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'home':
@@ -650,9 +658,10 @@ const Index = () => {
           trackRepeatCounts={trackRepeatCounts}
           onUpdateTrackRepeat={handleUpdateTrackRepeat}
           onReorderLikedTracks={handleReorderLikedTracks}
+          onRenameTrack={handleRenameTrack}
         />;
       case 'add':
-        return <AddTab tracks={tracks} playlists={playlists} isProcessing={isProcessing} setIsProcessing={setIsProcessing} onTrackExtracted={handleTrackExtracted} onAddToPlaylist={handleAddToPlaylist} likedTracks={likedTracks} onToggleLike={handleToggleLike} />;
+        return <AddTab tracks={tracks} playlists={playlists} isProcessing={isProcessing} setIsProcessing={setIsProcessing} onTrackExtracted={handleTrackExtracted} onAddToPlaylist={handleAddToPlaylist} likedTracks={likedTracks} onToggleLike={handleToggleLike} onRenameTrack={handleRenameTrack} />;
       case 'playlists':
         return (
           <PlaylistManagerTab 
@@ -673,7 +682,7 @@ const Index = () => {
           />
         );
       case 'settings':
-        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} />;
+        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} onRenameTrack={handleRenameTrack} />;
       default:
         return <HomeTab 
           tracks={tracks} 
@@ -690,6 +699,7 @@ const Index = () => {
           trackRepeatCounts={trackRepeatCounts}
           onUpdateTrackRepeat={handleUpdateTrackRepeat}
           onReorderLikedTracks={handleReorderLikedTracks}
+          onRenameTrack={handleRenameTrack}
         />;
     }
   };

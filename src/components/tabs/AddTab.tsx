@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Upload, Plus, Clock, Calendar, Trash2 } from "lucide-react";
+import { EditableTitle } from "@/components/EditableTitle";
 import { Track, Playlist } from "@/pages/Index";
 import { FileUpload } from "@/components/FileUpload";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ interface AddTabProps {
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
   likedTracks: Set<string>;
   onToggleLike: (trackId: string) => void;
+  onRenameTrack: (trackId: string, newTitle: string) => void;
 }
 
 export const AddTab = ({ 
@@ -25,7 +27,8 @@ export const AddTab = ({
   onTrackExtracted, 
   onAddToPlaylist,
   likedTracks,
-  onToggleLike
+  onToggleLike,
+  onRenameTrack
 }: AddTabProps) => {
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -84,7 +87,12 @@ export const AddTab = ({
 
                     {/* Track Info */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium truncate text-base">{track.title}</h3>
+                      <EditableTitle
+                        title={track.title}
+                        onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
+                        className="font-medium truncate text-base"
+                        inputClassName="h-8"
+                      />
                       <p className="text-sm text-muted-foreground truncate">
                         {track.originalFileName}
                       </p>

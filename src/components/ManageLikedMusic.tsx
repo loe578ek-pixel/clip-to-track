@@ -76,14 +76,12 @@ const SortableTrackItem = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group track-item ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
+      {...attributes}
+      {...listeners}
+      className={`group track-item cursor-grab active:cursor-grabbing touch-none ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
     >
-      {/* Drag Handle */}
-      <div 
-        {...attributes}
-        {...listeners}
-        className="w-6 flex justify-center items-center flex-shrink-0 cursor-grab active:cursor-grabbing touch-none"
-      >
+      {/* Drag Handle - Visual indicator only */}
+      <div className="w-6 flex justify-center items-center flex-shrink-0">
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
 

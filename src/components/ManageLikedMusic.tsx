@@ -78,7 +78,7 @@ const SortableTrackItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center pl-2 pr-3 py-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
+      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center pr-3 py-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
     >
       {/* Tight Left Section: Number + Play + Title */}
       <div className="flex items-center flex-1 min-w-0 mr-4">
@@ -211,8 +211,8 @@ export const ManageLikedMusic = ({
 
   if (likedTracksList.length === 0) {
     return (
-      <div className="flex-1 overflow-auto p-4 space-y-6" style={{ paddingBottom: '6rem' }}>
-        <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
+      <div className="flex-1 overflow-auto pr-4 pt-4 space-y-6" style={{ paddingBottom: '6rem' }}>
+        <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4 pl-4">
           <div className="flex items-center gap-3 mb-4">
             <Button variant="ghost" size="icon" onClick={onBack}>
               <ArrowLeft className="h-5 w-5" />
@@ -226,7 +226,7 @@ export const ManageLikedMusic = ({
           </div>
         </div>
 
-        <div className="text-center py-16">
+        <div className="text-center py-16 pl-4">
           <div className="mx-auto w-24 h-24 bg-gradient-to-br from-pink-500 to-red-500 rounded-full flex items-center justify-center mb-6 shadow-glow">
             <Heart className="h-12 w-12 text-white fill-white" />
           </div>
@@ -240,8 +240,8 @@ export const ManageLikedMusic = ({
   }
 
   return (
-    <div className="flex-1 overflow-auto p-4 space-y-6" style={{ paddingBottom: '6rem' }}>
-      <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
+    <div className="flex-1 overflow-auto pr-4 pt-4 space-y-6" style={{ paddingBottom: '6rem' }}>
+      <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4 pl-4">
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />

@@ -51,7 +51,7 @@ export const PlaylistSortableTrackItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center pl-2 pr-3 py-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
+      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center pr-3 py-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
     >
       {/* Tight Left Section: Number + Play + Title */}
       <div className="flex items-center flex-1 min-w-0 mr-4">

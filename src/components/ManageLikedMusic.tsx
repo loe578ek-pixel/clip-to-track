@@ -80,45 +80,48 @@ const SortableTrackItem = ({
       {...listeners}
       className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center p-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
     >
-      {/* Song Number */}
-      <div className="w-6 flex justify-center items-center flex-shrink-0 mr-2">
-        <span className="text-muted-foreground text-sm font-medium">
-          {index + 1}
-        </span>
-      </div>
+      {/* Tight Left Section: Number + Play + Title */}
+      <div className="flex items-center flex-1 min-w-0 mr-4">
+        {/* Song Number - No right margin */}
+        <div className="w-4 flex justify-center items-center flex-shrink-0">
+          <span className="text-muted-foreground text-sm font-medium">
+            {index + 1}
+          </span>
+        </div>
 
-      {/* Play Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onPlayTrack(track)}
-        className="w-8 h-8 flex-shrink-0 hover:bg-primary/20 mr-1"
-      >
-        <Play className="h-4 w-4" />
-      </Button>
+        {/* Play Button - No margins */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onPlayTrack(track)}
+          className="w-6 h-6 flex-shrink-0 hover:bg-primary/20 p-0"
+        >
+          <Play className="h-3 w-3" />
+        </Button>
 
-      {/* Thumbnail */}
-      <img
-        src={track.thumbnailUrl}
-        alt={track.title}
-        className="w-10 h-10 rounded-lg object-cover flex-shrink-0 mr-3"
-      />
+        {/* Thumbnail - Small gap after play button */}
+        <img
+          src={track.thumbnailUrl}
+          alt={track.title}
+          className="w-8 h-8 rounded-lg object-cover flex-shrink-0 ml-1 mr-2"
+        />
 
-      {/* Song Title - Right next to thumbnail */}
-      <div className="flex-1 min-w-0 mr-4">
-        <h4 className="font-medium truncate text-base leading-tight">{track.title}</h4>
-        <p className="text-sm text-muted-foreground truncate">
-          {track.originalFileName}
-        </p>
+        {/* Song Title - Takes remaining space */}
+        <div className="flex-1 min-w-0">
+          <h4 className="font-medium truncate text-base leading-tight">{track.title}</h4>
+          <p className="text-sm text-muted-foreground truncate">
+            {track.originalFileName}
+          </p>
+        </div>
       </div>
 
       {/* Duration - Hidden on small screens */}
-      <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-4">
+      <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-2">
         <span>{formatTime(track.duration)}</span>
       </div>
 
-      {/* Right Side Buttons */}
-      <div className="flex items-center gap-2">
+      {/* Right Side Buttons - Proper spacing */}
+      <div className="flex items-center gap-2 flex-shrink-0">
         {/* Repeat Controls */}
         <div className="flex items-center gap-1">
           <Button

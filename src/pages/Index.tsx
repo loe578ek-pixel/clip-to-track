@@ -40,6 +40,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string | null>(null);
+  const [currentPlaylistName, setCurrentPlaylistName] = useState<string | null>(null);
   const [trackRepeatCounts, setTrackRepeatCounts] = useState<Record<string, number>>({});
   const [currentTrackPlayCount, setCurrentTrackPlayCount] = useState<Record<string, number>>({});
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
@@ -221,6 +222,8 @@ const Index = () => {
 
   const handlePlayTrack = (track: Track) => {
     setCurrentTrack(track);
+    setCurrentPlaylistId(null); // Clear playlist when playing individual track
+    setCurrentPlaylistName(null); // Clear playlist name
     setIsAutoPlaying(false); // Reset autoplay when manually selecting a track
     // Reset play count when manually starting a track
     setCurrentTrackPlayCount(prev => ({
@@ -435,6 +438,10 @@ const Index = () => {
     // Use setTimeout to ensure state updates and then start new track
     setTimeout(() => {
       setCurrentPlaylistId(playlistId);
+      const playlist = playlists.find(p => p.id === playlistId);
+      if (playlist) {
+        setCurrentPlaylistName(playlist.name);
+      }
       const track = tracks.find(t => t.id === trackId);
       if (track) {
         setCurrentTrack(track);
@@ -458,6 +465,7 @@ const Index = () => {
       setCurrentPlaylistId(playlistId);
       const playlist = playlists.find(p => p.id === playlistId);
       if (playlist && playlist.tracks.length > 0) {
+        setCurrentPlaylistName(playlist.name);
         const firstTrack = tracks.find(t => t.id === playlist.tracks[0]);
         if (firstTrack) {
           setCurrentTrack(firstTrack);
@@ -482,6 +490,7 @@ const Index = () => {
       setPlaylists([]);
       setCurrentTrack(null);
       setCurrentPlaylistId(null);
+      setCurrentPlaylistName(null);
       setTrackRepeatCounts({});
       setLikedTracks(new Set());
       
@@ -495,6 +504,7 @@ const Index = () => {
       setPlaylists([]);
       setCurrentTrack(null);
       setCurrentPlaylistId(null);
+      setCurrentPlaylistName(null);
       setTrackRepeatCounts({});
       setLikedTracks(new Set());
       localStorage.clear();
@@ -595,6 +605,7 @@ const Index = () => {
       setTimeout(() => {
         setCurrentTrack(likedTracksList[0]);
         setCurrentPlaylistId('liked-music');
+        setCurrentPlaylistName('Liked Music');
         setIsAutoPlaying(true);
         setCurrentTrackPlayCount(prev => ({
           ...prev,
@@ -702,6 +713,7 @@ const Index = () => {
               onPrevious={handlePreviousTrack} 
               onEnded={handleTrackEnded}
               autoPlay={isAutoPlaying}
+              playlistName={currentPlaylistName}
             />
           </div>
         )}

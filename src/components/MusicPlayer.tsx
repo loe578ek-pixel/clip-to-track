@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Track } from "@/pages/Index";
 import { useVolume } from "@/contexts/VolumeContext";
+import { mediaSession } from "@/lib/mediaSession";
 
 interface MusicPlayerProps {
   track: Track;
@@ -11,9 +12,10 @@ interface MusicPlayerProps {
   onPrevious?: () => void;
   onEnded?: () => void;
   autoPlay?: boolean;
+  playlistName?: string;
 }
 
-export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = false }: MusicPlayerProps) => {
+export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = false, playlistName }: MusicPlayerProps) => {
   const { masterVolume } = useVolume();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -28,12 +30,21 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       audioRef.current.src = track.audioUrl;
       audioRef.current.load();
       
+      // Enable background playback and update media session
+      mediaSession.enableBackgroundPlayback();
+      mediaSession.updateTrack({
+        title: track.title,
+        artist: track.originalFileName,
+        duration: track.duration
+      }, playlistName);
+      
       // Always play when autoPlay is true, regardless of current playing state
       if (autoPlay) {
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.then(() => {
             setIsPlaying(true);
+            mediaSession.updatePlaybackState(true, currentTime);
           }).catch(error => {
             console.error('Error playing audio:', error);
             // Retry after a short delay if autoPlay fails
@@ -41,6 +52,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
               if (audioRef.current) {
                 audioRef.current.play().then(() => {
                   setIsPlaying(true);
+                  mediaSession.updatePlaybackState(true, currentTime);
                 }).catch(retryError => {
                   console.error('Retry failed:', retryError);
                 });
@@ -52,21 +64,29 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         // Manual play when not auto-playing but was already playing
         audioRef.current.play().then(() => {
           setIsPlaying(true);
+          mediaSession.updatePlaybackState(true, currentTime);
         }).catch(error => {
           console.error('Error playing audio:', error);
         });
       }
     }
-  }, [track.audioUrl, track.playbackKey, autoPlay]);
+  }, [track.audioUrl, track.playbackKey, autoPlay, playlistName]);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateTime = () => {
+      const newTime = audio.currentTime;
+      setCurrentTime(newTime);
+      // Update media session with current time
+      mediaSession.updatePlaybackState(isPlaying, newTime);
+    };
+    
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
+      mediaSession.updatePlaybackState(false, 0);
       // Always call onEnded to let parent handle repeat logic and next track
       if (onEnded) {
         onEnded();
@@ -80,7 +100,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [onEnded]);
+  }, [onEnded, isPlaying]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -89,16 +109,51 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     }
   }, [volume, isMuted, masterVolume]);
 
+  // Set up media session callbacks
+  useEffect(() => {
+    mediaSession.setCallbacks({
+      onPlay: () => {
+        if (audioRef.current) {
+          audioRef.current.play().then(() => {
+            setIsPlaying(true);
+          }).catch(error => {
+            console.error('Error playing from media session:', error);
+          });
+        }
+      },
+      onPause: () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        }
+      },
+      onNext: () => {
+        if (onNext) onNext();
+      },
+      onPrevious: () => {
+        if (onPrevious) onPrevious();
+      },
+      onSeek: (time: number) => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = time;
+          setCurrentTime(time);
+        }
+      }
+    });
+  }, [onNext, onPrevious]);
+
   const togglePlayPause = async () => {
     if (!audioRef.current) return;
 
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+      mediaSession.updatePlaybackState(false, currentTime);
     } else {
       try {
         await audioRef.current.play();
         setIsPlaying(true);
+        mediaSession.updatePlaybackState(true, currentTime);
       } catch (error) {
         console.error('Error playing audio:', error);
       }

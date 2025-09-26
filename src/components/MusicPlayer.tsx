@@ -196,11 +196,6 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       <div className="flex items-center justify-between max-w-screen-xl mx-auto">
         {/* Track Info */}
         <div className="flex items-center space-x-4 min-w-0 flex-1">
-          <img
-            src={track.thumbnailUrl}
-            alt={track.title}
-            className="w-14 h-14 rounded-lg object-cover"
-          />
           <div className="min-w-0">
             <h4 className="font-medium truncate text-white">{track.title}</h4>
             <p className="text-sm text-muted-foreground truncate">

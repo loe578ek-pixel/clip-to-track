@@ -99,15 +99,8 @@ const SortableTrackItem = ({
           <Play className="h-3 w-3" />
         </Button>
 
-        {/* Thumbnail - Small gap after play button */}
-        <img
-          src={track.thumbnailUrl}
-          alt={track.title}
-          className="w-8 h-8 rounded-lg object-cover flex-shrink-0 ml-1 mr-2"
-        />
-
         {/* Song Title - Maximum space available */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 ml-1">
           <h4 className="font-medium truncate text-base leading-tight">{track.title}</h4>
           <p className="text-sm text-muted-foreground truncate">
             {track.originalFileName}

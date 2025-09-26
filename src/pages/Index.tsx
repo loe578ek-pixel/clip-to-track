@@ -16,7 +16,6 @@ export interface Track {
   title: string;
   duration: number;
   audioUrl: string;
-  thumbnailUrl: string;
   originalFileName: string;
   createdAt: Date;
   repeatCount?: number; // For repeat functionality

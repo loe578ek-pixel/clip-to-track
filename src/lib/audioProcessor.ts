@@ -6,118 +6,70 @@ export const extractAudioFromVideo = async (
   onProgress: (progress: number) => void
 ): Promise<Track> => {
   return new Promise((resolve, reject) => {
-    // Create video element to process the file
-    const video = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    // Create audio context
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const fileReader = new FileReader();
     
-    if (!ctx) {
-      reject(new Error('Canvas context not available'));
-      return;
-    }
-
-    video.onloadedmetadata = () => {
-      // Set canvas size to video dimensions
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      // Seek to middle of video for thumbnail
-      video.currentTime = video.duration / 2;
-    };
-
-    video.onseeked = () => {
-      // Draw frame to canvas for thumbnail
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
-      
-      // Start audio extraction process
-      extractAudio();
-    };
-
-    const extractAudio = () => {
-      // Create audio context
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const fileReader = new FileReader();
-      
-      fileReader.onload = async (e) => {
+    fileReader.onload = async (e) => {
+      try {
+        const arrayBuffer = e.target?.result as ArrayBuffer;
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        
+        // Remove last 3 seconds from audio (app requirement)
+        const trimmedBuffer = trimAudioBuffer(audioContext, audioBuffer, 3);
+        
+        // Create WAV blob from trimmed audio buffer
+        const wavBlob = audioBufferToWav(trimmedBuffer);
+        
         try {
-          const arrayBuffer = e.target?.result as ArrayBuffer;
-          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          // Create basic track data (without thumbnailUrl)
+          const trackData = {
+            id: crypto.randomUUID(),
+            title: videoFile.name.replace(/\.[^/.]+$/, ""), // Remove extension
+            duration: trimmedBuffer.duration,
+            originalFileName: videoFile.name,
+            createdAt: new Date()
+          };
           
-          // Remove last 3 seconds from audio (app requirement)
-          const trimmedBuffer = trimAudioBuffer(audioContext, audioBuffer, 3);
+          // Save audio file to local storage and get complete track
+          const track = await audioStorageService.saveAudioTrack(wavBlob, trackData);
           
-          // Create WAV blob from trimmed audio buffer
-          const wavBlob = audioBufferToWav(trimmedBuffer);
-          
-          // Create thumbnail blob
-          canvas.toBlob(async (thumbnailBlob) => {
-            if (!thumbnailBlob) {
-              reject(new Error('Failed to create thumbnail'));
-              return;
-            }
-            
-            try {
-              const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
-              
-              // Create basic track data (without audio URL and local path)
-              const trackData = {
-                id: crypto.randomUUID(),
-                title: videoFile.name.replace(/\.[^/.]+$/, ""), // Remove extension
-                duration: trimmedBuffer.duration,
-                thumbnailUrl,
-                originalFileName: videoFile.name,
-                createdAt: new Date()
-              };
-              
-              // Save audio file to local storage and get complete track
-              const track = await audioStorageService.saveAudioTrack(wavBlob, trackData);
-              
-              onProgress(100);
-              resolve(track);
-            } catch (error) {
-              // Fallback: create track with blob URL only (no persistence)
-              const audioUrl = URL.createObjectURL(wavBlob);
-              const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
-              
-              const track: Track = {
-                id: crypto.randomUUID(),
-                title: videoFile.name.replace(/\.[^/.]+$/, ""),
-                duration: trimmedBuffer.duration,
-                audioUrl,
-                thumbnailUrl,
-                originalFileName: videoFile.name,
-                createdAt: new Date()
-              };
-              
-              onProgress(100);
-              resolve(track);
-            }
-          }, 'image/jpeg', 0.8);
-          
+          onProgress(100);
+          resolve(track);
         } catch (error) {
-          reject(error);
+          // Fallback: create track with blob URL only (no persistence)
+          const audioUrl = URL.createObjectURL(wavBlob);
+          
+          const track: Track = {
+            id: crypto.randomUUID(),
+            title: videoFile.name.replace(/\.[^/.]+$/, ""),
+            duration: trimmedBuffer.duration,
+            audioUrl,
+            originalFileName: videoFile.name,
+            createdAt: new Date()
+          };
+          
+          onProgress(100);
+          resolve(track);
         }
-      };
-      
-      fileReader.onerror = () => reject(new Error('File reading failed'));
-      
-      // Simulate progress
-      let progress = 0;
-      const progressInterval = setInterval(() => {
-        progress += 10;
-        onProgress(Math.min(progress, 90));
-        if (progress >= 90) {
-          clearInterval(progressInterval);
-        }
-      }, 200);
-      
-      fileReader.readAsArrayBuffer(videoFile);
+      } catch (error) {
+        reject(error);
+      }
     };
-
-    video.onerror = () => reject(new Error('Video loading failed'));
-    video.src = URL.createObjectURL(videoFile);
-    video.load();
+    
+    fileReader.onerror = () => reject(new Error('File reading failed'));
+    
+    // Simulate progress
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += 10;
+      onProgress(Math.min(progress, 90));
+      if (progress >= 90) {
+        clearInterval(progressInterval);
+      }
+    }, 200);
+    
+    fileReader.readAsArrayBuffer(videoFile);
   });
 };
 

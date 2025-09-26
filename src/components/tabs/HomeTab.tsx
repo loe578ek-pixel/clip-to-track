@@ -98,7 +98,6 @@ export const HomeTab = ({
           <h2 className="text-xl font-semibold mb-4">Recently Added</h2>
           <div className="space-y-3">
             {recentTracks.map(track => <div key={track.id} className="group track-item">
-                <img src={track.thumbnailUrl} alt={track.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0 mr-2">
                   <EditableTitle
                     title={track.title}

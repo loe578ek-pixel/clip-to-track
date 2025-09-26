@@ -104,11 +104,6 @@ export const AudioPlayer = ({ track, onNext, onPrevious }: AudioPlayerProps) => 
       <div className="flex items-center justify-between p-4 space-x-4">
         {/* Track Info */}
         <div className="flex items-center space-x-3 min-w-0 flex-1">
-          <img
-            src={track.thumbnailUrl}
-            alt={track.title}
-            className="w-12 h-12 rounded-lg object-cover shadow-card"
-          />
           <div className="min-w-0">
             <h4 className="font-medium truncate">{track.title}</h4>
             <p className="text-sm text-muted-foreground truncate">

@@ -151,13 +151,6 @@ export const MusicManagementDialog = ({
                     </AlertDialogContent>
                   </AlertDialog>
 
-                  {/* Thumbnail */}
-                  <img
-                    src={track.thumbnailUrl}
-                    alt={track.title}
-                    className="w-12 h-12 rounded-lg object-cover"
-                  />
-
                   {/* Track Info */}
                   <div className="flex-1 min-w-0">
                     <EditableTitle

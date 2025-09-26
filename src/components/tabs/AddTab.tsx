@@ -78,13 +78,6 @@ export const AddTab = ({
               <div key={track.id} className="soundwave-card p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    {/* Thumbnail */}
-                    <img
-                      src={track.thumbnailUrl}
-                      alt={track.title}
-                      className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                    />
-
                     {/* Track Info */}
                     <div className="flex-1 min-w-0">
                       <EditableTitle

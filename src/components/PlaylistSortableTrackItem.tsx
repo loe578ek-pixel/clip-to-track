@@ -1,4 +1,4 @@
-import { GripVertical, Play, RotateCcw } from "lucide-react";
+import { Play, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeartButton } from "@/components/HeartButton";
 import { Track } from "@/pages/Index";
@@ -51,15 +51,10 @@ export const PlaylistSortableTrackItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`group track-item cursor-grab active:cursor-grabbing touch-none ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
+      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center p-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
     >
-      {/* Drag Handle - Visual indicator only */}
-      <div className="w-6 flex justify-center items-center flex-shrink-0">
-        <GripVertical className="h-4 w-4 text-muted-foreground" />
-      </div>
-
       {/* Track Number / Play Button */}
-      <div className="w-8 flex justify-center items-center flex-shrink-0">
+      <div className="w-8 flex justify-center items-center flex-shrink-0 mr-3">
         <span className="text-muted-foreground text-sm group-hover:hidden">
           {index + 1}
         </span>
@@ -74,55 +69,56 @@ export const PlaylistSortableTrackItem = ({
       </div>
 
       {/* Track Info */}
-      <div className="flex-1 min-w-0 mr-2">
+      <div className="flex-1 min-w-0">
         <h4 className="font-medium text-sm truncate leading-tight">{track.title}</h4>
         <p className="text-xs text-muted-foreground truncate">
           {formatTime(track.duration)}
         </p>
       </div>
 
-      {/* Repeat Count */}
-      <div className="flex items-center gap-1 mr-2">
+      {/* Compact Right Side Buttons */}
+      <div className="flex items-center gap-1">
+        {/* Heart Button */}
+        <HeartButton
+          isLiked={isLiked}
+          onToggle={() => onToggleLike(track.id)}
+          size="sm"
+        />
+
+        {/* Remove Button */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => onUpdateTrackRepeat(track.id, Math.max(1, repeatCount - 1))}
-          className="w-5 h-5 text-xs text-muted-foreground hover:text-foreground"
-          disabled={repeatCount <= 1}
+          onClick={onRemoveFromPlaylist}
+          className="w-6 h-6 text-destructive hover:bg-destructive/20"
         >
-          -
+          <Trash2 className="h-3 w-3" />
         </Button>
-        <div className="flex items-center gap-1 min-w-[40px] justify-center">
-          <RotateCcw className="h-2 w-2 text-muted-foreground" />
-          <span className="text-xs font-medium">{repeatCount}</span>
+
+        {/* Repeat Count */}
+        <div className="flex items-center gap-0.5 ml-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onUpdateTrackRepeat(track.id, Math.max(1, repeatCount - 1))}
+            className="w-5 h-5 text-xs text-muted-foreground hover:text-foreground"
+            disabled={repeatCount <= 1}
+          >
+            -
+          </Button>
+          <div className="flex items-center gap-1 min-w-[32px] justify-center">
+            <span className="text-xs font-medium">{repeatCount}×</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onUpdateTrackRepeat(track.id, repeatCount + 1)}
+            className="w-5 h-5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            +
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onUpdateTrackRepeat(track.id, repeatCount + 1)}
-          className="w-5 h-5 text-xs text-muted-foreground hover:text-foreground"
-        >
-          +
-        </Button>
       </div>
-
-      {/* Heart Button */}
-      <HeartButton
-        isLiked={isLiked}
-        onToggle={() => onToggleLike(track.id)}
-        size="sm"
-        className="mr-2"
-      />
-
-      {/* Remove Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onRemoveFromPlaylist}
-        className="w-6 h-6 text-xs text-destructive hover:bg-destructive/20"
-      >
-        ×
-      </Button>
     </div>
   );
 };

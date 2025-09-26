@@ -4,25 +4,9 @@ import { HeartButton } from "@/components/HeartButton";
 import { ManageLikedMusic } from "@/components/ManageLikedMusic";
 import { Track, Playlist } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle,
-  AlertDialogTrigger 
-} from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-
 interface HomeTabProps {
   tracks: Track[];
   playlists: Playlist[];
@@ -39,12 +23,11 @@ interface HomeTabProps {
   onUpdateTrackRepeat: (trackId: string, repeatCount: number) => void;
   onReorderLikedTracks: (trackIds: string[]) => void;
 }
-
-export const HomeTab = ({ 
-  tracks, 
-  playlists, 
-  currentTrack, 
-  onPlayTrack, 
+export const HomeTab = ({
+  tracks,
+  playlists,
+  currentTrack,
+  onPlayTrack,
   onPlayPlaylist,
   onAddToPlaylist,
   onDeleteTrack,
@@ -63,48 +46,25 @@ export const HomeTab = ({
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-
   const recentTracks = tracks.slice(0, 6);
-
   if (showManageLikedMusic) {
-    return (
-      <ManageLikedMusic 
-        tracks={tracks}
-        likedTracks={likedTracks}
-        likedTracksOrder={likedTracksOrder}
-        trackRepeatCounts={trackRepeatCounts}
-        onToggleLike={onToggleLike}
-        onPlayTrack={onPlayTrack}
-        onUpdateTrackRepeat={onUpdateTrackRepeat}
-        onReorderLikedTracks={onReorderLikedTracks}
-        onBack={() => setShowManageLikedMusic(false)}
-      />
-    );
+    return <ManageLikedMusic tracks={tracks} likedTracks={likedTracks} likedTracksOrder={likedTracksOrder} trackRepeatCounts={trackRepeatCounts} onToggleLike={onToggleLike} onPlayTrack={onPlayTrack} onUpdateTrackRepeat={onUpdateTrackRepeat} onReorderLikedTracks={onReorderLikedTracks} onBack={() => setShowManageLikedMusic(false)} />;
   }
-
-  return (
-    <div className="flex-1 overflow-auto p-4 space-y-6" style={{ paddingBottom: '6rem' }}>
+  return <div className="flex-1 overflow-auto p-4 space-y-6" style={{
+    paddingBottom: '6rem'
+  }}>
       {/* Header */}
-      <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
-        <h1 className="text-3xl font-bold mb-2">Good evening</h1>
-        <p className="text-muted-foreground">Welcome back to your music</p>
-      </div>
+      
 
       {/* Quick Access Playlists */}
-      {playlists.length > 0 && (
-        <div>
+      {playlists.length > 0 && <div>
           <h2 className="text-xl font-semibold mb-4">Your Playlists</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {playlists.slice(0, 3).map((playlist) => {
-              const playlistTracks = playlist.tracks
-                .map(trackId => tracks.find(track => track.id === trackId))
-                .filter(Boolean) as Track[];
-              
-              const totalDuration = playlistTracks.reduce((sum, track) => sum + track.duration, 0);
-              const firstTrack = playlistTracks[0];
-              
-              return (
-                <div key={playlist.id} className="bg-card rounded-lg p-4 border hover:bg-accent/50 transition-colors">
+            {playlists.slice(0, 3).map(playlist => {
+          const playlistTracks = playlist.tracks.map(trackId => tracks.find(track => track.id === trackId)).filter(Boolean) as Track[];
+          const totalDuration = playlistTracks.reduce((sum, track) => sum + track.duration, 0);
+          const firstTrack = playlistTracks[0];
+          return <div key={playlist.id} className="bg-card rounded-lg p-4 border hover:bg-accent/50 transition-colors">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div className="w-8 h-8 bg-primary/20 rounded-md flex items-center justify-center flex-shrink-0">
@@ -114,13 +74,7 @@ export const HomeTab = ({
                         <h3 className="font-medium truncate">{playlist.name}</h3>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onPlayPlaylist(playlist.id)}
-                      className="w-8 h-8 hover:bg-primary/20 flex-shrink-0"
-                      disabled={playlistTracks.length === 0}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => onPlayPlaylist(playlist.id)} className="w-8 h-8 hover:bg-primary/20 flex-shrink-0" disabled={playlistTracks.length === 0}>
                       <Play className="h-4 w-4" />
                     </Button>
                   </div>
@@ -128,33 +82,20 @@ export const HomeTab = ({
                     <div>{playlist.tracks.length} songs</div>
                     <div>{formatTime(totalDuration)}</div>
                   </div>
-                </div>
-              );
-            })}
+                </div>;
+        })}
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Liked Music Section */}
-      <LikedMusicSection 
-        likedTracks={likedTracks}
-        tracks={tracks}
-        onPlayLikedMusic={onPlayLikedMusic}
-        onManageLikedMusic={() => setShowManageLikedMusic(true)}
-      />
+      <LikedMusicSection likedTracks={likedTracks} tracks={tracks} onPlayLikedMusic={onPlayLikedMusic} onManageLikedMusic={() => setShowManageLikedMusic(true)} />
 
       {/* Recently Added */}
-      {recentTracks.length > 0 && (
-        <div>
+      {recentTracks.length > 0 && <div>
           <h2 className="text-xl font-semibold mb-4">Recently Added</h2>
           <div className="space-y-3">
-            {recentTracks.map((track) => (
-              <div key={track.id} className="group track-item">
-                <img
-                  src={track.thumbnailUrl}
-                  alt={track.title}
-                  className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                />
+            {recentTracks.map(track => <div key={track.id} className="group track-item">
+                <img src={track.thumbnailUrl} alt={track.title} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                 <div className="flex-1 min-w-0 mr-2">
                   <h4 className="font-medium truncate text-base leading-tight">{track.title}</h4>
                   <p className="text-sm text-muted-foreground truncate">
@@ -167,20 +108,10 @@ export const HomeTab = ({
                 </div>
                 
                 {/* Heart Button */}
-                <HeartButton
-                  isLiked={likedTracks.has(track.id)}
-                  onToggle={() => onToggleLike(track.id)}
-                  size="sm"
-                  className="mr-2"
-                />
+                <HeartButton isLiked={likedTracks.has(track.id)} onToggle={() => onToggleLike(track.id)} size="sm" className="mr-2" />
 
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onPlayTrack(track)}
-                    className="w-8 h-8 hover:bg-primary/20"
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => onPlayTrack(track)} className="w-8 h-8 hover:bg-primary/20">
                     <Play className="h-4 w-4" />
                   </Button>
                   
@@ -191,25 +122,15 @@ export const HomeTab = ({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {playlists.map((playlist) => (
-                        <DropdownMenuItem
-                          key={playlist.id}
-                          onClick={() => onAddToPlaylist(playlist.id, track.id)}
-                        >
+                      {playlists.map(playlist => <DropdownMenuItem key={playlist.id} onClick={() => onAddToPlaylist(playlist.id, track.id)}>
                           Add to {playlist.name}
-                        </DropdownMenuItem>
-                      ))}
+                        </DropdownMenuItem>)}
                     </DropdownMenuContent>
                   </DropdownMenu>
                   
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="w-8 h-8 hover:bg-destructive/20 text-destructive"
-                        onClick={() => setDeletingTrackId(track.id)}
-                      >
+                      <Button variant="ghost" size="icon" className="w-8 h-8 hover:bg-destructive/20 text-destructive" onClick={() => setDeletingTrackId(track.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -222,30 +143,24 @@ export const HomeTab = ({
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setDeletingTrackId(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => {
-                            if (deletingTrackId) {
-                              onDeleteTrack(deletingTrackId);
-                              setDeletingTrackId(null);
-                            }
-                          }}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
+                        <AlertDialogAction onClick={() => {
+                    if (deletingTrackId) {
+                      onDeleteTrack(deletingTrackId);
+                      setDeletingTrackId(null);
+                    }
+                  }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                           Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Empty State */}
-      {tracks.length === 0 && playlists.length === 0 && (
-        <div className="text-center py-16">
+      {tracks.length === 0 && playlists.length === 0 && <div className="text-center py-16">
           <div className="mx-auto w-24 h-24 bg-gradient-to-br from-primary to-primary-foreground rounded-full flex items-center justify-center mb-6 shadow-glow">
             <Play className="h-12 w-12 text-primary-foreground" />
           </div>
@@ -257,8 +172,6 @@ export const HomeTab = ({
             <Plus className="w-4 h-4 mr-2" />
             Add Music
           </Button>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };

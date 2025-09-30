@@ -106,9 +106,6 @@ export const HomeTab = ({
                     inputClassName="h-8"
                     showButton={false}
                   />
-                  <p className="text-sm text-muted-foreground truncate block">
-                    {track.originalFileName}
-                  </p>
                 </div>
                 <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-3 flex-shrink-0">
                   <Clock className="w-4 h-4 mr-1" />

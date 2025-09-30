@@ -126,9 +126,6 @@ export const MusicManagementDialog = ({
                       inputClassName="h-7 text-sm"
                       showButton={false}
                     />
-                    <p className="text-xs text-muted-foreground truncate block">
-                      {track.originalFileName}
-                    </p>
                     <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
                       <span>{formatTime(track.duration)}</span>
                       <span>•</span>

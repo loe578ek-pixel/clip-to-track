@@ -98,24 +98,24 @@ export const HomeTab = ({
           <h2 className="text-xl font-semibold mb-4">Recently Added</h2>
           <div className="space-y-3">
             {recentTracks.map(track => <div key={track.id} className="group track-item">
-                <div className="flex-1 min-w-0 mr-3">
+                <div className="flex-1 min-w-0 mr-4 overflow-hidden">
                   <EditableTitle
                     title={track.title}
                     onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
-                    className="font-medium truncate text-base leading-tight"
+                    className="font-medium truncate text-base leading-tight block"
                     inputClassName="h-8"
                     showButton={false}
                   />
-                  <p className="text-sm text-muted-foreground truncate">
+                  <p className="text-sm text-muted-foreground truncate block">
                     {track.originalFileName}
                   </p>
                 </div>
-                <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-3">
+                <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-3 flex-shrink-0">
                   <Clock className="w-4 h-4 mr-1" />
                   <span>{formatTime(track.duration)}</span>
                 </div>
                 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   {/* Pencil Button */}
                   <Button variant="ghost" size="icon" onClick={() => {
                     const newTitle = prompt("Enter new title:", track.title);

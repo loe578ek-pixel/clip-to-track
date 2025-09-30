@@ -78,15 +78,15 @@ export const AddTab = ({
               <div key={track.id} className="soundwave-card p-4">
                 <div className="flex items-center gap-3">
                   {/* Track Info */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 mr-4 overflow-hidden">
                     <EditableTitle
                       title={track.title}
                       onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
-                      className="font-medium truncate text-base"
+                      className="font-medium truncate text-base block"
                       inputClassName="h-8"
                       showButton={false}
                     />
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className="text-sm text-muted-foreground truncate block">
                       {track.originalFileName}
                     </p>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
@@ -102,7 +102,7 @@ export const AddTab = ({
                   </div>
 
                   {/* Actions - All buttons inline */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     {/* Pencil Button */}
                     <Button variant="ghost" size="icon" onClick={() => {
                       const newTitle = prompt("Enter new title:", track.title);

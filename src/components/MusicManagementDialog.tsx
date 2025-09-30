@@ -118,15 +118,15 @@ export const MusicManagementDialog = ({
                   className="group flex items-center gap-2 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
                 >
                   {/* Track Info */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 mr-3 overflow-hidden">
                     <EditableTitle
                       title={track.title}
                       onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
-                      className="font-medium truncate text-sm"
+                      className="font-medium truncate text-sm block"
                       inputClassName="h-7 text-sm"
                       showButton={false}
                     />
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate block">
                       {track.originalFileName}
                     </p>
                     <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">

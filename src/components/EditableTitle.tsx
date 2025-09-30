@@ -67,7 +67,7 @@ export const EditableTitle = ({ title, onSave, className = "", inputClassName = 
   }
 
   if (!showButton) {
-    return <span className={className}>{title}</span>;
+    return <div className={`${className} overflow-hidden`}>{title}</div>;
   }
 
   return (

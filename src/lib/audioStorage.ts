@@ -103,9 +103,9 @@ export class AudioStorageService {
       let totalBytes = 0;
       
       try {
-        // Read all files in audio directory
+        // Read all files in audio directory (soundwave-audio)
         const result = await Filesystem.readdir({
-          path: 'audio',
+          path: 'soundwave-audio',
           directory: Directory.Data
         });
         
@@ -115,7 +115,7 @@ export class AudioStorageService {
         for (const file of result.files) {
           try {
             const stat = await Filesystem.stat({
-              path: `audio/${file.name}`,
+              path: `soundwave-audio/${file.name}`,
               directory: Directory.Data
             });
             totalBytes += stat.size;
@@ -129,7 +129,7 @@ export class AudioStorageService {
         console.log('Audio directory not found or empty');
       }
       
-      // Convert bytes to MB
+      // Convert bytes to MB with 1 decimal place
       const estimatedSizeMB = Math.round((totalBytes / (1024 * 1024)) * 10) / 10;
       
       return {

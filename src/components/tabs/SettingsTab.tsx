@@ -49,7 +49,7 @@ export const SettingsTab = ({
   const [isClearMusicDialogOpen, setIsClearMusicDialogOpen] = useState(false);
   const [isMusicManagementOpen, setIsMusicManagementOpen] = useState(false);
 
-  // Load storage information
+  // Load storage information - updates when tracks change
   useEffect(() => {
     const loadStorageInfo = async () => {
       try {
@@ -61,7 +61,7 @@ export const SettingsTab = ({
       }
     };
     loadStorageInfo();
-  }, []);
+  }, [tracks]);
   const handleDeleteIndividualTrack = (trackId: string) => {
     // Update local storage info after deletion
     setStorageInfo(prev => ({
@@ -165,7 +165,12 @@ export const SettingsTab = ({
               </div>
               <div>
                 <p className="font-medium text-primary">Storage Used</p>
-                <p className="text-muted-foreground">~{audioStats.estimatedSizeMB} MB</p>
+                <p className="text-muted-foreground">
+                  ~{audioStats.estimatedSizeMB >= 1024 
+                    ? `${(audioStats.estimatedSizeMB / 1024).toFixed(1)} GB`
+                    : `${audioStats.estimatedSizeMB.toFixed(1)} MB`
+                  }
+                </p>
               </div>
             </div>
             <div className="mt-3 p-2 rounded bg-primary/10 border border-primary/20">

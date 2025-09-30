@@ -97,13 +97,43 @@ export class AudioStorageService {
     estimatedSizeMB: number;
   }> {
     try {
-      const storageInfo = await storageService.getStorageInfo();
+      const { Filesystem, Directory } = await import('@capacitor/filesystem');
       
-      // Rough estimation - actual file sizes would require individual file stat calls
-      const estimatedSizeMB = storageInfo.audioFiles * 3; // Assume ~3MB per audio file
+      let totalFiles = 0;
+      let totalBytes = 0;
+      
+      try {
+        // Read all files in audio directory
+        const result = await Filesystem.readdir({
+          path: 'audio',
+          directory: Directory.Data
+        });
+        
+        totalFiles = result.files.length;
+        
+        // Get actual file sizes
+        for (const file of result.files) {
+          try {
+            const stat = await Filesystem.stat({
+              path: `audio/${file.name}`,
+              directory: Directory.Data
+            });
+            totalBytes += stat.size;
+          } catch (error) {
+            // Skip if file stat fails
+            console.error('Error getting file size:', error);
+          }
+        }
+      } catch (error) {
+        // Directory might not exist yet
+        console.log('Audio directory not found or empty');
+      }
+      
+      // Convert bytes to MB
+      const estimatedSizeMB = Math.round((totalBytes / (1024 * 1024)) * 10) / 10;
       
       return {
-        totalFiles: storageInfo.audioFiles,
+        totalFiles,
         estimatedSizeMB
       };
     } catch (error) {

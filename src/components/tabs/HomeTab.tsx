@@ -1,4 +1,4 @@
-import { Play, Plus, Trash2, Clock, Calendar } from "lucide-react";
+import { Play, Plus, Trash2, Clock, Calendar, Edit3 } from "lucide-react";
 import { EditableTitle } from "@/components/EditableTitle";
 import { LikedMusicSection } from "@/components/LikedMusicSection";
 import { HeartButton } from "@/components/HeartButton";
@@ -98,26 +98,37 @@ export const HomeTab = ({
           <h2 className="text-xl font-semibold mb-4">Recently Added</h2>
           <div className="space-y-3">
             {recentTracks.map(track => <div key={track.id} className="group track-item">
-                <div className="flex-1 min-w-0 mr-2">
+                <div className="flex-1 min-w-0 mr-3">
                   <EditableTitle
                     title={track.title}
                     onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
                     className="font-medium truncate text-base leading-tight"
                     inputClassName="h-8"
+                    showButton={false}
                   />
                   <p className="text-sm text-muted-foreground truncate">
                     {track.originalFileName}
                   </p>
                 </div>
-                <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-4">
+                <div className="hidden sm:flex items-center text-sm text-muted-foreground mr-3">
                   <Clock className="w-4 h-4 mr-1" />
                   <span>{formatTime(track.duration)}</span>
                 </div>
                 
-                {/* Heart Button */}
-                <HeartButton isLiked={likedTracks.has(track.id)} onToggle={() => onToggleLike(track.id)} size="sm" className="mr-2" />
+                <div className="flex items-center gap-1">
+                  {/* Pencil Button */}
+                  <Button variant="ghost" size="icon" onClick={() => {
+                    const newTitle = prompt("Enter new title:", track.title);
+                    if (newTitle && newTitle.trim() && newTitle.trim() !== track.title) {
+                      onRenameTrack(track.id, newTitle.trim());
+                    }
+                  }} className="w-8 h-8 hover:bg-accent/50">
+                    <Edit3 className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Heart Button */}
+                  <HeartButton isLiked={likedTracks.has(track.id)} onToggle={() => onToggleLike(track.id)} size="sm" />
 
-                <div className="flex items-center gap-2">
                   <Button variant="ghost" size="icon" onClick={() => onPlayTrack(track)} className="w-8 h-8 hover:bg-primary/20">
                     <Play className="h-4 w-4" />
                   </Button>

@@ -8,9 +8,10 @@ interface EditableTitleProps {
   onSave: (newTitle: string) => void;
   className?: string;
   inputClassName?: string;
+  showButton?: boolean;
 }
 
-export const EditableTitle = ({ title, onSave, className = "", inputClassName = "" }: EditableTitleProps) => {
+export const EditableTitle = ({ title, onSave, className = "", inputClassName = "", showButton = true }: EditableTitleProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(title);
 
@@ -63,6 +64,10 @@ export const EditableTitle = ({ title, onSave, className = "", inputClassName = 
         </Button>
       </div>
     );
+  }
+
+  if (!showButton) {
+    return <span className={className}>{title}</span>;
   }
 
   return (

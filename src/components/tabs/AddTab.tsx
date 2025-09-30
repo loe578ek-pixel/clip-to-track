@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Plus, Clock, Calendar, Trash2 } from "lucide-react";
+import { Upload, Plus, Clock, Calendar, Trash2, Edit3 } from "lucide-react";
 import { EditableTitle } from "@/components/EditableTitle";
 import { Track, Playlist } from "@/pages/Index";
 import { FileUpload } from "@/components/FileUpload";
@@ -76,45 +76,56 @@ export const AddTab = ({
           <div className="space-y-3">
             {tracks.map((track, index) => (
               <div key={track.id} className="soundwave-card p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    {/* Track Info */}
-                    <div className="flex-1 min-w-0">
-                      <EditableTitle
-                        title={track.title}
-                        onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
-                        className="font-medium truncate text-base"
-                        inputClassName="h-8"
-                      />
-                      <p className="text-sm text-muted-foreground truncate">
-                        {track.originalFileName}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-                        <span className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {formatTime(track.duration)}
-                        </span>
-                        <span className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {formatDate(track.createdAt)}
-                        </span>
-                      </div>
+                <div className="flex items-center gap-3">
+                  {/* Track Info */}
+                  <div className="flex-1 min-w-0">
+                    <EditableTitle
+                      title={track.title}
+                      onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
+                      className="font-medium truncate text-base"
+                      inputClassName="h-8"
+                      showButton={false}
+                    />
+                    <p className="text-sm text-muted-foreground truncate">
+                      {track.originalFileName}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
+                      <span className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {formatTime(track.duration)}
+                      </span>
+                      <span className="flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {formatDate(track.createdAt)}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex justify-end sm:justify-start gap-2">
+                  {/* Actions - All buttons inline */}
+                  <div className="flex items-center gap-1">
+                    {/* Pencil Button */}
+                    <Button variant="ghost" size="icon" onClick={() => {
+                      const newTitle = prompt("Enter new title:", track.title);
+                      if (newTitle && newTitle.trim() && newTitle.trim() !== track.title) {
+                        onRenameTrack(track.id, newTitle.trim());
+                      }
+                    }} className="w-8 h-8 hover:bg-accent/50">
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                    
+                    {/* Heart Button */}
                     <HeartButton
                       isLiked={likedTracks.has(track.id)}
                       onToggle={() => onToggleLike(track.id)}
                       size="sm"
                     />
+                    
+                    {/* Add to Playlist */}
                     {playlists.length > 0 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button size="sm" className="soundwave-button-secondary w-full sm:w-auto">
-                            <Plus className="h-4 w-4 mr-2" />
-                            <span className="truncate">Add to Playlist</span>
+                          <Button variant="ghost" size="icon" className="w-8 h-8">
+                            <Plus className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-card border-white/10 z-50">

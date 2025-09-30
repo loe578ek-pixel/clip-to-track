@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Trash2, Music, Search } from "lucide-react";
+import { ArrowLeft, Trash2, Music, Search, Edit3 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,42 +115,8 @@ export const MusicManagementDialog = ({
               filteredTracks.map((track) => (
                 <div
                   key={track.id}
-                  className="group flex items-center space-x-3 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                  className="group flex items-center gap-2 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
                 >
-                  {/* Delete Button - Positioned on the left */}
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="h-10 w-10 p-0 bg-red-500 hover:bg-red-600 text-white border-0 shrink-0"
-                        disabled={deletingTrackId === track.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-card border-white/10 mx-4">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure you want to delete this song?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-muted-foreground">
-                          This action will permanently delete "{track.title}" from your device and all playlists.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
-                        <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => {
-                            setDeletingTrackId(track.id);
-                            handleDeleteTrack(track.id);
-                          }}
-                          className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-
                   {/* Track Info */}
                   <div className="flex-1 min-w-0">
                     <EditableTitle
@@ -158,6 +124,7 @@ export const MusicManagementDialog = ({
                       onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
                       className="font-medium truncate text-sm"
                       inputClassName="h-7 text-sm"
+                      showButton={false}
                     />
                     <p className="text-xs text-muted-foreground truncate">
                       {track.originalFileName}
@@ -169,12 +136,59 @@ export const MusicManagementDialog = ({
                     </div>
                   </div>
 
-                  {/* Heart Button - Now on the right */}
-                  <HeartButton
-                    isLiked={likedTracks.has(track.id)}
-                    onToggle={() => onToggleLike(track.id)}
-                    size="sm"
-                  />
+                  {/* All Action Buttons - Inline with tight spacing */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {/* Pencil Button */}
+                    <Button variant="ghost" size="icon" onClick={() => {
+                      const newTitle = prompt("Enter new title:", track.title);
+                      if (newTitle && newTitle.trim() && newTitle.trim() !== track.title) {
+                        onRenameTrack(track.id, newTitle.trim());
+                      }
+                    }} className="w-8 h-8 hover:bg-accent/50">
+                      <Edit3 className="h-4 w-4" />
+                    </Button>
+                    
+                    {/* Heart Button */}
+                    <HeartButton
+                      isLiked={likedTracks.has(track.id)}
+                      onToggle={() => onToggleLike(track.id)}
+                      size="sm"
+                    />
+                    
+                    {/* Delete Button */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-8 h-8 hover:bg-destructive/20 text-destructive"
+                          disabled={deletingTrackId === track.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-card border-white/10 mx-4">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure you want to delete this song?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-muted-foreground">
+                            This action will permanently delete "{track.title}" from your device and all playlists.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
+                          <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              setDeletingTrackId(track.id);
+                              handleDeleteTrack(track.id);
+                            }}
+                            className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               ))
             ) : (

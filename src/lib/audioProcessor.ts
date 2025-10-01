@@ -18,8 +18,8 @@ export const extractAudioFromVideo = async (
         // Remove last 3 seconds from audio (app requirement)
         const trimmedBuffer = trimAudioBuffer(audioContext, audioBuffer, 3);
         
-        // Convert to compressed format using MediaRecorder
-        const compressedBlob = await audioBufferToCompressed(audioContext, trimmedBuffer);
+        // Create WAV blob from trimmed audio buffer
+        const wavBlob = audioBufferToWav(trimmedBuffer);
         
         try {
           // Create basic track data (without thumbnailUrl)
@@ -32,13 +32,13 @@ export const extractAudioFromVideo = async (
           };
           
           // Save audio file to local storage and get complete track
-          const track = await audioStorageService.saveAudioTrack(compressedBlob, trackData);
+          const track = await audioStorageService.saveAudioTrack(wavBlob, trackData);
           
           onProgress(100);
           resolve(track);
         } catch (error) {
           // Fallback: create track with blob URL only (no persistence)
-          const audioUrl = URL.createObjectURL(compressedBlob);
+          const audioUrl = URL.createObjectURL(wavBlob);
           
           const track: Track = {
             id: crypto.randomUUID(),
@@ -103,72 +103,68 @@ function trimAudioBuffer(audioContext: AudioContext, buffer: AudioBuffer, second
   return trimmedBuffer;
 }
 
-// Convert AudioBuffer to compressed format using MediaRecorder
-async function audioBufferToCompressed(audioContext: AudioContext, buffer: AudioBuffer): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    // Create an offline audio context to render the buffer
-    const offlineContext = new OfflineAudioContext(
-      buffer.numberOfChannels,
-      buffer.length,
-      buffer.sampleRate
-    );
-    
-    // Create a buffer source
-    const source = offlineContext.createBufferSource();
-    source.buffer = buffer;
-    
-    // Create a destination for MediaRecorder
-    const destination = audioContext.createMediaStreamDestination();
-    
-    // Try different MIME types in order of preference (best compression)
-    const mimeTypes = [
-      'audio/webm;codecs=opus',  // Best compression, widely supported
-      'audio/webm',
-      'audio/ogg;codecs=opus',
-      'audio/mp4'
-    ];
-    
-    let selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
-    
-    if (!selectedMimeType) {
-      reject(new Error('No supported audio codec found'));
-      return;
+// Convert AudioBuffer to WAV blob
+function audioBufferToWav(buffer: AudioBuffer): Blob {
+  const length = buffer.length * buffer.numberOfChannels * 2 + 44;
+  const arrayBuffer = new ArrayBuffer(length);
+  const view = new DataView(arrayBuffer);
+  const channels = [];
+  let sample;
+  let offset = 0;
+  let pos = 0;
+
+  // Write WAV header
+  const setUint16 = (data: number) => {
+    view.setUint16(pos, data, true);
+    pos += 2;
+  };
+  
+  const setUint32 = (data: number) => {
+    view.setUint32(pos, data, true);
+    pos += 4;
+  };
+
+  // RIFF identifier
+  setUint32(0x46464952);
+  // file length
+  setUint32(length - 8);
+  // WAVE identifier
+  setUint32(0x45564157);
+  // format chunk identifier
+  setUint32(0x20746d66);
+  // format chunk length
+  setUint32(16);
+  // sample format (raw)
+  setUint16(1);
+  // channel count
+  setUint16(buffer.numberOfChannels);
+  // sample rate
+  setUint32(buffer.sampleRate);
+  // byte rate (sample rate * block align)
+  setUint32(buffer.sampleRate * 4);
+  // block align (channel count * bytes per sample)
+  setUint16(buffer.numberOfChannels * 2);
+  // bits per sample
+  setUint16(16);
+  // data chunk identifier
+  setUint32(0x61746164);
+  // data chunk length
+  setUint32(length - pos - 4);
+
+  // Write interleaved data
+  for (let i = 0; i < buffer.numberOfChannels; i++) {
+    channels.push(buffer.getChannelData(i));
+  }
+
+  while (pos < length) {
+    for (let i = 0; i < buffer.numberOfChannels; i++) {
+      sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+      sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0; // scale to 16-bit signed int
+      view.setInt16(pos, sample, true); // write 16-bit sample
+      pos += 2;
     }
-    
-    // Create MediaRecorder with the best available codec
-    const mediaRecorder = new MediaRecorder(destination.stream, {
-      mimeType: selectedMimeType,
-      audioBitsPerSecond: 128000  // 128 kbps - good quality, reasonable size
-    });
-    
-    const audioChunks: Blob[] = [];
-    
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        audioChunks.push(event.data);
-      }
-    };
-    
-    mediaRecorder.onstop = () => {
-      const audioBlob = new Blob(audioChunks, { type: selectedMimeType });
-      resolve(audioBlob);
-    };
-    
-    mediaRecorder.onerror = (event) => {
-      reject(new Error('MediaRecorder error: ' + event));
-    };
-    
-    // Connect and start recording
-    const realSource = audioContext.createBufferSource();
-    realSource.buffer = buffer;
-    realSource.connect(destination);
-    
-    mediaRecorder.start();
-    realSource.start(0);
-    
-    // Stop recording when buffer finishes playing
-    realSource.onended = () => {
-      mediaRecorder.stop();
-    };
-  });
+    offset++; // next source sample
+  }
+
+  return new Blob([arrayBuffer], { type: 'audio/wav' });
 }

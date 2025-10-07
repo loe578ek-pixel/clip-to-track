@@ -4,10 +4,7 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.cliptotrack',
   appName: 'clip-to-track',
   webDir: 'dist',
-  server: {
-    url: "https://4f9cba36-6647-49eb-bd51-be637b97cf76.lovableproject.com?forceHideBadge=true",
-    cleartext: true
-  },
+  // Remove server config for native builds - only use for hot-reload during development
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,

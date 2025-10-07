@@ -22,13 +22,20 @@ class StorageService {
   private readonly AUDIO_DIR = 'soundwave-audio';
 
   /**
-   * Save track metadata to preferences
+   * Save track metadata to preferences (without blob URLs)
    */
   async saveTracks(tracks: Track[]): Promise<void> {
     try {
       const tracksData = tracks.map(track => ({
-        ...track,
-        createdAt: track.createdAt.toISOString()
+        id: track.id,
+        title: track.title,
+        duration: track.duration,
+        originalFileName: track.originalFileName,
+        createdAt: track.createdAt.toISOString(),
+        repeatCount: track.repeatCount,
+        localFilePath: track.localFilePath,
+        isLiked: track.isLiked
+        // Exclude audioUrl and playbackKey - they're regenerated at runtime
       }));
       
       await Preferences.set({
@@ -36,7 +43,7 @@ class StorageService {
         value: JSON.stringify(tracksData)
       });
       
-      console.log('Tracks saved successfully');
+      console.log(`Tracks saved successfully (${tracksData.length} tracks)`);
     } catch (error) {
       console.error('Error saving tracks:', error);
       throw error;

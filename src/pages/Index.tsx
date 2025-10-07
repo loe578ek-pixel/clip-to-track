@@ -159,8 +159,11 @@ const Index = () => {
         await storageService.saveTracks(tracks);
       } catch (error) {
         console.error('Error saving tracks:', error);
-        // Fallback to localStorage
-        localStorage.setItem('soundwave-tracks', JSON.stringify(tracks));
+        toast({
+          title: "Storage Error",
+          description: "Failed to save tracks. Please check storage permissions.",
+          variant: "destructive"
+        });
       }
     };
     
@@ -175,8 +178,6 @@ const Index = () => {
         await storageService.savePlaylists(playlists);
       } catch (error) {
         console.error('Error saving playlists:', error);
-        // Fallback to localStorage
-        localStorage.setItem('soundwave-playlists', JSON.stringify(playlists));
       }
     };
     
@@ -191,8 +192,6 @@ const Index = () => {
         await storageService.saveRepeatCounts(trackRepeatCounts);
       } catch (error) {
         console.error('Error saving repeat counts:', error);
-        // Fallback to localStorage
-        localStorage.setItem('soundwave-repeat-counts', JSON.stringify(trackRepeatCounts));
       }
     };
     
@@ -207,8 +206,6 @@ const Index = () => {
         await storageService.saveLikedTracks(Array.from(likedTracks));
       } catch (error) {
         console.error('Error saving liked tracks:', error);
-        // Fallback to localStorage
-        localStorage.setItem('soundwave-liked-tracks', JSON.stringify(Array.from(likedTracks)));
       }
     };
     

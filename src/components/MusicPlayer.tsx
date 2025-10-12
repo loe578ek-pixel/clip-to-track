@@ -5,6 +5,8 @@ import { Slider } from "@/components/ui/slider";
 import { Track } from "@/pages/Index";
 import { useVolume } from "@/contexts/VolumeContext";
 import { mediaSession } from "@/lib/mediaSession";
+import { nativeMediaControls } from "@/lib/nativeMediaControls";
+import { Capacitor } from "@capacitor/core";
 
 interface MusicPlayerProps {
   track: Track;
@@ -31,12 +33,24 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       audioRef.current.load();
       
       // Enable background playback and update media session
-      mediaSession.enableBackgroundPlayback();
-      mediaSession.updateTrack({
-        title: track.title,
-        artist: track.originalFileName,
-        duration: track.duration
-      }, playlistName);
+      const isNative = Capacitor.isNativePlatform();
+      
+      if (isNative) {
+        // Use native media controls for mobile
+        nativeMediaControls.updateTrack({
+          title: track.title,
+          artist: track.originalFileName,
+          duration: track.duration
+        }, playlistName);
+      } else {
+        // Use web media session for web
+        mediaSession.enableBackgroundPlayback();
+        mediaSession.updateTrack({
+          title: track.title,
+          artist: track.originalFileName,
+          duration: track.duration
+        }, playlistName);
+      }
       
       // Always play when autoPlay is true, regardless of current playing state
       if (autoPlay) {
@@ -44,7 +58,11 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         if (playPromise !== undefined) {
           playPromise.then(() => {
             setIsPlaying(true);
-            mediaSession.updatePlaybackState(true, currentTime);
+            if (isNative) {
+              nativeMediaControls.updatePlaybackState(true, currentTime);
+            } else {
+              mediaSession.updatePlaybackState(true, currentTime);
+            }
           }).catch(error => {
             console.error('Error playing audio:', error);
             // Retry after a short delay if autoPlay fails
@@ -52,7 +70,11 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
               if (audioRef.current) {
                 audioRef.current.play().then(() => {
                   setIsPlaying(true);
-                  mediaSession.updatePlaybackState(true, currentTime);
+                  if (isNative) {
+                    nativeMediaControls.updatePlaybackState(true, currentTime);
+                  } else {
+                    mediaSession.updatePlaybackState(true, currentTime);
+                  }
                 }).catch(retryError => {
                   console.error('Retry failed:', retryError);
                 });
@@ -64,7 +86,11 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         // Manual play when not auto-playing but was already playing
         audioRef.current.play().then(() => {
           setIsPlaying(true);
-          mediaSession.updatePlaybackState(true, currentTime);
+          if (isNative) {
+            nativeMediaControls.updatePlaybackState(true, currentTime);
+          } else {
+            mediaSession.updatePlaybackState(true, currentTime);
+          }
         }).catch(error => {
           console.error('Error playing audio:', error);
         });
@@ -80,13 +106,23 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       const newTime = audio.currentTime;
       setCurrentTime(newTime);
       // Update media session with current time
-      mediaSession.updatePlaybackState(isPlaying, newTime);
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        nativeMediaControls.updatePlaybackState(isPlaying, newTime);
+      } else {
+        mediaSession.updatePlaybackState(isPlaying, newTime);
+      }
     };
     
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
-      mediaSession.updatePlaybackState(false, 0);
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        nativeMediaControls.updatePlaybackState(false, 0);
+      } else {
+        mediaSession.updatePlaybackState(false, 0);
+      }
       // Always call onEnded to let parent handle repeat logic and next track
       if (onEnded) {
         onEnded();
@@ -111,13 +147,15 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
 
   // Set up media session callbacks
   useEffect(() => {
-    mediaSession.setCallbacks({
+    const isNative = Capacitor.isNativePlatform();
+    
+    const callbacks = {
       onPlay: () => {
         if (audioRef.current) {
           audioRef.current.play().then(() => {
             setIsPlaying(true);
           }).catch(error => {
-            console.error('Error playing from media session:', error);
+            console.error('Error playing from media controls:', error);
           });
         }
       },
@@ -139,21 +177,37 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
           setCurrentTime(time);
         }
       }
-    });
+    };
+    
+    if (isNative) {
+      nativeMediaControls.setCallbacks(callbacks);
+    } else {
+      mediaSession.setCallbacks(callbacks);
+    }
   }, [onNext, onPrevious]);
 
   const togglePlayPause = async () => {
     if (!audioRef.current) return;
 
+    const isNative = Capacitor.isNativePlatform();
+    
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
-      mediaSession.updatePlaybackState(false, currentTime);
+      if (isNative) {
+        nativeMediaControls.updatePlaybackState(false, currentTime);
+      } else {
+        mediaSession.updatePlaybackState(false, currentTime);
+      }
     } else {
       try {
         await audioRef.current.play();
         setIsPlaying(true);
-        mediaSession.updatePlaybackState(true, currentTime);
+        if (isNative) {
+          nativeMediaControls.updatePlaybackState(true, currentTime);
+        } else {
+          mediaSession.updatePlaybackState(true, currentTime);
+        }
       } catch (error) {
         console.error('Error playing audio:', error);
       }

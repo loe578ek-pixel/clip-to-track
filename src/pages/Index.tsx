@@ -29,6 +29,7 @@ export interface Playlist {
   name: string;
   tracks: string[];
   createdAt: Date;
+  isPermanent?: boolean;
 }
 
 const Index = () => {
@@ -228,41 +229,26 @@ const Index = () => {
     }));
   };
 
-  // Initialize default playlists
+  // Initialize 3 permanent playlists - always ensure they exist
   useEffect(() => {
-    if (playlists.length === 0) {
+    if (isDataLoaded && playlists.length < 3) {
       const defaultPlaylists = [
-        { id: crypto.randomUUID(), name: "Liked Songs", tracks: [], createdAt: new Date() },
-        { id: crypto.randomUUID(), name: "Recently Played", tracks: [], createdAt: new Date() },
-        { id: crypto.randomUUID(), name: "My Favorites", tracks: [], createdAt: new Date() }
+        { id: 'playlist-1', name: "Playlist 1", tracks: [], createdAt: new Date(), isPermanent: true },
+        { id: 'playlist-2', name: "Playlist 2", tracks: [], createdAt: new Date(), isPermanent: true },
+        { id: 'playlist-3', name: "Playlist 3", tracks: [], createdAt: new Date(), isPermanent: true }
       ];
-      setPlaylists(defaultPlaylists);
+      
+      // Merge existing playlists with defaults to prevent duplicates
+      const existingIds = new Set(playlists.map(p => p.id));
+      const missingDefaults = defaultPlaylists.filter(p => !existingIds.has(p.id));
+      
+      if (missingDefaults.length > 0) {
+        setPlaylists([...playlists, ...missingDefaults]);
+      }
     }
-  }, []);
+  }, [isDataLoaded, playlists.length]);
 
-  const handleCreatePlaylist = (name: string) => {
-    if (playlists.length >= 3) {
-      toast({
-        title: "Maximum playlists reached",
-        description: "Maximum 3 playlists allowed",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const newPlaylist: Playlist = {
-      id: crypto.randomUUID(),
-      name,
-      tracks: [],
-      createdAt: new Date()
-    };
-    setPlaylists(prev => [newPlaylist, ...prev]);
-    
-    toast({
-      title: "Playlist created",
-      description: `"${name}" has been created successfully.`,
-    });
-  };
+  // Removed - playlists are now permanent and cannot be created
 
   const handleAddToPlaylist = (playlistId: string, trackId: string) => {
     const playlist = playlists.find(p => p.id === playlistId);
@@ -295,10 +281,16 @@ const Index = () => {
     ));
   };
 
-  const handleDeletePlaylist = (playlistId: string) => {
+  const handleClearPlaylistTracks = (playlistId: string) => {
     const playlist = playlists.find(p => p.id === playlistId);
     if (playlist) {
-      setPlaylists(prev => prev.filter(p => p.id !== playlistId));
+      setPlaylists(prev => prev.map(p => 
+        p.id === playlistId ? { ...p, tracks: [] } : p
+      ));
+      toast({
+        title: "Playlist cleared",
+        description: `All tracks removed from "${playlist.name}".`,
+      });
     }
   };
 
@@ -509,32 +501,40 @@ const Index = () => {
 
   const handleClearMusicFiles = async () => {
     try {
-      // Clear only music-related data from native storage (keep app settings)
+      // Clear tracks and audio files, but keep the 3 permanent playlists (empty them)
+      const emptyPlaylists = playlists.map(p => ({ ...p, tracks: [] }));
+      
       await Promise.all([
         storageService.saveTracks([]),
-        storageService.savePlaylists([]),
+        storageService.savePlaylists(emptyPlaylists),
         storageService.clearAudioFiles()
       ]);
       
-      // Clear state (but keep settings-related state)
+      // Clear state (but keep the 3 playlists empty)
       setTracks([]);
-      setPlaylists([]);
+      setPlaylists(emptyPlaylists);
       setCurrentTrack(null);
       setCurrentPlaylistId(null);
       setTrackRepeatCounts({});
       setCurrentTrackPlayCount({});
       setLikedTracks(new Set());
       
-      // Clear music-related localStorage as fallback (keep other settings)
+      // Clear music-related localStorage as fallback
       localStorage.removeItem('soundwave-tracks');
-      localStorage.removeItem('soundwave-playlists');
       localStorage.removeItem('soundwave-repeat-counts');
+      localStorage.removeItem('soundwave-liked-tracks');
+      
+      toast({
+        title: "Music cleared",
+        description: "All tracks deleted. Your 3 playlists are kept empty.",
+      });
     } catch (error) {
       console.error('Error clearing music files:', error);
       
       // Fallback to clearing state and localStorage
+      const emptyPlaylists = playlists.map(p => ({ ...p, tracks: [] }));
       setTracks([]);
-      setPlaylists([]);
+      setPlaylists(emptyPlaylists);
       setCurrentTrack(null);
       setCurrentPlaylistId(null);
       setTrackRepeatCounts({});
@@ -664,9 +664,8 @@ const Index = () => {
             tracks={tracks} 
             playlists={playlists} 
             trackRepeatCounts={trackRepeatCounts}
-            onCreatePlaylist={handleCreatePlaylist} 
             onRenamePlaylist={handleRenamePlaylist} 
-            onDeletePlaylist={handleDeletePlaylist} 
+            onClearPlaylistTracks={handleClearPlaylistTracks} 
             onAddToPlaylist={handleAddToPlaylist} 
             onRemoveFromPlaylist={handleRemoveFromPlaylist} 
             onUpdateTrackRepeat={handleUpdateTrackRepeat} 

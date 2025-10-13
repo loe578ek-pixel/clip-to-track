@@ -192,9 +192,9 @@ export const SettingsTab = ({
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg bg-secondary/30 gap-3">
             <div className="flex-1">
-              <h4 className="font-medium">Clear Downloaded Music</h4>
+              <h4 className="font-medium">Clear All Music</h4>
               <p className="text-sm text-muted-foreground">
-                Remove all music files and playlists, keep app settings
+                Delete all tracks, keep your 3 playlists empty
               </p>
             </div>
             <Dialog open={isClearMusicDialogOpen} onOpenChange={setIsClearMusicDialogOpen}>
@@ -206,9 +206,9 @@ export const SettingsTab = ({
               </DialogTrigger>
               <DialogContent className="bg-card border-white/10 mx-4">
                 <DialogHeader>
-                  <DialogTitle>Delete Music</DialogTitle>
+                  <DialogTitle>Clear All Tracks</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
-                    Do you want to delete downloaded music from the app?
+                    This will delete all tracks but keep your 3 playlists (empty). Are you sure?
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6">

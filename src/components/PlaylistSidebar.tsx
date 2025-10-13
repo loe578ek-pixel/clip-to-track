@@ -1,80 +1,26 @@
-import { useState } from "react";
-import { Plus, Music, List, PlayCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Music, List, PlayCircle } from "lucide-react";
 import { Playlist } from "@/pages/Index";
 
 interface PlaylistSidebarProps {
   playlists: Playlist[];
   currentPlaylist: string | null;
   onSelectPlaylist: (playlistId: string | null) => void;
-  onCreatePlaylist: (name: string) => void;
 }
 
 export const PlaylistSidebar = ({
   playlists,
   currentPlaylist,
-  onSelectPlaylist,
-  onCreatePlaylist
+  onSelectPlaylist
 }: PlaylistSidebarProps) => {
-  const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleCreatePlaylist = () => {
-    if (newPlaylistName.trim()) {
-      onCreatePlaylist(newPlaylistName.trim());
-      setNewPlaylistName("");
-      setIsDialogOpen(false);
-    }
-  };
 
   return (
     <div className="w-64 bg-card border-r border-glass flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-glass">
-        <div className="flex items-center space-x-2 mb-4">
+        <div className="flex items-center space-x-2">
           <Music className="h-6 w-6 text-primary" />
           <h2 className="font-semibold text-lg">Library</h2>
         </div>
-        
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="w-full bg-gradient-primary hover:scale-105 transition-transform shadow-glow border-0" 
-              disabled={playlists.length >= 3}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Playlist {playlists.length >= 3 && "(3/3)"}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-card border-glass">
-            <DialogHeader>
-              <DialogTitle>Create New Playlist</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Input
-                placeholder="Playlist name"
-                value={newPlaylistName}
-                onChange={(e) => setNewPlaylistName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleCreatePlaylist()}
-                className="bg-secondary border-glass"
-              />
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCreatePlaylist}
-                  disabled={!newPlaylistName.trim()}
-                  className="bg-gradient-primary"
-                >
-                  Create
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Navigation */}
@@ -119,13 +65,6 @@ export const PlaylistSidebar = ({
           ))}
         </div>
 
-        {playlists.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Music className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No playlists yet</p>
-            <p className="text-xs">Create your first playlist above</p>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -6,7 +6,6 @@ import { PlaylistManagerTab } from "@/components/tabs/PlaylistManagerTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { VolumeProvider } from "@/contexts/VolumeContext";
-import { useToast } from "@/hooks/use-toast";
 
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
@@ -33,7 +32,6 @@ export interface Playlist {
 }
 
 const Index = () => {
-  const { toast } = useToast();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -160,11 +158,6 @@ const Index = () => {
         await storageService.saveTracks(tracks);
       } catch (error) {
         console.error('Error saving tracks:', error);
-        toast({
-          title: "Storage Error",
-          description: "Failed to save tracks. Please check storage permissions.",
-          variant: "destructive"
-        });
       }
     };
     
@@ -287,10 +280,6 @@ const Index = () => {
       setPlaylists(prev => prev.map(p => 
         p.id === playlistId ? { ...p, tracks: [] } : p
       ));
-      toast({
-        title: "Playlist cleared",
-        description: `All tracks removed from "${playlist.name}".`,
-      });
     }
   };
 
@@ -523,11 +512,6 @@ const Index = () => {
       localStorage.removeItem('soundwave-tracks');
       localStorage.removeItem('soundwave-repeat-counts');
       localStorage.removeItem('soundwave-liked-tracks');
-      
-      toast({
-        title: "Music cleared",
-        description: "All tracks deleted. Your 3 playlists are kept empty.",
-      });
     } catch (error) {
       console.error('Error clearing music files:', error);
       

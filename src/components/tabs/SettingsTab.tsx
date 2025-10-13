@@ -166,10 +166,7 @@ export const SettingsTab = ({
               <div>
                 <p className="font-medium text-primary">Storage Used</p>
                 <p className="text-muted-foreground">
-                  ~{audioStats.estimatedSizeMB >= 1024 
-                    ? `${(audioStats.estimatedSizeMB / 1024).toFixed(1)} GB`
-                    : `${audioStats.estimatedSizeMB.toFixed(1)} MB`
-                  }
+                  ~{audioStats.estimatedSizeMB >= 1024 ? `${(audioStats.estimatedSizeMB / 1024).toFixed(1)} GB` : `${audioStats.estimatedSizeMB.toFixed(1)} MB`}
                 </p>
               </div>
             </div>
@@ -233,56 +230,9 @@ export const SettingsTab = ({
       </Card>
 
       {/* Music Management Dialog */}
-      <MusicManagementDialog 
-        isOpen={isMusicManagementOpen} 
-        onClose={() => setIsMusicManagementOpen(false)} 
-        tracks={tracks} 
-        onDeleteTrack={handleDeleteIndividualTrack}
-        likedTracks={likedTracks}
-        onToggleLike={onToggleLike}
-        onRenameTrack={onRenameTrack}
-      />
+      <MusicManagementDialog isOpen={isMusicManagementOpen} onClose={() => setIsMusicManagementOpen(false)} tracks={tracks} onDeleteTrack={handleDeleteIndividualTrack} likedTracks={likedTracks} onToggleLike={onToggleLike} onRenameTrack={onRenameTrack} />
 
       {/* App Information */}
-      <Card className="soundwave-card border-white/10">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Info className="h-5 w-5 text-primary" />
-            <span>App Information</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="font-medium">Version</p>
-              <p className="text-muted-foreground">1.0.0</p>
-            </div>
-            <div>
-              <p className="font-medium">Build</p>
-              <p className="text-muted-foreground">2024.01.15</p>
-            </div>
-            <div>
-              <p className="font-medium">Platform</p>
-              <p className="text-muted-foreground">Mobile (Capacitor)</p>
-            </div>
-            <div>
-              <p className="font-medium">Theme</p>
-              <p className="text-muted-foreground">SoundWave Dark</p>
-            </div>
-          </div>
-
-          <Separator className="bg-white/10" />
-
-          <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground">
-              SoundWave - Built with ❤️ using React & TypeScript
-            </p>
-            <div className="flex justify-center items-center space-x-2 text-xs text-primary">
-              <HardDrive className="h-3 w-3" />
-              <span>Offline-First Mobile App</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      
     </div>;
 };

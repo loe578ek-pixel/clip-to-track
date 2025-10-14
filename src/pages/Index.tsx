@@ -6,6 +6,8 @@ import { PlaylistManagerTab } from "@/components/tabs/PlaylistManagerTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { VolumeProvider } from "@/contexts/VolumeContext";
+import { supabase } from "@/integrations/supabase/client";
+import { syncUserProfile, getPlaylistNames, syncPlaylistNames, type UserProfile } from "@/lib/cloudSync";
 
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
@@ -45,6 +47,84 @@ const Index = () => {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set());
   const [likedTracksOrder, setLikedTracksOrder] = useState<string[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Auth state listener - sync account data from cloud
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user;
+      setUserId(user?.id ?? null);
+      
+      if (user) {
+        // Sync user profile from cloud
+        syncUserProfile(user.id).then(profile => {
+          if (profile) {
+            setUserProfile(profile);
+            console.log('User profile synced from cloud:', profile);
+          }
+        });
+        
+        // Sync playlist names from cloud (not contents)
+        getPlaylistNames(user.id).then(cloudPlaylists => {
+          if (cloudPlaylists.length > 0) {
+            console.log('Playlist names synced from cloud:', cloudPlaylists);
+            // Update local playlist names with cloud names, but keep local tracks
+            setPlaylists(prev => {
+              return prev.map((localPlaylist, index) => {
+                const cloudPlaylist = cloudPlaylists[index];
+                if (cloudPlaylist) {
+                  return {
+                    ...localPlaylist,
+                    name: cloudPlaylist.name
+                  };
+                }
+                return localPlaylist;
+              });
+            });
+          }
+        });
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user;
+      setUserId(user?.id ?? null);
+      
+      if (user) {
+        setTimeout(() => {
+          syncUserProfile(user.id).then(profile => {
+            if (profile) {
+              setUserProfile(profile);
+              console.log('User profile synced from cloud:', profile);
+            }
+          });
+          
+          getPlaylistNames(user.id).then(cloudPlaylists => {
+            if (cloudPlaylists.length > 0) {
+              console.log('Playlist names synced from cloud:', cloudPlaylists);
+              setPlaylists(prev => {
+                return prev.map((localPlaylist, index) => {
+                  const cloudPlaylist = cloudPlaylists[index];
+                  if (cloudPlaylist) {
+                    return {
+                      ...localPlaylist,
+                      name: cloudPlaylist.name
+                    };
+                  }
+                  return localPlaylist;
+                });
+              });
+            }
+          });
+        }, 0);
+      } else {
+        setUserProfile(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Load data from Capacitor native storage on mount
   useEffect(() => {
@@ -170,13 +250,22 @@ const Index = () => {
     const saveData = async () => {
       try {
         await storageService.savePlaylists(playlists);
+        
+        // Sync playlist names to cloud (if user is logged in)
+        if (userId && playlists.length > 0) {
+          const playlistNames = playlists.map((p, index) => ({
+            name: p.name,
+            position: index
+          }));
+          await syncPlaylistNames(userId, playlistNames);
+        }
       } catch (error) {
         console.error('Error saving playlists:', error);
       }
     };
     
     saveData();
-  }, [playlists, isDataLoaded]);
+  }, [playlists, isDataLoaded, userId]);
 
   useEffect(() => {
     if (!isDataLoaded) return; // Don't save during initial load

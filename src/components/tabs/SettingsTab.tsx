@@ -1,4 +1,4 @@
-import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Apple } from "lucide-react";
+import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Apple, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useVolume } from "@/contexts/VolumeContext";
 import { storageService } from "@/lib/storageService";
@@ -14,6 +15,7 @@ import { audioStorageService } from "@/lib/audioStorage";
 import { MusicManagementDialog } from "@/components/MusicManagementDialog";
 import { Track } from "@/pages/Index";
 import { supabase } from "@/integrations/supabase/client";
+import { syncUserProfile, type UserProfile } from "@/lib/cloudSync";
 import type { User } from "@supabase/supabase-js";
 interface SettingsTabProps {
   onClearAllData: () => void;
@@ -52,6 +54,7 @@ export const SettingsTab = ({
   const [isClearMusicDialogOpen, setIsClearMusicDialogOpen] = useState(false);
   const [isMusicManagementOpen, setIsMusicManagementOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
@@ -59,10 +62,24 @@ export const SettingsTab = ({
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        syncUserProfile(session.user.id).then(profile => {
+          setUserProfile(profile);
+        });
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        setTimeout(() => {
+          syncUserProfile(session.user.id).then(profile => {
+            setUserProfile(profile);
+          });
+        }, 0);
+      } else {
+        setUserProfile(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -216,13 +233,26 @@ export const SettingsTab = ({
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{user.user_metadata?.full_name || 'User'}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium truncate">{user.user_metadata?.full_name || 'User'}</p>
+                    {userProfile?.is_premium && (
+                      <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-black border-0">
+                        <Crown className="h-3 w-3 mr-1" />
+                        Premium
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                   {user.app_metadata?.provider && (
                     <div className="flex items-center space-x-1 mt-1">
                       {getProviderIcon(user.app_metadata.provider)}
                       <span className="text-xs text-muted-foreground capitalize">{user.app_metadata.provider}</span>
                     </div>
+                  )}
+                  {userProfile?.is_premium && userProfile.premium_type && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {userProfile.premium_type.charAt(0).toUpperCase() + userProfile.premium_type.slice(1)} Plan
+                    </p>
                   )}
                 </div>
               </div>

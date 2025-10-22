@@ -278,77 +278,91 @@ export const SettingsTab = ({
         <p className="text-muted-foreground">Customize your music experience</p>
       </div>
 
-      {/* Premium Section - Prominent at top */}
-      {user && (
-        <Card className="soundwave-card border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-background">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-amber-500">
-              <Crown className="h-6 w-6" />
-              <span>Premium Subscription</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {userProfile?.is_premium ? (
-              <div className="space-y-3">
-                <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-bold text-lg flex items-center gap-2 text-amber-500">
-                        <Crown className="w-5 h-5" />
-                        ✓ Premium Active
+      {/* Premium Section - ALWAYS VISIBLE at top */}
+      <Card className="soundwave-card border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-background shadow-xl shadow-amber-500/10">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-amber-500">
+            <Crown className="h-6 w-6" />
+            <span>Premium Subscription</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {user && userProfile?.is_premium ? (
+            <div className="space-y-3">
+              {(() => { console.log('Premium button rendered - User is PREMIUM'); return null; })()}
+              <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-bold text-lg flex items-center gap-2 text-amber-500">
+                      <Crown className="w-5 h-5" />
+                      ✓ Premium Active
+                    </p>
+                    {userProfile.premium_expires_at && (
+                      <p className="text-sm text-foreground mt-2">
+                        Premium until: {formatExpirationDate(userProfile.premium_expires_at)}
                       </p>
-                      {userProfile.premium_expires_at && (
-                        <p className="text-sm text-foreground mt-2">
-                          Premium until: {formatExpirationDate(userProfile.premium_expires_at)}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3 mt-3 text-sm">
-                        <span className="flex items-center gap-1">
-                          <Music className="w-4 h-4" />
-                          9 Playlists
-                        </span>
-                        <span>•</span>
-                        <span>No Ads</span>
-                      </div>
+                    )}
+                    <div className="flex items-center gap-3 mt-3 text-sm">
+                      <span className="flex items-center gap-1">
+                        <Music className="w-4 h-4" />
+                        9 Playlists
+                      </span>
+                      <span>•</span>
+                      <span>No Ads</span>
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={handleRestorePurchases}
-                  disabled={subscriptionLoading}
-                  className="w-full"
-                >
-                  Manage Subscription
-                </Button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-muted/50 space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Current: Free Plan</p>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• 3 playlists maximum</li>
-                    <li>• Ads displayed</li>
-                  </ul>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleRestorePurchases}
+                disabled={subscriptionLoading}
+                className="w-full"
+              >
+                Manage Subscription
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {(() => { console.log('Premium button rendered - User is FREE or NOT LOGGED IN'); return null; })()}
+              {!user && (
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 mb-3">
+                  <p className="text-sm text-foreground">
+                    💡 Sign in below to unlock Premium features
+                  </p>
                 </div>
-                <Button
-                  size="lg"
-                  className="w-full h-14 text-lg font-bold bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-600 text-black border-0 shadow-lg shadow-amber-500/20"
-                  onClick={() => setIsPricingModalOpen(true)}
-                  disabled={subscriptionLoading}
-                >
-                  <Crown className="w-6 h-6 mr-2" />
-                  👑 Upgrade to Premium
-                </Button>
-                <p className="text-sm text-center text-muted-foreground">
-                  Starting at €5/month • 9 playlists • Zero ads
-                </p>
+              )}
+              <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Current: Free Plan</p>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• 3 playlists maximum</li>
+                  <li>• Ads displayed</li>
+                </ul>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <Button
+                size="lg"
+                className="w-full h-16 text-xl font-bold bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-600 text-black border-2 border-amber-600 shadow-2xl shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-300"
+                onClick={() => {
+                  console.log('Premium button CLICKED');
+                  if (!user) {
+                    toast.info("Please sign in first to upgrade to Premium");
+                    return;
+                  }
+                  setIsPricingModalOpen(true);
+                }}
+                disabled={subscriptionLoading}
+              >
+                <Crown className="w-6 h-6 mr-2" />
+                👑 Upgrade to Premium - €5/month
+              </Button>
+              <p className="text-sm text-center text-muted-foreground font-medium">
+                Starting at €5/month • 9 playlists • Zero ads
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Account Section */}
       <Card className="soundwave-card border-white/10">

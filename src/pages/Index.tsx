@@ -11,6 +11,10 @@ import { syncUserProfile, getPlaylistNames, syncPlaylistNames, type UserProfile 
 
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
+import { initializeAds, showBannerAd, hideBannerAd, showInterstitialAd } from "@/lib/adService";
+import { checkSubscriptionStatus } from "@/lib/paymentService";
+import { UpgradeToPremiumDialog } from "@/components/UpgradeToPremiumDialog";
+import { toast } from "sonner";
 
 export interface Track {
   id: string;
@@ -49,6 +53,9 @@ const Index = () => {
   const [likedTracksOrder, setLikedTracksOrder] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
 
   // Auth state listener - sync account data from cloud
   useEffect(() => {
@@ -125,6 +132,33 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Initialize ads and manage premium status
+  useEffect(() => {
+    initializeAds();
+  }, []);
+
+  // Update premium status and manage ads
+  useEffect(() => {
+    const premium = userProfile?.is_premium || false;
+    setIsPremium(premium);
+    
+    // Show/hide ads based on premium status
+    if (premium) {
+      hideBannerAd();
+    } else {
+      showBannerAd(false);
+    }
+
+    // Check subscription expiration
+    if (userId) {
+      checkSubscriptionStatus(userId).then(status => {
+        if (status.expired) {
+          toast.error("Your premium subscription has expired");
+        }
+      });
+    }
+  }, [userProfile, userId]);
 
   // Load data from Capacitor native storage on mount
   useEffect(() => {
@@ -522,6 +556,15 @@ const Index = () => {
   };
 
   const handlePlayPlaylist = (playlistId: string) => {
+    // Check playlist limits
+    const playlistIndex = playlists.findIndex(p => p.id === playlistId);
+    const maxPlaylists = isPremium ? 9 : 3;
+    
+    if (playlistIndex >= maxPlaylists) {
+      setShowUpgradeDialog(true);
+      return;
+    }
+
     // Force stop current playback by briefly clearing track
     setCurrentTrack(null);
     setIsAutoPlaying(false);
@@ -535,8 +578,7 @@ const Index = () => {
         const firstTrack = tracks.find(t => t.id === playlist.tracks[0]);
         if (firstTrack) {
           setCurrentTrack(firstTrack);
-          setIsAutoPlaying(true); // Enable autoplay to start immediately
-          // Reset play count for the track
+          setIsAutoPlaying(true);
           setCurrentTrackPlayCount(prev => ({
             ...prev,
             [firstTrack.id]: 0
@@ -796,7 +838,15 @@ const Index = () => {
           </div>
         )}
         
-        
+        {/* Upgrade Dialog */}
+        <UpgradeToPremiumDialog
+          open={showUpgradeDialog}
+          onOpenChange={setShowUpgradeDialog}
+          onUpgrade={() => {
+            setShowUpgradeDialog(false);
+            setActiveTab('settings');
+          }}
+        />
       </div>
     </VolumeProvider>
   );

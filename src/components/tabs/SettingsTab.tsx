@@ -278,6 +278,78 @@ export const SettingsTab = ({
         <p className="text-muted-foreground">Customize your music experience</p>
       </div>
 
+      {/* Premium Section - Prominent at top */}
+      {user && (
+        <Card className="soundwave-card border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-background">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-amber-500">
+              <Crown className="h-6 w-6" />
+              <span>Premium Subscription</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {userProfile?.is_premium ? (
+              <div className="space-y-3">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-bold text-lg flex items-center gap-2 text-amber-500">
+                        <Crown className="w-5 h-5" />
+                        ✓ Premium Active
+                      </p>
+                      {userProfile.premium_expires_at && (
+                        <p className="text-sm text-foreground mt-2">
+                          Premium until: {formatExpirationDate(userProfile.premium_expires_at)}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 mt-3 text-sm">
+                        <span className="flex items-center gap-1">
+                          <Music className="w-4 h-4" />
+                          9 Playlists
+                        </span>
+                        <span>•</span>
+                        <span>No Ads</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleRestorePurchases}
+                  disabled={subscriptionLoading}
+                  className="w-full"
+                >
+                  Manage Subscription
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">Current: Free Plan</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• 3 playlists maximum</li>
+                    <li>• Ads displayed</li>
+                  </ul>
+                </div>
+                <Button
+                  size="lg"
+                  className="w-full h-14 text-lg font-bold bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-600 text-black border-0 shadow-lg shadow-amber-500/20"
+                  onClick={() => setIsPricingModalOpen(true)}
+                  disabled={subscriptionLoading}
+                >
+                  <Crown className="w-6 h-6 mr-2" />
+                  👑 Upgrade to Premium
+                </Button>
+                <p className="text-sm text-center text-muted-foreground">
+                  Starting at €5/month • 9 playlists • Zero ads
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Account Section */}
       <Card className="soundwave-card border-white/10">
         <CardHeader>
@@ -322,62 +394,6 @@ export const SettingsTab = ({
                     </p>
                    )}
                  </div>
-               </div>
-
-               {/* Premium Management Section */}
-               <div className="space-y-3 border-t pt-4">
-                 {userProfile?.is_premium ? (
-                   <div className="space-y-3">
-                     <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/20">
-                       <div className="flex items-start justify-between">
-                         <div>
-                           <p className="font-semibold flex items-center gap-2 text-primary">
-                             <Crown className="w-4 h-4" />
-                             Premium Active
-                           </p>
-                           {userProfile.premium_expires_at && (
-                             <p className="text-sm text-muted-foreground mt-1">
-                               Expires: {formatExpirationDate(userProfile.premium_expires_at)}
-                             </p>
-                           )}
-                           <p className="text-xs text-muted-foreground mt-1">
-                             Enjoy 9 playlists and ad-free experience
-                           </p>
-                         </div>
-                       </div>
-                     </div>
-                     <Button
-                       variant="outline"
-                       size="sm"
-                       onClick={handleRestorePurchases}
-                       disabled={subscriptionLoading}
-                       className="w-full"
-                     >
-                       Restore Purchases
-                     </Button>
-                   </div>
-                 ) : (
-                   <div className="space-y-3">
-                     <div className="p-4 rounded-lg bg-secondary/30 space-y-2">
-                       <p className="text-sm font-medium">Free Plan</p>
-                       <ul className="text-xs text-muted-foreground space-y-1">
-                         <li>• 3 playlists maximum</li>
-                         <li>• Ads displayed</li>
-                       </ul>
-                     </div>
-                     <Button
-                       className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black border-0"
-                       onClick={() => setIsPricingModalOpen(true)}
-                       disabled={subscriptionLoading}
-                     >
-                       <Crown className="w-4 h-4 mr-2" />
-                       Upgrade to Premium
-                     </Button>
-                     <p className="text-xs text-center text-muted-foreground">
-                       Starting at €5/month • 9 playlists • No ads
-                     </p>
-                   </div>
-                 )}
                </div>
                
                <Dialog open={isSignOutDialogOpen} onOpenChange={setIsSignOutDialogOpen}>

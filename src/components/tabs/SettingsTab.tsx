@@ -341,8 +341,7 @@ export const SettingsTab = ({
                 </ul>
               </div>
               <Button
-                size="lg"
-                className="w-full h-16 text-xl font-bold bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-600 text-black border-2 border-amber-600 shadow-2xl shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-300"
+                className="w-full h-auto py-3 px-4 text-sm sm:text-base font-bold bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-600 text-black border-2 border-amber-600 shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-300"
                 onClick={() => {
                   console.log('Premium button CLICKED');
                   if (!user) {
@@ -353,8 +352,8 @@ export const SettingsTab = ({
                 }}
                 disabled={subscriptionLoading}
               >
-                <Crown className="w-6 h-6 mr-2" />
-                👑 Upgrade to Premium - €5/month
+                <Crown className="w-5 h-5 mr-2 flex-shrink-0" />
+                <span className="break-words">👑 Upgrade to Premium</span>
               </Button>
               <p className="text-sm text-center text-muted-foreground font-medium">
                 Starting at €5/month • 9 playlists • Zero ads

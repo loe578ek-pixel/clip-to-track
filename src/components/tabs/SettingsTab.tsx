@@ -17,9 +17,6 @@ import { Track } from "@/pages/Index";
 import { supabase } from "@/integrations/supabase/client";
 import { syncUserProfile, type UserProfile } from "@/lib/cloudSync";
 import type { User } from "@supabase/supabase-js";
-import { PricingModal } from "@/components/PricingModal";
-import { purchaseSubscription, restorePurchases, checkSubscriptionStatus } from "@/lib/paymentService";
-import { toast } from "sonner";
 interface SettingsTabProps {
   onClearAllData: () => void;
   onClearMusicFiles?: () => void;
@@ -60,8 +57,6 @@ export const SettingsTab = ({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
-  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
-  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
 
   // Check authentication state
   useEffect(() => {
@@ -181,68 +176,6 @@ export const SettingsTab = ({
     }
   };
 
-  const handleSubscribe = async (type: 'monthly' | 'yearly') => {
-    setSubscriptionLoading(true);
-    try {
-      const result = await purchaseSubscription(type);
-      
-      if (result.success) {
-        toast.success("Subscription activated! Enjoy Premium features.");
-        setIsPricingModalOpen(false);
-        
-        // Refresh user profile
-        if (user) {
-          const profile = await syncUserProfile(user.id);
-          if (profile) {
-            setUserProfile(profile);
-          }
-        }
-      } else {
-        toast.error(result.error || "Failed to complete purchase");
-      }
-    } catch (error) {
-      toast.error("Failed to process subscription");
-      console.error(error);
-    } finally {
-      setSubscriptionLoading(false);
-    }
-  };
-
-  const handleRestorePurchases = async () => {
-    setSubscriptionLoading(true);
-    try {
-      const result = await restorePurchases();
-      
-      if (result.success) {
-        toast.success("Purchases restored successfully!");
-        
-        // Refresh user profile
-        if (user) {
-          const profile = await syncUserProfile(user.id);
-          if (profile) {
-            setUserProfile(profile);
-          }
-        }
-      } else {
-        toast.error(result.error || "No purchases found to restore");
-      }
-    } catch (error) {
-      toast.error("Failed to restore purchases");
-      console.error(error);
-    } finally {
-      setSubscriptionLoading(false);
-    }
-  };
-
-  const formatExpirationDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
   const getProviderIcon = (provider?: string) => {
     if (provider === 'google') {
       return (
@@ -277,91 +210,6 @@ export const SettingsTab = ({
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-muted-foreground">Customize your music experience</p>
       </div>
-
-      {/* Premium Section - ALWAYS VISIBLE at top */}
-      <Card className="soundwave-card border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-yellow-500/5 to-background shadow-xl shadow-amber-500/10">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2 text-amber-500">
-            <Crown className="h-6 w-6" />
-            <span>Premium Subscription</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {user && userProfile?.is_premium ? (
-            <div className="space-y-3">
-              {(() => { console.log('Premium button rendered - User is PREMIUM'); return null; })()}
-              <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-bold text-lg flex items-center gap-2 text-amber-500">
-                      <Crown className="w-5 h-5" />
-                      ✓ Premium Active
-                    </p>
-                    {userProfile.premium_expires_at && (
-                      <p className="text-sm text-foreground mt-2">
-                        Premium until: {formatExpirationDate(userProfile.premium_expires_at)}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3 mt-3 text-sm">
-                      <span className="flex items-center gap-1">
-                        <Music className="w-4 h-4" />
-                        9 Playlists
-                      </span>
-                      <span>•</span>
-                      <span>No Ads</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={handleRestorePurchases}
-                disabled={subscriptionLoading}
-                className="w-full"
-              >
-                Manage Subscription
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {(() => { console.log('Premium button rendered - User is FREE or NOT LOGGED IN'); return null; })()}
-              {!user && (
-                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 mb-3">
-                  <p className="text-sm text-foreground">
-                    💡 Sign in below to unlock Premium features
-                  </p>
-                </div>
-              )}
-              <div className="p-4 rounded-lg bg-muted/50 space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Current: Free Plan</p>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• 3 playlists maximum</li>
-                  <li>• Ads displayed</li>
-                </ul>
-              </div>
-              <Button
-                className="w-full h-auto py-3 px-4 text-sm sm:text-base font-bold bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:via-yellow-500 hover:to-amber-600 text-black border-2 border-amber-600 shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-300"
-                onClick={() => {
-                  console.log('Premium button CLICKED');
-                  if (!user) {
-                    toast.info("Please sign in first to upgrade to Premium");
-                    return;
-                  }
-                  setIsPricingModalOpen(true);
-                }}
-                disabled={subscriptionLoading}
-              >
-                <Crown className="w-5 h-5 mr-2 flex-shrink-0" />
-                <span className="break-words">👑 Upgrade to Premium</span>
-              </Button>
-              <p className="text-sm text-center text-muted-foreground font-medium">
-                Starting at €5/month • 9 playlists • Zero ads
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Account Section */}
       <Card className="soundwave-card border-white/10">
@@ -405,11 +253,11 @@ export const SettingsTab = ({
                     <p className="text-xs text-muted-foreground mt-1">
                       {userProfile.premium_type.charAt(0).toUpperCase() + userProfile.premium_type.slice(1)} Plan
                     </p>
-                   )}
-                 </div>
-               </div>
-               
-               <Dialog open={isSignOutDialogOpen} onOpenChange={setIsSignOutDialogOpen}>
+                  )}
+                </div>
+              </div>
+              
+              <Dialog open={isSignOutDialogOpen} onOpenChange={setIsSignOutDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">
                     <LogOut className="h-4 w-4 mr-2" />
@@ -598,13 +446,6 @@ export const SettingsTab = ({
 
       {/* Music Management Dialog */}
       <MusicManagementDialog isOpen={isMusicManagementOpen} onClose={() => setIsMusicManagementOpen(false)} tracks={tracks} onDeleteTrack={handleDeleteIndividualTrack} likedTracks={likedTracks} onToggleLike={onToggleLike} onRenameTrack={onRenameTrack} />
-
-      {/* Pricing Modal */}
-      <PricingModal
-        open={isPricingModalOpen}
-        onOpenChange={setIsPricingModalOpen}
-        onSubscribe={handleSubscribe}
-      />
 
       {/* App Information */}
       

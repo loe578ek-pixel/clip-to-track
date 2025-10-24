@@ -7,16 +7,49 @@ import { SplashScreen } from '@capacitor/splash-screen'
 
 // Initialize Capacitor for mobile
 const initializeApp = async () => {
-  if (Capacitor.isNativePlatform()) {
-    // Set status bar style for mobile
-    await StatusBar.setStyle({ style: Style.Dark })
+  try {
+    console.log('🚀 Starting app initialization...');
+    console.log('Platform:', Capacitor.getPlatform());
+    console.log('Is Native:', Capacitor.isNativePlatform());
     
-    // Hide splash screen after initialization
-    await SplashScreen.hide()
+    if (Capacitor.isNativePlatform()) {
+      console.log('📱 Initializing native features...');
+      
+      // Set status bar style for mobile
+      await StatusBar.setStyle({ style: Style.Dark });
+      console.log('✅ Status bar configured');
+    }
+    
+    // Render the app
+    console.log('🎨 Rendering React app...');
+    const rootElement = document.getElementById("root");
+    if (!rootElement) {
+      console.error('❌ Root element not found!');
+      throw new Error('Root element not found');
+    }
+    
+    createRoot(rootElement).render(<App />);
+    console.log('✅ React app rendered successfully');
+    
+    // Hide splash screen after React is ready
+    if (Capacitor.isNativePlatform()) {
+      setTimeout(async () => {
+        await SplashScreen.hide();
+        console.log('✅ Splash screen hidden');
+      }, 100);
+    }
+  } catch (error) {
+    console.error('❌ App initialization error:', error);
+    // Show error on screen for debugging
+    document.body.innerHTML = `
+      <div style="padding: 20px; color: white; background: #0F0F11; font-family: monospace;">
+        <h1>Initialization Error</h1>
+        <pre>${error instanceof Error ? error.message : 'Unknown error'}</pre>
+        <pre>${error instanceof Error ? error.stack : ''}</pre>
+      </div>
+    `;
   }
 }
 
 // Initialize the app
-initializeApp()
-
-createRoot(document.getElementById("root")!).render(<App />);
+initializeApp();

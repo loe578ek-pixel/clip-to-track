@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.cliptotrack',
+  appId: 'app.lovable.4f9cba36664749ebbd51be637b97cf76',
   appName: 'clip-to-track',
   webDir: 'dist',
   server: {

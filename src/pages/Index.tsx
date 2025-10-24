@@ -6,11 +6,20 @@ import { PlaylistManagerTab } from "@/components/tabs/PlaylistManagerTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { VolumeProvider } from "@/contexts/VolumeContext";
-import { supabase } from "@/integrations/supabase/client";
-import { syncUserProfile, getPlaylistNames, syncPlaylistNames, type UserProfile } from "@/lib/cloudSync";
 
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
+
+// Type definition
+type UserProfile = {
+  id: string;
+  display_name?: string;
+  avatar_url?: string;
+  email?: string;
+  is_premium?: boolean;
+  premium_type?: string;
+  premium_expires_at?: string;
+} | null;
 
 export interface Track {
   id: string;
@@ -52,8 +61,19 @@ const Index = () => {
 
   // Auth state listener - sync account data from cloud (non-blocking)
   useEffect(() => {
+    let authSubscription: any = null;
+    
     const initAuth = async () => {
       try {
+        // Dynamically import Supabase modules
+        const supabaseModule = await import("@/integrations/supabase/client");
+        const cloudSyncModule = await import("@/lib/cloudSync");
+        const supabase = supabaseModule.supabase;
+        const syncUserProfile = cloudSyncModule.syncUserProfile;
+        const getPlaylistNames = cloudSyncModule.getPlaylistNames;
+        
+        console.log("✅ Supabase loaded, initializing auth...");
+
         const { data: { session } } = await Promise.race([
           supabase.auth.getSession(),
           new Promise((_, reject) => setTimeout(() => reject(new Error('Auth timeout')), 5000))
@@ -64,15 +84,15 @@ const Index = () => {
         
         if (user) {
           // Sync user profile from cloud (non-blocking)
-          syncUserProfile(user.id).then(profile => {
+          syncUserProfile(user.id).then((profile: any) => {
             if (profile) {
               setUserProfile(profile);
               console.log('User profile synced from cloud:', profile);
             }
-          }).catch(err => console.log('Profile sync skipped:', err.message));
+          }).catch((err: any) => console.log('Profile sync skipped:', err.message));
           
           // Sync playlist names from cloud (non-blocking)
-          getPlaylistNames(user.id).then(cloudPlaylists => {
+          getPlaylistNames(user.id).then((cloudPlaylists: any) => {
             if (cloudPlaylists.length > 0) {
               console.log('Playlist names synced from cloud:', cloudPlaylists);
               setPlaylists(prev => {
@@ -88,53 +108,60 @@ const Index = () => {
                 });
               });
             }
-          }).catch(err => console.log('Playlist sync skipped:', err.message));
+          }).catch((err: any) => console.log('Playlist sync skipped:', err.message));
         }
+
+        // Set up auth state listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+          const user = session?.user;
+          setUserId(user?.id ?? null);
+          
+          if (user) {
+            setTimeout(() => {
+              syncUserProfile(user.id).then((profile: any) => {
+                if (profile) {
+                  setUserProfile(profile);
+                  console.log('User profile synced from cloud:', profile);
+                }
+              }).catch((err: any) => console.log('Profile sync error:', err));
+              
+              getPlaylistNames(user.id).then((cloudPlaylists: any) => {
+                if (cloudPlaylists.length > 0) {
+                  console.log('Playlist names synced from cloud:', cloudPlaylists);
+                  setPlaylists(prev => {
+                    return prev.map((localPlaylist, index) => {
+                      const cloudPlaylist = cloudPlaylists[index];
+                      if (cloudPlaylist) {
+                        return {
+                          ...localPlaylist,
+                          name: cloudPlaylist.name
+                        };
+                      }
+                      return localPlaylist;
+                    });
+                  });
+                }
+              }).catch((err: any) => console.log('Playlist sync error:', err));
+            }, 0);
+          } else {
+            setUserProfile(null);
+          }
+        });
+        
+        authSubscription = subscription;
       } catch (error) {
-        console.log('Auth initialization skipped:', error);
+        console.log('⚠️ Auth initialization skipped - app continues in offline mode:', error);
         // Continue app loading even if auth fails
       }
     };
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const user = session?.user;
-      setUserId(user?.id ?? null);
-      
-      if (user) {
-        setTimeout(() => {
-          syncUserProfile(user.id).then(profile => {
-            if (profile) {
-              setUserProfile(profile);
-              console.log('User profile synced from cloud:', profile);
-            }
-          }).catch(err => console.log('Profile sync error:', err));
-          
-          getPlaylistNames(user.id).then(cloudPlaylists => {
-            if (cloudPlaylists.length > 0) {
-              console.log('Playlist names synced from cloud:', cloudPlaylists);
-              setPlaylists(prev => {
-                return prev.map((localPlaylist, index) => {
-                  const cloudPlaylist = cloudPlaylists[index];
-                  if (cloudPlaylist) {
-                    return {
-                      ...localPlaylist,
-                      name: cloudPlaylist.name
-                    };
-                  }
-                  return localPlaylist;
-                });
-              });
-            }
-          }).catch(err => console.log('Playlist sync error:', err));
-        }, 0);
-      } else {
-        setUserProfile(null);
+    return () => {
+      if (authSubscription) {
+        authSubscription.unsubscribe();
       }
-    });
-
-    return () => subscription.unsubscribe();
+    };
   }, []);
 
   // Load data from Capacitor native storage on mount
@@ -264,11 +291,16 @@ const Index = () => {
         
         // Sync playlist names to cloud (if user is logged in)
         if (userId && playlists.length > 0) {
-          const playlistNames = playlists.map((p, index) => ({
-            name: p.name,
-            position: index
-          }));
-          await syncPlaylistNames(userId, playlistNames);
+          try {
+            const cloudSyncModule = await import("@/lib/cloudSync");
+            const playlistNames = playlists.map((p, index) => ({
+              name: p.name,
+              position: index
+            }));
+            await cloudSyncModule.syncPlaylistNames(userId, playlistNames);
+          } catch (error) {
+            console.log('Cloud sync skipped:', error);
+          }
         }
       } catch (error) {
         console.error('Error saving playlists:', error);

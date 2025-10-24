@@ -56,8 +56,9 @@ const Index = () => {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set());
   const [likedTracksOrder, setLikedTracksOrder] = useState<string[]>([]);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAppReady, setIsAppReady] = useState(false);
 
   // Auth state listener - sync account data from cloud (non-blocking)
   useEffect(() => {
@@ -210,6 +211,8 @@ const Index = () => {
         console.log('Storage info:', storageInfo);
         
         setIsDataLoaded(true);
+        setIsAppReady(true);
+        console.log('✅ App is ready to use');
       } catch (error) {
         console.error('Error loading app data:', error);
         // Fallback to localStorage if native storage fails
@@ -817,30 +820,39 @@ const Index = () => {
 
   return (
     <VolumeProvider>
-      <div className="h-full max-h-screen bg-background text-foreground overflow-hidden" style={{ paddingBottom: '4.5rem' }}>
-        <div className="h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20">
-          {renderActiveTab()}
-        </div>
-        
-        {/* Bottom Navigation - Always Visible */}
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-        
-        {/* Audio Player - Above Bottom Navigation */}
-        {currentTrack && (
-          <div className="fixed bottom-16 left-0 right-0 z-40">
-            <MusicPlayer 
-              track={currentTrack} 
-              onNext={handleNextTrack} 
-              onPrevious={handlePreviousTrack} 
-              onEnded={handleTrackEnded}
-              autoPlay={isAutoPlaying}
-              playlistName={currentPlaylistName}
-            />
+      {!isAppReady ? (
+        <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground">
+          <div className="animate-pulse mb-4">
+            <svg className="w-16 h-16 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
           </div>
-        )}
-        
-        
-      </div>
+          <p className="text-lg text-muted-foreground">Loading SoundWave...</p>
+        </div>
+      ) : (
+        <div className="h-full max-h-screen bg-background text-foreground overflow-hidden" style={{ paddingBottom: '4.5rem' }}>
+          <div className="h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20">
+            {renderActiveTab()}
+          </div>
+          
+          {/* Bottom Navigation - Always Visible */}
+          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+          
+          {/* Audio Player - Above Bottom Navigation */}
+          {currentTrack && (
+            <div className="fixed bottom-16 left-0 right-0 z-40">
+              <MusicPlayer 
+                track={currentTrack} 
+                onNext={handleNextTrack} 
+                onPrevious={handlePreviousTrack} 
+                onEnded={handleTrackEnded}
+                autoPlay={isAutoPlaying}
+                playlistName={currentPlaylistName}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </VolumeProvider>
   );
 };

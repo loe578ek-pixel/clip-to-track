@@ -63,165 +63,63 @@ const Index = () => {
   // Auth disabled temporarily for Android debugging
   // Will re-enable once app loads properly
 
-  // Load data from Capacitor native storage on mount
+  // Load data - simplified for Android debugging
   useEffect(() => {
     const loadAppData = async () => {
+      console.log('🚀 Starting app load...');
       try {
-        console.log('Loading app data from native storage...');
-        
-        // First, try to migrate from localStorage if needed
-        await storageService.migrateFromLocalStorage();
-        
-        // Load all data from native storage
-        const [loadedTracks, loadedPlaylists, loadedRepeatCounts, loadedLikedTracks] = await Promise.all([
-          storageService.loadTracks(),
-          storageService.loadPlaylists(),
-          storageService.loadRepeatCounts(),
-          storageService.loadLikedTracks()
-        ]);
-        
-        // Update audio URLs to use local storage paths for offline access
-        const tracksWithLocalPaths = await Promise.all(
-          loadedTracks.map(async (track) => {
-            if (track.localFilePath) {
-              try {
-                const localAudioUrl = await storageService.getAudioFile(track.localFilePath);
-                return { ...track, audioUrl: localAudioUrl };
-              } catch (error) {
-                console.warn(`Could not load local audio for track ${track.id}:`, error);
-                return track;
-              }
-            }
-            return track;
-          })
-        );
-        
-        setTracks(tracksWithLocalPaths);
-        setPlaylists(loadedPlaylists);
-        setTrackRepeatCounts(loadedRepeatCounts);
-        setLikedTracks(new Set(loadedLikedTracks));
-        setLikedTracksOrder(loadedLikedTracks); // Initialize order from loaded liked tracks
-        
-        console.log(`Loaded ${tracksWithLocalPaths.length} tracks, ${loadedPlaylists.length} playlists`);
-        
-        // Get storage info for debugging
-        const storageInfo = await storageService.getStorageInfo();
-        console.log('Storage info:', storageInfo);
-        
-        setIsDataLoaded(true);
-        console.log('✅ App is ready to use');
-      } catch (error) {
-        console.error('Error loading app data:', error);
-        // Fallback to localStorage if native storage fails
-        console.log('Falling back to localStorage...');
-        
+        // Try localStorage first (simpler)
         const savedTracks = localStorage.getItem('soundwave-tracks');
         const savedPlaylists = localStorage.getItem('soundwave-playlists');
-        const savedRepeatCounts = localStorage.getItem('soundwave-repeat-counts');
-        const savedLikedTracks = localStorage.getItem('soundwave-liked-tracks');
         
         if (savedTracks) {
-          try {
-            const parsedTracks = JSON.parse(savedTracks).map((track: any) => ({
-              ...track,
-              createdAt: new Date(track.createdAt)
-            }));
-            setTracks(parsedTracks);
-          } catch (error) {
-            console.error('Error loading tracks from localStorage:', error);
-          }
+          const parsedTracks = JSON.parse(savedTracks).map((track: any) => ({
+            ...track,
+            createdAt: new Date(track.createdAt)
+          }));
+          setTracks(parsedTracks);
+          console.log(`✅ Loaded ${parsedTracks.length} tracks`);
         }
         
         if (savedPlaylists) {
-          try {
-            const parsedPlaylists = JSON.parse(savedPlaylists).map((playlist: any) => ({
-              ...playlist,
-              createdAt: new Date(playlist.createdAt)
-            }));
-            setPlaylists(parsedPlaylists);
-          } catch (error) {
-            console.error('Error loading playlists from localStorage:', error);
-          }
-        }
-        
-        if (savedRepeatCounts) {
-          try {
-            setTrackRepeatCounts(JSON.parse(savedRepeatCounts));
-          } catch (error) {
-            console.error('Error loading repeat counts from localStorage:', error);
-          }
-        }
-        
-        if (savedLikedTracks) {
-          try {
-            setLikedTracks(new Set(JSON.parse(savedLikedTracks)));
-          } catch (error) {
-            console.error('Error loading liked tracks from localStorage:', error);
-          }
+          const parsedPlaylists = JSON.parse(savedPlaylists).map((playlist: any) => ({
+            ...playlist,
+            createdAt: new Date(playlist.createdAt)
+          }));
+          setPlaylists(parsedPlaylists);
+          console.log(`✅ Loaded ${parsedPlaylists.length} playlists`);
         }
         
         setIsDataLoaded(true);
+        console.log('✅ App ready!');
+      } catch (error) {
+        console.error('❌ Load error:', error);
+        setIsDataLoaded(true); // Continue anyway
       }
     };
     
     loadAppData();
   }, []);
 
-  // Save to native storage whenever data changes
+  // Save to localStorage (simplified for Android)
   useEffect(() => {
-    if (!isDataLoaded) return; // Don't save during initial load
-    
-    const saveData = async () => {
-      try {
-        await storageService.saveTracks(tracks);
-      } catch (error) {
-        console.error('Error saving tracks:', error);
-      }
-    };
-    
-    saveData();
+    if (!isDataLoaded) return;
+    localStorage.setItem('soundwave-tracks', JSON.stringify(tracks));
   }, [tracks, isDataLoaded]);
 
   useEffect(() => {
-    if (!isDataLoaded) return; // Don't save during initial load
-    
-    const saveData = async () => {
-      try {
-        await storageService.savePlaylists(playlists);
-      } catch (error) {
-        console.error('Error saving playlists:', error);
-      }
-    };
-    
-    saveData();
+    if (!isDataLoaded) return;
+    localStorage.setItem('soundwave-playlists', JSON.stringify(playlists));
   }, [playlists, isDataLoaded]);
 
   useEffect(() => {
-    if (!isDataLoaded) return; // Don't save during initial load
-    
-    const saveData = async () => {
-      try {
-        await storageService.saveRepeatCounts(trackRepeatCounts);
-      } catch (error) {
-        console.error('Error saving repeat counts:', error);
-      }
-    };
-    
-    saveData();
+    if (!isDataLoaded) return;
+    localStorage.setItem('soundwave-repeat-counts', JSON.stringify(trackRepeatCounts));
   }, [trackRepeatCounts, isDataLoaded]);
 
   useEffect(() => {
-    if (!isDataLoaded) return; // Don't save during initial load
-    
-    const saveData = async () => {
-      try {
-        await storageService.saveLikedTracks(Array.from(likedTracks));
-      } catch (error) {
-        console.error('Error saving liked tracks:', error);
-      }
-    };
-    
-    saveData();
+    if (!isDataLoaded) return;
+    localStorage.setItem('soundwave-liked-tracks', JSON.stringify(Array.from(likedTracks)));
   }, [likedTracks, isDataLoaded]);
 
   const handleTrackExtracted = (track: Track) => {

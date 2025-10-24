@@ -22,19 +22,17 @@
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
   </head>
 
-  <body>
-    <div id="root"></div>
-    <!-- Android debug - visible before React loads -->
-    <div id="loading-test" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; color: black; display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 9999;">
-      Loading App...
+  <body style="margin: 0; padding: 0;">
+    <!-- ANDROID DEBUG: Pure HTML test (no React) -->
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: red; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: Arial; font-size: 32px; font-weight: bold; z-index: 99999;">
+      <div>HTML WORKS!</div>
+      <div style="font-size: 16px; margin-top: 20px;">If you see this, WebView is loading</div>
     </div>
-    <script>
-      // Hide loading test when React mounts
-      setTimeout(() => {
-        const test = document.getElementById('loading-test');
-        if (test) test.style.display = 'none';
-      }, 100);
-    </script>
+    
+    <div id="root"></div>
+    
+    <!--
     <script type="module" src="./src/main.tsx"></script>
+    -->
   </body>
 </html>

@@ -23,16 +23,28 @@
   </head>
 
   <body style="margin: 0; padding: 0;">
-    <!-- ANDROID DEBUG: Pure HTML test (no React) -->
-    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: red; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: Arial; font-size: 32px; font-weight: bold; z-index: 99999;">
-      <div>HTML WORKS!</div>
-      <div style="font-size: 16px; margin-top: 20px;">If you see this, WebView is loading</div>
-    </div>
-    
     <div id="root"></div>
     
-    <!--
+    <!-- Error display for debugging -->
+    <div id="error-display" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: orange; color: black; padding: 20px; font-family: monospace; font-size: 14px; overflow: auto; z-index: 99999;"></div>
+    
+    <script>
+      // Catch all errors
+      window.addEventListener('error', function(e) {
+        const errorDiv = document.getElementById('error-display');
+        errorDiv.style.display = 'block';
+        errorDiv.innerHTML += '<div style="margin-bottom: 10px; border-bottom: 1px solid black; padding-bottom: 10px;"><strong>ERROR:</strong> ' + e.message + '<br><strong>File:</strong> ' + e.filename + '<br><strong>Line:</strong> ' + e.lineno + '</div>';
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        const errorDiv = document.getElementById('error-display');
+        errorDiv.style.display = 'block';
+        errorDiv.innerHTML += '<div style="margin-bottom: 10px; border-bottom: 1px solid black; padding-bottom: 10px;"><strong>PROMISE ERROR:</strong> ' + e.reason + '</div>';
+      });
+      
+      console.log('🚀 Starting to load React...');
+    </script>
+    
     <script type="module" src="./src/main.tsx"></script>
-    -->
   </body>
 </html>

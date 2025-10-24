@@ -26,18 +26,28 @@ class NativeMediaControlsService {
   private isPlaying = false;
   private isNative = false;
   private listenersSet = false;
+  private initialized = false;
 
   constructor() {
     this.isNative = Capacitor.isNativePlatform();
-    if (this.isNative) {
-      this.setupNativeControls();
+    // Don't initialize immediately - wait for first use
+  }
+
+  private async ensureInitialized() {
+    if (this.initialized || !this.isNative) return;
+    this.initialized = true;
+    
+    try {
+      await this.setupNativeControls();
+    } catch (error) {
+      console.log('⚠️ Native media controls init skipped:', error);
     }
   }
 
-  private setupNativeControls() {
+  private async setupNativeControls() {
     console.log('Native media controls initialized');
     if (!this.listenersSet) {
-      this.setupActionHandlers();
+      await this.setupActionHandlers();
       this.listenersSet = true;
     }
   }
@@ -48,6 +58,7 @@ class NativeMediaControlsService {
 
   async updateTrack(track: NativeMediaTrack, playlistName?: string) {
     if (!this.isNative) return;
+    await this.ensureInitialized();
 
     this.currentTrack = track;
 
@@ -114,6 +125,7 @@ class NativeMediaControlsService {
 
   async updatePlaybackState(isPlaying: boolean, currentTime: number) {
     if (!this.isNative || !this.currentTrack) return;
+    await this.ensureInitialized();
 
     this.isPlaying = isPlaying;
 

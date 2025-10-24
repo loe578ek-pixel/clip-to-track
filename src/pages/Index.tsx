@@ -58,7 +58,7 @@ const Index = () => {
   const [likedTracksOrder, setLikedTracksOrder] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [isAppReady, setIsAppReady] = useState(false);
+  const [isAppReady, setIsAppReady] = useState(true);
 
   // Auth state listener - sync account data from cloud (non-blocking)
   useEffect(() => {
@@ -211,7 +211,6 @@ const Index = () => {
         console.log('Storage info:', storageInfo);
         
         setIsDataLoaded(true);
-        setIsAppReady(true);
         console.log('✅ App is ready to use');
       } catch (error) {
         console.error('Error loading app data:', error);

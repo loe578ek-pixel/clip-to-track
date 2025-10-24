@@ -22,12 +22,17 @@ const initializeApp = async () => {
     
     // Render the app
     console.log('🎨 Rendering React app...');
+    console.log('Document ready state:', document.readyState);
+    console.log('Window location:', window.location.href);
+    
     const rootElement = document.getElementById("root");
     if (!rootElement) {
       console.error('❌ Root element not found!');
+      console.error('Document body HTML:', document.body.innerHTML);
       throw new Error('Root element not found');
     }
     
+    console.log('✅ Root element found, creating React root...');
     createRoot(rootElement).render(<App />);
     console.log('✅ React app rendered successfully');
     

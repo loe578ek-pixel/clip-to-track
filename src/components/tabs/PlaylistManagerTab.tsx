@@ -27,12 +27,11 @@ import {
 interface PlaylistManagerTabProps {
   tracks: Track[];
   playlists: Playlist[];
-  trackRepeatCounts: Record<string, number>;
   onRenamePlaylist: (playlistId: string, newName: string) => void;
   onClearPlaylistTracks: (playlistId: string) => void;
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
   onRemoveFromPlaylist: (playlistId: string, trackId: string) => void;
-  onUpdateTrackRepeat: (trackId: string, repeatCount: number) => void;
+  onUpdatePlaylistTrackRepeat: (playlistId: string, trackId: string, repeatCount: number) => void;
   onPlayPlaylist: (playlistId: string) => void;
   onPlayTrack: (track: Track) => void;
   likedTracks: Set<string>;
@@ -43,12 +42,11 @@ interface PlaylistManagerTabProps {
 export const PlaylistManagerTab = ({
   tracks,
   playlists,
-  trackRepeatCounts,
   onRenamePlaylist,
   onClearPlaylistTracks,
   onAddToPlaylist,
   onRemoveFromPlaylist,
-  onUpdateTrackRepeat,
+  onUpdatePlaylistTrackRepeat,
   onPlayPlaylist,
   onPlayTrack,
   likedTracks,
@@ -118,7 +116,7 @@ export const PlaylistManagerTab = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto pt-4 space-y-6">
+    <div className="flex-1 overflow-auto space-y-6" style={{ paddingTop: 'max(env(safe-area-inset-top), 16px)', paddingBottom: '6rem' }}>
       {/* Header */}
       <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4 pl-4">
         <h1 className="text-3xl font-bold mb-2">Playlist Manager</h1>
@@ -229,10 +227,10 @@ export const PlaylistManagerTab = ({
                               track={track}
                               index={index}
                               isLiked={likedTracks.has(track.id)}
-                              repeatCount={trackRepeatCounts[track.id] || 1}
+                              repeatCount={playlist.repeatCounts?.[track.id] || 1}
                               onPlayTrack={onPlayTrack}
                               onToggleLike={onToggleLike}
-                              onUpdateTrackRepeat={onUpdateTrackRepeat}
+                              onUpdateTrackRepeat={(trackId, count) => onUpdatePlaylistTrackRepeat(playlist.id, trackId, count)}
                               onRemoveFromPlaylist={() => onRemoveFromPlaylist(playlist.id, track.id)}
                               formatTime={formatTime}
                             />

@@ -40,6 +40,7 @@ export interface Playlist {
   tracks: string[];
   createdAt: Date;
   isPermanent?: boolean;
+  repeatCounts?: Record<string, number>; // Independent repeat counts per playlist
 }
 
 const Index = () => {
@@ -142,9 +143,9 @@ const Index = () => {
   useEffect(() => {
     if (isDataLoaded && playlists.length < 3) {
       const defaultPlaylists = [
-        { id: 'playlist-1', name: "Playlist 1", tracks: [], createdAt: new Date(), isPermanent: true },
-        { id: 'playlist-2', name: "Playlist 2", tracks: [], createdAt: new Date(), isPermanent: true },
-        { id: 'playlist-3', name: "Playlist 3", tracks: [], createdAt: new Date(), isPermanent: true }
+        { id: 'playlist-1', name: "Playlist 1", tracks: [], createdAt: new Date(), isPermanent: true, repeatCounts: {} },
+        { id: 'playlist-2', name: "Playlist 2", tracks: [], createdAt: new Date(), isPermanent: true, repeatCounts: {} },
+        { id: 'playlist-3', name: "Playlist 3", tracks: [], createdAt: new Date(), isPermanent: true, repeatCounts: {} }
       ];
       
       // Merge existing playlists with defaults to prevent duplicates
@@ -166,7 +167,11 @@ const Index = () => {
     // Check if track is already in playlist
     if (playlist && track && !playlist.tracks.includes(trackId)) {
       setPlaylists(prev => prev.map(p => 
-        p.id === playlistId ? { ...p, tracks: [...p.tracks, trackId] } : p
+        p.id === playlistId ? { 
+          ...p, 
+          tracks: [...p.tracks, trackId],
+          repeatCounts: { ...(p.repeatCounts || {}), [trackId]: 1 } // Initialize with 1x repeat
+        } : p
       ));
     }
   };
@@ -178,7 +183,13 @@ const Index = () => {
     if (playlist && track) {
       setPlaylists(prev => prev.map(p => 
         p.id === playlistId 
-          ? { ...p, tracks: p.tracks.filter(id => id !== trackId) }
+          ? { 
+              ...p, 
+              tracks: p.tracks.filter(id => id !== trackId),
+              repeatCounts: Object.fromEntries(
+                Object.entries(p.repeatCounts || {}).filter(([id]) => id !== trackId)
+              )
+            }
           : p
       ));
     }
@@ -194,11 +205,12 @@ const Index = () => {
     const playlist = playlists.find(p => p.id === playlistId);
     if (playlist) {
       setPlaylists(prev => prev.map(p => 
-        p.id === playlistId ? { ...p, tracks: [] } : p
+        p.id === playlistId ? { ...p, tracks: [], repeatCounts: {} } : p
       ));
     }
   };
 
+  // Global repeat counts (for liked music and standalone tracks)
   const handleUpdateTrackRepeat = (trackId: string, repeatCount: number) => {
     setTrackRepeatCounts(prev => ({ 
       ...prev, 
@@ -206,11 +218,27 @@ const Index = () => {
     }));
   };
 
+  // Playlist-specific repeat counts
+  const handleUpdatePlaylistTrackRepeat = (playlistId: string, trackId: string, repeatCount: number) => {
+    setPlaylists(prev => prev.map(p => 
+      p.id === playlistId 
+        ? { 
+            ...p, 
+            repeatCounts: { 
+              ...(p.repeatCounts || {}), 
+              [trackId]: Math.max(1, repeatCount) 
+            }
+          }
+        : p
+    ));
+  };
+
   const handleTrackEnded = () => {
-    if (!currentTrack) return;
+    if (!currentTrack || !currentPlaylistId) return;
     
-    // Check if current track should repeat (using saved repeat count, not temporary counter)
-    const savedRepeatCount = trackRepeatCounts[currentTrack.id] || 1;
+    // Get playlist-specific repeat count
+    const playlist = playlists.find(p => p.id === currentPlaylistId);
+    const savedRepeatCount = playlist?.repeatCounts?.[currentTrack.id] || 1;
     const currentPlayCount = currentTrackPlayCount[currentTrack.id] || 0;
     
     if (currentPlayCount + 1 < savedRepeatCount) {
@@ -562,13 +590,12 @@ const Index = () => {
         return (
           <PlaylistManagerTab 
             tracks={tracks} 
-            playlists={playlists} 
-            trackRepeatCounts={trackRepeatCounts}
+            playlists={playlists}
             onRenamePlaylist={handleRenamePlaylist} 
             onClearPlaylistTracks={handleClearPlaylistTracks} 
             onAddToPlaylist={handleAddToPlaylist} 
             onRemoveFromPlaylist={handleRemoveFromPlaylist} 
-            onUpdateTrackRepeat={handleUpdateTrackRepeat} 
+            onUpdatePlaylistTrackRepeat={handleUpdatePlaylistTrackRepeat} 
             onPlayPlaylist={handlePlayPlaylist}
             onPlayTrack={handlePlayTrack}
             likedTracks={likedTracks}

@@ -6,36 +6,36 @@
 
 @layer base {
   :root {
-    /* SoundWave Black Theme with Blue Accent (#1905C8) */
-    --background: 0 0% 6%;
+    /* SoundWave True OLED Black Theme with Blue Accent (#1905C8) */
+    --background: 0 0% 0%;  /* Pure OLED black */
     --foreground: 0 0% 98%;
-    --card: 0 0% 9%;
+    --card: 0 0% 4%;  /* Very dark gray for cards */
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 9%;
+    --popover: 0 0% 4%;
     --popover-foreground: 0 0% 98%;
     --primary: 240 95% 40%;  /* #1905C8 blue */
     --primary-foreground: 0 0% 98%;
     --primary-glow: 240 100% 60%;
-    --secondary: 0 0% 12%;
+    --secondary: 0 0% 7%;
     --secondary-foreground: 0 0% 85%;
-    --muted: 0 0% 15%;
+    --muted: 0 0% 10%;
     --muted-foreground: 0 0% 60%;
-    --accent: 0 0% 15%;
+    --accent: 0 0% 10%;
     --accent-foreground: 0 0% 90%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 20%;
-    --input: 0 0% 12%;
+    --border: 0 0% 15%;
+    --input: 0 0% 7%;
     --ring: 240 95% 40%;
     --success: 142 71% 45%;
     --success-foreground: 0 0% 98%;
     --radius: 0.75rem;
     
     /* SoundWave Design System */
-    --soundwave-black: 0 0% 6%;
-    --soundwave-dark-gray: 0 0% 9%;
-    --soundwave-medium-gray: 0 0% 12%;
-    --soundwave-light-gray: 0 0% 18%;
+    --soundwave-black: 0 0% 0%;  /* Pure OLED black */
+    --soundwave-dark-gray: 0 0% 4%;
+    --soundwave-medium-gray: 0 0% 7%;
+    --soundwave-light-gray: 0 0% 12%;
     --soundwave-blue: 240 95% 40%;
     --soundwave-blue-hover: 240 95% 50%;
     
@@ -53,13 +53,13 @@
     --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     /* Sidebar variables */
-    --sidebar-background: 0 0% 6%;
+    --sidebar-background: 0 0% 0%;  /* Pure OLED black */
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 240 95% 40%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent: 0 0% 7%;
     --sidebar-accent-foreground: 0 0% 85%;
-    --sidebar-border: 0 0% 20%;
+    --sidebar-border: 0 0% 15%;
     --sidebar-ring: 240 95% 40%;
   }
 }
@@ -80,7 +80,8 @@
   
   /* Bottom Navigation - Always visible */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-white/10 flex items-center justify-around px-1 py-2 z-50;
+    @apply fixed bottom-0 left-0 right-0 backdrop-blur-md border-t border-white/10 flex items-center justify-around px-1 py-2 z-50;
+    background: hsl(0 0% 0% / 0.95);  /* Pure OLED black with slight transparency */
     height: 4.5rem; /* 72px - increased for better mobile touch */
     padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
     padding-left: max(env(safe-area-inset-left), 0.25rem);

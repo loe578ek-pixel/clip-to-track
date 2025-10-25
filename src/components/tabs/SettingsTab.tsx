@@ -185,6 +185,7 @@ export const SettingsTab = ({
     return 'U';
   };
   return <div className="flex-1 overflow-auto p-4 space-y-6" style={{
+    paddingTop: 'max(env(safe-area-inset-top), 16px)',
     paddingBottom: '6rem'
   }}>
       {/* Header */}

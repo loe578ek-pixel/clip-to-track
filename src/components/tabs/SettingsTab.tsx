@@ -185,11 +185,11 @@ export const SettingsTab = ({
     return 'U';
   };
   return <div className="flex-1 overflow-auto p-4 space-y-6" style={{
-    paddingTop: 'max(env(safe-area-inset-top), 16px)',
+    paddingTop: 'calc(env(safe-area-inset-top) + 20px)',
     paddingBottom: '6rem'
   }}>
       {/* Header */}
-      <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4">
+      <div className="sticky bg-background/80 backdrop-blur-md z-10 pb-4" style={{ top: 'calc(env(safe-area-inset-top) + 16px)' }}>
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-muted-foreground">Customize your music experience</p>
       </div>

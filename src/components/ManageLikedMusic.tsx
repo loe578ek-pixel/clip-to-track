@@ -204,8 +204,8 @@ export const ManageLikedMusic = ({
 
   if (likedTracksList.length === 0) {
     return (
-      <div className="flex-1 overflow-auto pt-4 space-y-6" style={{ paddingBottom: '6rem' }}>
-        <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4 pl-4">
+      <div className="flex-1 overflow-auto space-y-6" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 20px)', paddingBottom: '6rem' }}>
+        <div className="sticky bg-background/80 backdrop-blur-md z-10 pb-4 pl-4" style={{ top: 'calc(env(safe-area-inset-top) + 16px)' }}>
           <div className="flex items-center gap-3 mb-4">
             <Button variant="ghost" size="icon" onClick={onBack}>
               <ArrowLeft className="h-5 w-5" />
@@ -233,8 +233,8 @@ export const ManageLikedMusic = ({
   }
 
   return (
-    <div className="flex-1 overflow-auto pt-4 space-y-6" style={{ paddingBottom: '6rem' }}>
-      <div className="sticky top-0 bg-background/80 backdrop-blur-md z-10 pb-4 pl-4">
+    <div className="flex-1 overflow-auto space-y-6" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 20px)', paddingBottom: '6rem' }}>
+      <div className="sticky bg-background/80 backdrop-blur-md z-10 pb-4 pl-4" style={{ top: 'calc(env(safe-area-inset-top) + 16px)' }}>
         <div className="flex items-center gap-3 mb-4">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="h-5 w-5" />

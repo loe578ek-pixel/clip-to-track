@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.cliptotrack',
-  appName: 'clip-to-track',
+  appName: 'TKPlaylist',
   webDir: 'dist',
   server: {
     androidScheme: 'https'

@@ -1,6 +1,6 @@
 {
-  "name": "Clip to Track",
-  "short_name": "ClipTrack",
+  "name": "TKPlaylist",
+  "short_name": "TKPlaylist",
   "description": "Extract audio from video files, create playlists, and manage your audio collection",
   "start_url": "/",
   "display": "standalone",

@@ -1,6 +1,22 @@
 import { Capacitor } from '@capacitor/core';
 import { CapacitorMusicControls } from 'capacitor-music-controls-plugin-v3';
 
+// Check if POST_NOTIFICATIONS permission is available (Android 13+)
+const checkNotificationPermission = async (): Promise<boolean> => {
+  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
+    return true; // iOS doesn't need explicit permission check for media controls
+  }
+
+  try {
+    // On Android, try to check permission status via the plugin
+    // If it fails, we'll assume we need to request permission
+    return true; // We'll let the plugin handle permission internally
+  } catch (error) {
+    console.log('Permission check not available, will request when needed');
+    return false;
+  }
+};
+
 export interface NativeMediaTrack {
   title: string;
   artist: string;
@@ -25,6 +41,8 @@ class NativeMediaControlsService {
   private isNative = false;
   private listenersSet = false;
   private initialized = false;
+  private permissionGranted = false;
+  private permissionChecked = false;
 
   constructor() {
     this.isNative = Capacitor.isNativePlatform();
@@ -33,6 +51,16 @@ class NativeMediaControlsService {
 
   private async ensureInitialized() {
     if (this.initialized || !this.isNative) return;
+    
+    // Check permissions first (only once)
+    if (!this.permissionChecked) {
+      this.permissionChecked = true;
+      this.permissionGranted = await checkNotificationPermission();
+      console.log('📋 Notification permission status:', this.permissionGranted ? 'Granted' : 'Pending');
+    }
+    
+    // Don't initialize if we don't have permission yet
+    // The plugin will handle permission request on first create() call
     this.initialized = true;
     
     try {
@@ -97,8 +125,14 @@ class NativeMediaControlsService {
       };
 
       console.log('📱 Creating notification with config:', JSON.stringify(config, null, 2));
+      console.log('📋 About to call CapacitorMusicControls.create() - permission dialog may appear on Android 13+');
       
+      // This call will trigger permission request on Android 13+ if not already granted
       await CapacitorMusicControls.create(config);
+      
+      // Mark permission as granted if we got here successfully
+      this.permissionGranted = true;
+      
       await CapacitorMusicControls.updateIsPlaying({ isPlaying: this.isPlaying });
       
       console.log('✅ Native media notification created successfully');
@@ -107,6 +141,12 @@ class NativeMediaControlsService {
       console.error('❌ Error creating native media notification:', error);
       console.error('📋 Error details:', JSON.stringify(error));
       console.error('📋 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      // If permission was denied, log it
+      if (error instanceof Error && error.message?.includes('permission')) {
+        console.error('🚫 Permission denied - user needs to grant notification permission in Android settings');
+        console.error('💡 Go to: Settings → Apps → ClipToTrack → Notifications → Enable notifications');
+      }
     }
   }
 

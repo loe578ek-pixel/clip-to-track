@@ -62,19 +62,21 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         }, playlistName);
       }
       
-      // Auto-start playback for new tracks
-      console.log('🎵 Starting playback...');
-      try {
-        await audioRef.current.play();
-        setIsPlaying(true);
-        if (isNative) {
-          nativeMediaControls.updatePlaybackState(true, 0);
-        } else {
-          mediaSession.updatePlaybackState(true, 0);
+      // Handle autoPlay OR continue playing if was already playing
+      if (autoPlay || wasPlaying) {
+        console.log('🎵 Starting playback...');
+        try {
+          await audioRef.current.play();
+          setIsPlaying(true);
+          if (isNative) {
+            nativeMediaControls.updatePlaybackState(true, 0);
+          } else {
+            mediaSession.updatePlaybackState(true, 0);
+          }
+        } catch (error) {
+          console.error('❌ Error playing audio:', error);
+          setIsPlaying(false);
         }
-      } catch (error) {
-        console.error('❌ Error playing audio:', error);
-        setIsPlaying(false);
       }
     };
     

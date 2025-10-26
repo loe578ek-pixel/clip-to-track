@@ -73,41 +73,50 @@ class NativeMediaControlsService {
 
     try {
       console.log('🎵 Creating native media notification for:', track.title);
+      console.log('📊 Track details:', { 
+        title: track.title, 
+        artist: track.artist, 
+        duration: track.duration,
+        hasArtwork: !!track.artwork 
+      });
       
-      await MusicControls.create({
+      const config = {
         track: track.title,
         artist: track.artist,
-        album: playlistName || track.album || '',
+        album: playlistName || track.album || 'Unknown Album',
         cover: track.artwork || '',
         isPlaying: this.isPlaying,
         dismissable: false,
         hasPrev: true,
         hasNext: true,
         hasClose: false,
-        duration: track.duration,
-        elapsed: track.elapsed || 0,
+        duration: Math.round(track.duration),
+        elapsed: Math.round(track.elapsed || 0),
         hasSkipForward: false,
         hasSkipBackward: false,
         skipForwardInterval: 0,
         skipBackwardInterval: 0,
         hasScrubbing: true,
-        // Use app icon as notification icon - this is the standard icon name
         notificationIcon: 'ic_launcher',
-        // Add these for better Android compatibility
         playIcon: 'media_play',
         pauseIcon: 'media_pause',
         prevIcon: 'media_prev',
         nextIcon: 'media_next',
         closeIcon: 'media_close',
         ticker: `Now playing "${track.title}"`
-      });
+      };
 
+      console.log('📱 Creating notification with config:', JSON.stringify(config, null, 2));
+      
+      await MusicControls.create(config);
       await MusicControls.updateIsPlaying({ isPlaying: this.isPlaying });
+      
       console.log('✅ Native media notification created successfully');
       console.log('📊 Notification state - isPlaying:', this.isPlaying, 'duration:', track.duration);
     } catch (error) {
       console.error('❌ Error creating native media notification:', error);
       console.error('📋 Error details:', JSON.stringify(error));
+      console.error('📋 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     }
   }
 

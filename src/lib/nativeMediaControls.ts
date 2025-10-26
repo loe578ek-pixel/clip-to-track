@@ -72,6 +72,8 @@ class NativeMediaControlsService {
     this.currentTrack = track;
 
     try {
+      console.log('🎵 Creating native media notification for:', track.title);
+      
       await MusicControls.create({
         track: track.title,
         artist: track.artist,
@@ -89,13 +91,23 @@ class NativeMediaControlsService {
         skipForwardInterval: 0,
         skipBackwardInterval: 0,
         hasScrubbing: true,
-        notificationIcon: 'notification'
+        // Use app icon as notification icon - this is the standard icon name
+        notificationIcon: 'ic_launcher',
+        // Add these for better Android compatibility
+        playIcon: 'media_play',
+        pauseIcon: 'media_pause',
+        prevIcon: 'media_prev',
+        nextIcon: 'media_next',
+        closeIcon: 'media_close',
+        ticker: `Now playing "${track.title}"`
       });
 
       await MusicControls.updateIsPlaying({ isPlaying: this.isPlaying });
-      console.log('✅ Native media notification created with track:', track.title);
+      console.log('✅ Native media notification created successfully');
+      console.log('📊 Notification state - isPlaying:', this.isPlaying, 'duration:', track.duration);
     } catch (error) {
-      console.error('❌ Error updating native media controls:', error);
+      console.error('❌ Error creating native media notification:', error);
+      console.error('📋 Error details:', JSON.stringify(error));
     }
   }
 

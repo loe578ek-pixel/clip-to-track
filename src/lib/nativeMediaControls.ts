@@ -41,26 +41,15 @@ class NativeMediaControlsService {
   private isNative = false;
   private listenersSet = false;
   private initialized = false;
-  private permissionGranted = false;
-  private permissionChecked = false;
+  private notificationCreated = false; // Track if notification was ever created
 
   constructor() {
     this.isNative = Capacitor.isNativePlatform();
-    // Don't initialize immediately - wait for first use
   }
 
   private async ensureInitialized() {
     if (this.initialized || !this.isNative) return;
     
-    // Check permissions first (only once)
-    if (!this.permissionChecked) {
-      this.permissionChecked = true;
-      this.permissionGranted = await checkNotificationPermission();
-      console.log('📋 Notification permission status:', this.permissionGranted ? 'Granted' : 'Pending');
-    }
-    
-    // Don't initialize if we don't have permission yet
-    // The plugin will handle permission request on first create() call
     this.initialized = true;
     
     try {
@@ -90,14 +79,6 @@ class NativeMediaControlsService {
     this.currentTrack = track;
 
     try {
-      console.log('🎵 Creating native media notification for:', track.title);
-      console.log('📊 Track details:', { 
-        title: track.title, 
-        artist: track.artist, 
-        duration: track.duration,
-        hasArtwork: !!track.artwork 
-      });
-      
       const config = {
         track: track.title,
         artist: track.artist,
@@ -124,34 +105,29 @@ class NativeMediaControlsService {
         ticker: `Now playing "${track.title}"`
       };
 
-      console.log('📱 Creating notification with config:', JSON.stringify(config, null, 2));
-      console.log('📋 About to call CapacitorMusicControls.create() - permission dialog may appear on Android 13+');
-      
-      // This call will trigger permission request on Android 13+ if not already granted
-      // The await here ensures we wait for user to grant/deny permission
-      const result = await CapacitorMusicControls.create(config);
-      
-      console.log('✅ Permission granted and notification created:', result);
-      
-      // Small delay to ensure permission dialog is fully processed
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Mark permission as granted if we got here successfully
-      this.permissionGranted = true;
+      if (!this.notificationCreated) {
+        // FIRST TIME: Create notification (this shows permission dialog on Android 13+)
+        console.log('📱 Creating notification for FIRST time - permission dialog will appear');
+        console.log('⏳ Waiting for user to grant permission...');
+        
+        await CapacitorMusicControls.create(config);
+        
+        this.notificationCreated = true;
+        console.log('✅ Permission granted! Notification created');
+      } else {
+        // SUBSEQUENT TIMES: Just update the existing notification (no permission dialog)
+        console.log('🔄 Updating existing notification for:', track.title);
+        await CapacitorMusicControls.create(config);
+      }
       
       await CapacitorMusicControls.updateIsPlaying({ isPlaying: this.isPlaying });
       
-      console.log('✅ Native media notification created successfully');
-      console.log('📊 Notification state - isPlaying:', this.isPlaying, 'duration:', track.duration);
+      console.log('✅ Media controls updated successfully');
     } catch (error) {
-      console.error('❌ Error creating native media notification:', error);
-      console.error('📋 Error details:', JSON.stringify(error));
-      console.error('📋 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      console.error('❌ Error with media controls:', error);
       
-      // If permission was denied, log it
       if (error instanceof Error && error.message?.includes('permission')) {
-        console.error('🚫 Permission denied - user needs to grant notification permission in Android settings');
-        console.error('💡 Go to: Settings → Apps → ClipToTrack → Notifications → Enable notifications');
+        console.error('🚫 Permission denied - enable notifications in Settings → Apps → ClipToTrack');
       }
     }
   }

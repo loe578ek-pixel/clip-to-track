@@ -10,6 +10,7 @@ export interface NativeMediaTrack {
   album?: string;
   duration: number;
   elapsed?: number;
+  artwork?: string;
 }
 
 export interface NativeMediaCallbacks {
@@ -67,7 +68,7 @@ class NativeMediaControlsService {
         track: track.title,
         artist: track.artist,
         album: playlistName || track.album || '',
-        cover: '', // No cover image as requested
+        cover: track.artwork || '',
         isPlaying: this.isPlaying,
         dismissable: false,
         hasPrev: true,
@@ -84,8 +85,9 @@ class NativeMediaControlsService {
       });
 
       await MusicControls.updateIsPlaying({ isPlaying: this.isPlaying });
+      console.log('✅ Native media notification created with track:', track.title);
     } catch (error) {
-      console.error('Error updating native media controls:', error);
+      console.error('❌ Error updating native media controls:', error);
     }
   }
 
@@ -135,8 +137,9 @@ class NativeMediaControlsService {
         elapsed: currentTime,
         isPlaying: isPlaying 
       });
+      console.log(`🎵 Playback state: ${isPlaying ? 'PLAYING' : 'PAUSED'} at ${currentTime.toFixed(1)}s`);
     } catch (error) {
-      console.error('Error updating playback state:', error);
+      console.error('❌ Error updating playback state:', error);
     }
   }
 

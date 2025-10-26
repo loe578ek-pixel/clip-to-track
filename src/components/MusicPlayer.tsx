@@ -105,13 +105,6 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     const updateTime = () => {
       const newTime = audio.currentTime;
       setCurrentTime(newTime);
-      // Update media session with current time
-      const isNative = Capacitor.isNativePlatform();
-      if (isNative) {
-        nativeMediaControls.updatePlaybackState(isPlaying, newTime);
-      } else {
-        mediaSession.updatePlaybackState(isPlaying, newTime);
-      }
     };
     
     const handleEnded = () => {
@@ -137,6 +130,27 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       audio.removeEventListener('ended', handleEnded);
     };
   }, [onEnded, isPlaying]);
+
+  // Smooth position updates for lockscreen notification (Android/iOS)
+  useEffect(() => {
+    if (!isPlaying || !audioRef.current) return;
+
+    const isNative = Capacitor.isNativePlatform();
+    
+    // Update lockscreen position every second for smooth progress
+    const updateInterval = setInterval(() => {
+      const audio = audioRef.current;
+      if (audio && !isNaN(audio.currentTime)) {
+        if (isNative) {
+          nativeMediaControls.updatePlaybackState(true, audio.currentTime);
+        } else {
+          mediaSession.updatePlaybackState(true, audio.currentTime);
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(updateInterval);
+  }, [isPlaying]);
 
   useEffect(() => {
     if (audioRef.current) {

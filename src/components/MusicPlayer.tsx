@@ -34,23 +34,11 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       audioRef.current.src = track.audioUrl;
       audioRef.current.load();
       
-      // Enable background playback and update media session
+      // Only set up media session on web (non-native)
+      // On native, we'll wait until user presses play to avoid permission dialog issues
       const isNative = Capacitor.isNativePlatform();
       
-      if (isNative) {
-        // Use native media controls for mobile
-        // Wait for media controls to be ready before playing (gives time for permission dialog)
-        console.log('📱 Setting up native media controls...');
-        await nativeMediaControls.updateTrack({
-          title: track.title,
-          artist: track.originalFileName,
-          duration: track.duration
-        }, playlistName);
-        console.log('✅ Media controls ready');
-        
-        // Small delay to ensure permission dialog has been handled
-        await new Promise(resolve => setTimeout(resolve, 300));
-      } else {
+      if (!isNative) {
         // Use web media session for web
         mediaSession.enableBackgroundPlayback();
         mediaSession.updateTrack({
@@ -60,41 +48,8 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         }, playlistName);
       }
       
-      // Now try to play if autoPlay is true
-      if (autoPlay) {
-        console.log('🎵 Starting autoplay...');
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            console.log('✅ Autoplay started successfully');
-            setIsPlaying(true);
-            if (isNative) {
-              nativeMediaControls.updatePlaybackState(true, currentTime);
-            } else {
-              mediaSession.updatePlaybackState(true, currentTime);
-            }
-          }).catch(error => {
-            console.error('❌ Error playing audio:', error);
-            // Retry after a short delay if autoPlay fails
-            setTimeout(() => {
-              if (audioRef.current) {
-                audioRef.current.play().then(() => {
-                  console.log('✅ Autoplay retry succeeded');
-                  setIsPlaying(true);
-                  if (isNative) {
-                    nativeMediaControls.updatePlaybackState(true, currentTime);
-                  } else {
-                    mediaSession.updatePlaybackState(true, currentTime);
-                  }
-                }).catch(retryError => {
-                  console.error('❌ Retry failed:', retryError);
-                });
-              }
-            }, 500);
-          });
-        }
-      } else if (isPlaying) {
-        // Manual play when not auto-playing but was already playing
+      // If was already playing, continue playing
+      if (isPlaying && !autoPlay) {
         audioRef.current.play().then(() => {
           setIsPlaying(true);
           if (isNative) {
@@ -109,7 +64,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     };
     
     initializeTrack();
-  }, [track.audioUrl, track.playbackKey, autoPlay, playlistName]);
+  }, [track.audioUrl, track.playbackKey, playlistName]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -228,6 +183,18 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       }
     } else {
       try {
+        // On native, initialize media controls on FIRST play press
+        // This ensures permission dialog appears when user is ready
+        if (isNative) {
+          console.log('📱 Initializing native media controls on play...');
+          await nativeMediaControls.updateTrack({
+            title: track.title,
+            artist: track.originalFileName,
+            duration: track.duration
+          }, playlistName);
+          console.log('✅ Media controls initialized');
+        }
+        
         await audioRef.current.play();
         setIsPlaying(true);
         if (isNative) {

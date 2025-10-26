@@ -128,7 +128,10 @@ class NativeMediaControlsService {
       console.log('📋 About to call CapacitorMusicControls.create() - permission dialog may appear on Android 13+');
       
       // This call will trigger permission request on Android 13+ if not already granted
-      await CapacitorMusicControls.create(config);
+      // The await here ensures we wait for user to grant/deny permission
+      const result = await CapacitorMusicControls.create(config);
+      
+      console.log('✅ Permission granted and notification created:', result);
       
       // Mark permission as granted if we got here successfully
       this.permissionGranted = true;

@@ -48,8 +48,21 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         }, playlistName);
       }
       
-      // If was already playing, continue playing
-      if (isPlaying && !autoPlay) {
+      // Handle autoPlay for playlist transitions
+      if (autoPlay) {
+        try {
+          await audioRef.current.play();
+          setIsPlaying(true);
+          if (isNative) {
+            nativeMediaControls.updatePlaybackState(true, 0);
+          } else {
+            mediaSession.updatePlaybackState(true, 0);
+          }
+        } catch (error) {
+          console.error('Error with autoplay:', error);
+        }
+      } else if (isPlaying) {
+        // Continue playing if was already playing
         audioRef.current.play().then(() => {
           setIsPlaying(true);
           if (isNative) {
@@ -64,7 +77,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     };
     
     initializeTrack();
-  }, [track.audioUrl, track.playbackKey, playlistName]);
+  }, [track.audioUrl, track.playbackKey, autoPlay, playlistName]);
 
   useEffect(() => {
     const audio = audioRef.current;

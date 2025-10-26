@@ -1,8 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import * as MusicControlsModule from 'capacitor-music-controls-plugin-v3';
-
-// Access the MusicControls object from the module
-const MusicControls = (MusicControlsModule as any).MusicControls || MusicControlsModule;
+import { CapacitorMusicControls } from 'capacitor-music-controls-plugin-v3';
 
 export interface NativeMediaTrack {
   title: string;
@@ -50,14 +47,7 @@ class NativeMediaControlsService {
     if (!this.listenersSet) {
       this.setupActionHandlers();
       this.listenersSet = true;
-      
-      // CRITICAL: Must call listen() to start listening for control events
-      try {
-        await MusicControls.listen();
-        console.log('✅ Native media controls listening for events');
-      } catch (error) {
-        console.error('❌ Error starting to listen:', error);
-      }
+      console.log('✅ Native media control listeners set up');
     }
   }
 
@@ -108,8 +98,8 @@ class NativeMediaControlsService {
 
       console.log('📱 Creating notification with config:', JSON.stringify(config, null, 2));
       
-      await MusicControls.create(config);
-      await MusicControls.updateIsPlaying({ isPlaying: this.isPlaying });
+      await CapacitorMusicControls.create(config);
+      await CapacitorMusicControls.updateIsPlaying({ isPlaying: this.isPlaying });
       
       console.log('✅ Native media notification created successfully');
       console.log('📊 Notification state - isPlaying:', this.isPlaying, 'duration:', track.duration);
@@ -125,42 +115,52 @@ class NativeMediaControlsService {
 
     console.log('🎮 Setting up native media control action handlers...');
 
-    // Subscribe to control events
-    MusicControls.addListener('controlsNotification', (info: any) => {
-      console.log('🎵 Native media control action:', info.message);
-      
-      switch (info.message) {
-        case 'music-controls-play':
-          console.log('▶️ Play button pressed on lockscreen');
-          this.callbacks?.onPlay();
-          break;
-        case 'music-controls-pause':
-          console.log('⏸️ Pause button pressed on lockscreen');
-          this.callbacks?.onPause();
-          break;
-        case 'music-controls-previous':
-          console.log('⏮️ Previous button pressed on lockscreen');
-          this.callbacks?.onPrevious();
-          break;
-        case 'music-controls-next':
-          console.log('⏭️ Next button pressed on lockscreen');
-          this.callbacks?.onNext();
-          break;
-        case 'music-controls-seek-to':
-          console.log('⏩ Seek to:', info.position);
-          if (this.callbacks?.onSeek && info.position !== undefined) {
-            this.callbacks.onSeek(info.position);
-          }
-          break;
-        default:
-          console.log('❓ Unknown media control action:', info.message);
-      }
+    // iOS: Use addListener
+    CapacitorMusicControls.addListener('controlsNotification', (info: any) => {
+      console.log('🎵 Native media control action (iOS):', info.message);
+      this.handleControlEvent(info);
     });
 
+    // Android 13+: Use document.addEventListener
+    document.addEventListener('controlsNotification', ((event: any) => {
+      console.log('🎵 Native media control action (Android):', event.message);
+      const info = { message: event.message, position: event.position || 0 };
+      this.handleControlEvent(info);
+    }) as EventListener);
+
     // Listen to when the notification is destroyed
-    MusicControls.addListener('controlsDestroyed', () => {
+    CapacitorMusicControls.addListener('controlsDestroyed', () => {
       console.log('🗑️ Native media controls notification destroyed');
     });
+  }
+
+  private handleControlEvent(info: any) {
+    switch (info.message) {
+      case 'music-controls-play':
+        console.log('▶️ Play button pressed on lockscreen');
+        this.callbacks?.onPlay();
+        break;
+      case 'music-controls-pause':
+        console.log('⏸️ Pause button pressed on lockscreen');
+        this.callbacks?.onPause();
+        break;
+      case 'music-controls-previous':
+        console.log('⏮️ Previous button pressed on lockscreen');
+        this.callbacks?.onPrevious();
+        break;
+      case 'music-controls-next':
+        console.log('⏭️ Next button pressed on lockscreen');
+        this.callbacks?.onNext();
+        break;
+      case 'music-controls-seek-to':
+        console.log('⏩ Seek to:', info.position);
+        if (this.callbacks?.onSeek && info.position !== undefined) {
+          this.callbacks.onSeek(info.position);
+        }
+        break;
+      default:
+        console.log('❓ Unknown media control action:', info.message);
+    }
   }
 
   async updatePlaybackState(isPlaying: boolean, currentTime: number) {
@@ -170,8 +170,8 @@ class NativeMediaControlsService {
     this.isPlaying = isPlaying;
 
     try {
-      await MusicControls.updateIsPlaying({ isPlaying: isPlaying });
-      await MusicControls.updateElapsed({ 
+      await CapacitorMusicControls.updateIsPlaying({ isPlaying: isPlaying });
+      await CapacitorMusicControls.updateElapsed({ 
         elapsed: currentTime,
         isPlaying: isPlaying 
       });
@@ -185,7 +185,7 @@ class NativeMediaControlsService {
     if (!this.isNative) return;
 
     try {
-      await MusicControls.destroy();
+      await CapacitorMusicControls.destroy();
       console.log('🗑️ Native media controls destroyed');
     } catch (error) {
       console.error('❌ Error destroying media controls:', error);

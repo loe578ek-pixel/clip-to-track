@@ -34,11 +34,24 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       audioRef.current.src = track.audioUrl;
       audioRef.current.load();
       
-      // Only set up media session on web (non-native)
-      // On native, we'll wait until user presses play to avoid permission dialog issues
       const isNative = Capacitor.isNativePlatform();
       
-      if (!isNative) {
+      // Initialize media controls for FIRST play (permission dialog appears here)
+      // This happens on manual play OR on first playlist autoplay
+      if (isNative) {
+        console.log('📱 Initializing native media controls...');
+        try {
+          // This will show permission dialog on first call
+          await nativeMediaControls.updateTrack({
+            title: track.title,
+            artist: track.originalFileName,
+            duration: track.duration
+          }, playlistName);
+          console.log('✅ Media controls ready');
+        } catch (error) {
+          console.error('❌ Error initializing media controls:', error);
+        }
+      } else {
         // Use web media session for web
         mediaSession.enableBackgroundPlayback();
         mediaSession.updateTrack({
@@ -50,6 +63,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       
       // Handle autoPlay for playlist transitions
       if (autoPlay) {
+        console.log('🎵 AutoPlay enabled, starting playback...');
         try {
           await audioRef.current.play();
           setIsPlaying(true);
@@ -59,10 +73,11 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
             mediaSession.updatePlaybackState(true, 0);
           }
         } catch (error) {
-          console.error('Error with autoplay:', error);
+          console.error('❌ Error with autoplay:', error);
         }
       } else if (isPlaying) {
         // Continue playing if was already playing
+        console.log('▶️ Continuing playback...');
         audioRef.current.play().then(() => {
           setIsPlaying(true);
           if (isNative) {
@@ -71,7 +86,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
             mediaSession.updatePlaybackState(true, currentTime);
           }
         }).catch(error => {
-          console.error('Error playing audio:', error);
+          console.error('❌ Error playing audio:', error);
         });
       }
     };
@@ -196,18 +211,6 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       }
     } else {
       try {
-        // On native, initialize media controls on FIRST play press
-        // This ensures permission dialog appears when user is ready
-        if (isNative) {
-          console.log('📱 Initializing native media controls on play...');
-          await nativeMediaControls.updateTrack({
-            title: track.title,
-            artist: track.originalFileName,
-            duration: track.duration
-          }, playlistName);
-          console.log('✅ Media controls initialized');
-        }
-        
         await audioRef.current.play();
         setIsPlaying(true);
         if (isNative) {
@@ -216,7 +219,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
           mediaSession.updatePlaybackState(true, currentTime);
         }
       } catch (error) {
-        console.error('Error playing audio:', error);
+        console.error('❌ Error playing audio:', error);
       }
     }
   };

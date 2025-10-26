@@ -133,6 +133,9 @@ class NativeMediaControlsService {
       
       console.log('✅ Permission granted and notification created:', result);
       
+      // Small delay to ensure permission dialog is fully processed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Mark permission as granted if we got here successfully
       this.permissionGranted = true;
       

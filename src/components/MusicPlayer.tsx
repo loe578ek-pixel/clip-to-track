@@ -31,28 +31,29 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     const initializeTrack = async () => {
       if (!audioRef.current) return;
       
+      const wasPlaying = isPlaying;
+      
+      // Reset audio element
       audioRef.current.src = track.audioUrl;
       audioRef.current.load();
+      setCurrentTime(0);
       
       const isNative = Capacitor.isNativePlatform();
       
-      // Initialize media controls for FIRST play (permission dialog appears here)
-      // This happens on manual play OR on first playlist autoplay
+      // Update media controls with new track info
       if (isNative) {
-        console.log('📱 Initializing native media controls...');
+        console.log('📱 Updating native media controls for new track...');
         try {
-          // This will show permission dialog on first call
           await nativeMediaControls.updateTrack({
             title: track.title,
             artist: track.originalFileName,
             duration: track.duration
           }, playlistName);
-          console.log('✅ Media controls ready');
+          console.log('✅ Media controls updated');
         } catch (error) {
-          console.error('❌ Error initializing media controls:', error);
+          console.error('❌ Error updating media controls:', error);
         }
       } else {
-        // Use web media session for web
         mediaSession.enableBackgroundPlayback();
         mediaSession.updateTrack({
           title: track.title,
@@ -61,9 +62,9 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         }, playlistName);
       }
       
-      // Handle autoPlay for playlist transitions
-      if (autoPlay) {
-        console.log('🎵 AutoPlay enabled, starting playback...');
+      // Handle autoPlay OR continue playing if was already playing
+      if (autoPlay || wasPlaying) {
+        console.log('🎵 Starting playback...');
         try {
           await audioRef.current.play();
           setIsPlaying(true);
@@ -73,26 +74,14 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
             mediaSession.updatePlaybackState(true, 0);
           }
         } catch (error) {
-          console.error('❌ Error with autoplay:', error);
-        }
-      } else if (isPlaying) {
-        // Continue playing if was already playing
-        console.log('▶️ Continuing playback...');
-        audioRef.current.play().then(() => {
-          setIsPlaying(true);
-          if (isNative) {
-            nativeMediaControls.updatePlaybackState(true, currentTime);
-          } else {
-            mediaSession.updatePlaybackState(true, currentTime);
-          }
-        }).catch(error => {
           console.error('❌ Error playing audio:', error);
-        });
+          setIsPlaying(false);
+        }
       }
     };
     
     initializeTrack();
-  }, [track.audioUrl, track.playbackKey, autoPlay, playlistName]);
+  }, [track.audioUrl, track.playbackKey]);
 
   useEffect(() => {
     const audio = audioRef.current;

@@ -36,6 +36,13 @@ class NativeMediaControlsService {
 
   private async ensureInitialized() {
     if (this.initialized || !this.isNative) return;
+    
+    // CRITICAL: Don't initialize until callbacks are set
+    if (!this.callbacks) {
+      console.log('⚠️ Skipping initialization - callbacks not set yet');
+      return;
+    }
+    
     this.initialized = true;
     
     try {
@@ -62,7 +69,12 @@ class NativeMediaControlsService {
   }
 
   setCallbacks(callbacks: NativeMediaCallbacks) {
+    console.log('🎮 Setting native media control callbacks');
     this.callbacks = callbacks;
+    // Trigger initialization now that we have callbacks
+    if (this.isNative && !this.initialized) {
+      this.ensureInitialized();
+    }
   }
 
   async updateTrack(track: NativeMediaTrack, playlistName?: string) {

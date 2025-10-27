@@ -116,42 +116,87 @@ class NativeMediaControlsService {
 
     console.log('🎮 Setting up native media control action handlers...');
 
-    // Subscribe to control events
-    MusicControls.addListener('controlsNotification', (info: any) => {
-      console.log('🎵 Native media control action:', info.message);
+    // Android 13+ has a bug with notifyListeners, must use document.addEventListener
+    // See: https://github.com/ionic-team/capacitor/issues/6234
+    if (Capacitor.getPlatform() === 'android') {
+      console.log('🤖 Setting up Android-specific event listeners via document.addEventListener');
       
-      switch (info.message) {
-        case 'music-controls-play':
-          console.log('▶️ Play button pressed on lockscreen');
-          this.callbacks?.onPlay();
-          break;
-        case 'music-controls-pause':
-          console.log('⏸️ Pause button pressed on lockscreen');
-          this.callbacks?.onPause();
-          break;
-        case 'music-controls-previous':
-          console.log('⏮️ Previous button pressed on lockscreen');
-          this.callbacks?.onPrevious();
-          break;
-        case 'music-controls-next':
-          console.log('⏭️ Next button pressed on lockscreen');
-          this.callbacks?.onNext();
-          break;
-        case 'music-controls-seek-to':
-          console.log('⏩ Seek to:', info.position);
-          if (this.callbacks?.onSeek && info.position !== undefined) {
-            this.callbacks.onSeek(info.position);
-          }
-          break;
-        default:
-          console.log('❓ Unknown media control action:', info.message);
-      }
-    });
+      document.addEventListener('controlsNotification', (event: any) => {
+        console.log('🎵 Native media control action (Android):', event);
+        const message = event.message || event.detail?.message;
+        
+        console.log('📱 Android control event message:', message);
+        
+        switch (message) {
+          case 'music-controls-play':
+            console.log('▶️ Play button pressed on lockscreen');
+            this.callbacks?.onPlay();
+            break;
+          case 'music-controls-pause':
+            console.log('⏸️ Pause button pressed on lockscreen');
+            this.callbacks?.onPause();
+            break;
+          case 'music-controls-previous':
+            console.log('⏮️ Previous button pressed on lockscreen');
+            this.callbacks?.onPrevious();
+            break;
+          case 'music-controls-next':
+            console.log('⏭️ Next button pressed on lockscreen');
+            this.callbacks?.onNext();
+            break;
+          case 'music-controls-seek-to':
+            console.log('⏩ Seek to:', event.position);
+            if (this.callbacks?.onSeek && event.position !== undefined) {
+              this.callbacks.onSeek(event.position);
+            }
+            break;
+          default:
+            console.log('❓ Unknown media control action:', message);
+        }
+      });
 
-    // Listen to when the notification is destroyed
-    MusicControls.addListener('controlsDestroyed', () => {
-      console.log('🗑️ Native media controls notification destroyed');
-    });
+      document.addEventListener('controlsDestroyed', () => {
+        console.log('🗑️ Native media controls notification destroyed (Android)');
+      });
+    } else {
+      // iOS uses standard addListener
+      console.log('🍎 Setting up iOS-specific event listeners via addListener');
+      
+      MusicControls.addListener('controlsNotification', (info: any) => {
+        console.log('🎵 Native media control action (iOS):', info.message);
+        
+        switch (info.message) {
+          case 'music-controls-play':
+            console.log('▶️ Play button pressed on lockscreen');
+            this.callbacks?.onPlay();
+            break;
+          case 'music-controls-pause':
+            console.log('⏸️ Pause button pressed on lockscreen');
+            this.callbacks?.onPause();
+            break;
+          case 'music-controls-previous':
+            console.log('⏮️ Previous button pressed on lockscreen');
+            this.callbacks?.onPrevious();
+            break;
+          case 'music-controls-next':
+            console.log('⏭️ Next button pressed on lockscreen');
+            this.callbacks?.onNext();
+            break;
+          case 'music-controls-seek-to':
+            console.log('⏩ Seek to:', info.position);
+            if (this.callbacks?.onSeek && info.position !== undefined) {
+              this.callbacks.onSeek(info.position);
+            }
+            break;
+          default:
+            console.log('❓ Unknown media control action:', info.message);
+        }
+      });
+
+      MusicControls.addListener('controlsDestroyed', () => {
+        console.log('🗑️ Native media controls notification destroyed (iOS)');
+      });
+    }
   }
 
   async updatePlaybackState(isPlaying: boolean, currentTime: number) {

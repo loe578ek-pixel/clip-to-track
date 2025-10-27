@@ -61,78 +61,95 @@ const Index = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [isAppReady, setIsAppReady] = useState(true);
 
-  // Auth disabled temporarily for Android debugging
-  // Will re-enable once app loads properly
-
-  // Load data - simplified for Android debugging
+  // Load all app data using Capacitor storage service
   useEffect(() => {
     const loadAppData = async () => {
       console.log('🚀 Starting app load...');
       try {
-        // Try localStorage first (simpler)
-        const savedTracks = localStorage.getItem('soundwave-tracks');
-        const savedPlaylists = localStorage.getItem('soundwave-playlists');
+        const [
+          savedTracks,
+          savedPlaylists,
+          savedRepeatCounts,
+          savedLikedTracks
+        ] = await Promise.all([
+          storageService.loadTracks(),
+          storageService.loadPlaylists(),
+          storageService.loadRepeatCounts(),
+          storageService.loadLikedTracks()
+        ]);
         
-        if (savedTracks) {
-          const parsedTracks = JSON.parse(savedTracks).map((track: any) => ({
-            ...track,
-            createdAt: new Date(track.createdAt)
-          }));
-          setTracks(parsedTracks);
-          console.log(`✅ Loaded ${parsedTracks.length} tracks`);
-        }
+        setTracks(savedTracks);
+        setPlaylists(savedPlaylists.length > 0 ? savedPlaylists : [
+          { id: 'playlist-1', name: 'Playlist 1', tracks: [], createdAt: new Date(), repeatCounts: {} },
+          { id: 'playlist-2', name: 'Playlist 2', tracks: [], createdAt: new Date(), repeatCounts: {} },
+          { id: 'playlist-3', name: 'Playlist 3', tracks: [], createdAt: new Date(), repeatCounts: {} }
+        ]);
+        setTrackRepeatCounts(savedRepeatCounts);
+        setLikedTracks(new Set(savedLikedTracks));
+        setLikedTracksOrder(savedLikedTracks);
         
-        if (savedPlaylists) {
-          const parsedPlaylists = JSON.parse(savedPlaylists).map((playlist: any) => ({
-            ...playlist,
-            createdAt: new Date(playlist.createdAt)
-          }));
-          setPlaylists(parsedPlaylists);
-          console.log(`✅ Loaded ${parsedPlaylists.length} playlists`);
-        }
-        
+        console.log(`✅ Loaded ${savedTracks.length} tracks, ${savedLikedTracks.length} liked tracks`);
         setIsDataLoaded(true);
         console.log('✅ App ready!');
       } catch (error) {
         console.error('❌ Load error:', error);
-        setIsDataLoaded(true); // Continue anyway
+        setIsDataLoaded(true);
       }
     };
     
     loadAppData();
   }, []);
 
-  // Save to localStorage (simplified for Android)
+  // Save tracks with Capacitor storage
   useEffect(() => {
     if (!isDataLoaded) return;
-    localStorage.setItem('soundwave-tracks', JSON.stringify(tracks));
+    storageService.saveTracks(tracks);
+    console.log('💾 Saved tracks:', tracks.length);
   }, [tracks, isDataLoaded]);
 
+  // Save playlists with Capacitor storage
   useEffect(() => {
     if (!isDataLoaded) return;
-    localStorage.setItem('soundwave-playlists', JSON.stringify(playlists));
+    storageService.savePlaylists(playlists);
+    console.log('💾 Saved playlists:', playlists.length);
   }, [playlists, isDataLoaded]);
 
+  // Save repeat counts with Capacitor storage
   useEffect(() => {
     if (!isDataLoaded) return;
-    localStorage.setItem('soundwave-repeat-counts', JSON.stringify(trackRepeatCounts));
+    storageService.saveRepeatCounts(trackRepeatCounts);
   }, [trackRepeatCounts, isDataLoaded]);
 
+  // Save liked tracks with Capacitor storage
   useEffect(() => {
     if (!isDataLoaded) return;
-    localStorage.setItem('soundwave-liked-tracks', JSON.stringify(Array.from(likedTracks)));
+    const likedArray = Array.from(likedTracks);
+    storageService.saveLikedTracks(likedArray);
+    console.log('💾 Saved liked tracks:', likedArray.length);
   }, [likedTracks, isDataLoaded]);
 
   const handleTrackExtracted = (track: Track) => {
     setTracks(prev => [track, ...prev]);
   };
 
-  const handlePlayTrack = (track: Track) => {
-    setCurrentTrack(track);
-    setCurrentPlaylistId(null); // Clear playlist when playing individual track
-    setCurrentPlaylistName(null); // Clear playlist name
-    setIsAutoPlaying(false); // Reset autoplay when manually selecting a track
-    // Reset play count when manually starting a track
+  // Helper to load audio before playing
+  const loadTrackAudio = async (track: Track): Promise<Track> => {
+    try {
+      const loadedTrack = await audioStorageService.loadAudioTrack(track);
+      console.log('✅ Track audio loaded:', loadedTrack.title);
+      return loadedTrack;
+    } catch (error) {
+      console.error('❌ Error loading track audio:', error);
+      return track;
+    }
+  };
+
+  const handlePlayTrack = async (track: Track) => {
+    const loadedTrack = await loadTrackAudio(track);
+    setCurrentTrack(loadedTrack);
+    setCurrentPlaylistId(null);
+    setCurrentPlaylistName(null);
+    setIsAutoPlaying(false);
     setCurrentTrackPlayCount(prev => ({
       ...prev,
       [track.id]: 0
@@ -267,7 +284,7 @@ const Index = () => {
     handleNextTrack();
   };
 
-  const handleNextTrack = () => {
+  const handleNextTrack = async () => {
     if (!currentTrack) return;
     
     // Handle liked music playlist
@@ -278,12 +295,13 @@ const Index = () => {
       if (currentIndex !== -1) {
         const nextTrackId = likedTracksList[currentIndex + 1];
         if (nextTrackId) {
-          setCurrentTrack(nextTrackId);
+          const loadedTrack = await loadTrackAudio(nextTrackId);
+          setCurrentTrack(loadedTrack);
         } else {
-          // Loop back to first liked track
           const firstTrack = likedTracksList[0];
           if (firstTrack) {
-            setCurrentTrack(firstTrack);
+            const loadedTrack = await loadTrackAudio(firstTrack);
+            setCurrentTrack(loadedTrack);
           }
         }
       }
@@ -299,26 +317,26 @@ const Index = () => {
     const currentIndex = playlist.tracks.findIndex(id => id === currentTrack.id);
     if (currentIndex === -1) return;
     
-    // Move to next track
     const nextTrackId = playlist.tracks[currentIndex + 1];
     if (nextTrackId) {
       const nextTrack = tracks.find(t => t.id === nextTrackId);
       if (nextTrack) {
-        setCurrentTrack(nextTrack);
+        const loadedTrack = await loadTrackAudio(nextTrack);
+        setCurrentTrack(loadedTrack);
       }
     } else {
-      // End of playlist - loop back to first song
       const firstTrackId = playlist.tracks[0];
       if (firstTrackId) {
         const firstTrack = tracks.find(t => t.id === firstTrackId);
         if (firstTrack) {
-          setCurrentTrack(firstTrack);
+          const loadedTrack = await loadTrackAudio(firstTrack);
+          setCurrentTrack(loadedTrack);
         }
       }
     }
   };
 
-  const handlePreviousTrack = () => {
+  const handlePreviousTrack = async () => {
     if (!currentTrack) return;
     
     // Handle liked music playlist
@@ -329,7 +347,8 @@ const Index = () => {
       if (currentIndex !== -1) {
         const prevTrack = likedTracksList[currentIndex - 1];
         if (prevTrack) {
-          setCurrentTrack(prevTrack);
+          const loadedTrack = await loadTrackAudio(prevTrack);
+          setCurrentTrack(loadedTrack);
         }
       }
       return;
@@ -347,17 +366,18 @@ const Index = () => {
     const prevTrackId = playlist.tracks[currentIndex - 1];
     if (prevTrackId) {
       const prevTrack = tracks.find(t => t.id === prevTrackId);
-      if (prevTrack) setCurrentTrack(prevTrack);
+      if (prevTrack) {
+        const loadedTrack = await loadTrackAudio(prevTrack);
+        setCurrentTrack(loadedTrack);
+      }
     }
   };
 
-  const handlePlayPlaylistFromTrack = (playlistId: string, trackId: string) => {
-    // Force stop current playback by briefly clearing track
+  const handlePlayPlaylistFromTrack = async (playlistId: string, trackId: string) => {
     setCurrentTrack(null);
     setIsAutoPlaying(false);
     
-    // Use setTimeout to ensure state updates and then start new track
-    setTimeout(() => {
+    setTimeout(async () => {
       setCurrentPlaylistId(playlistId);
       const playlist = playlists.find(p => p.id === playlistId);
       if (playlist) {
@@ -365,9 +385,9 @@ const Index = () => {
       }
       const track = tracks.find(t => t.id === trackId);
       if (track) {
-        setCurrentTrack(track);
-        setIsAutoPlaying(true); // Enable autoplay to start immediately
-        // Reset play count when manually starting a track
+        const loadedTrack = await loadTrackAudio(track);
+        setCurrentTrack(loadedTrack);
+        setIsAutoPlaying(true);
         setCurrentTrackPlayCount(prev => ({
           ...prev,
           [track.id]: 0
@@ -376,22 +396,20 @@ const Index = () => {
     }, 10);
   };
 
-  const handlePlayPlaylist = (playlistId: string) => {
-    // Force stop current playback by briefly clearing track
+  const handlePlayPlaylist = async (playlistId: string) => {
     setCurrentTrack(null);
     setIsAutoPlaying(false);
     
-    // Use setTimeout to ensure state updates and then start new playlist
-    setTimeout(() => {
+    setTimeout(async () => {
       setCurrentPlaylistId(playlistId);
       const playlist = playlists.find(p => p.id === playlistId);
       if (playlist && playlist.tracks.length > 0) {
         setCurrentPlaylistName(playlist.name);
         const firstTrack = tracks.find(t => t.id === playlist.tracks[0]);
         if (firstTrack) {
-          setCurrentTrack(firstTrack);
-          setIsAutoPlaying(true); // Enable autoplay to start immediately
-          // Reset play count for the track
+          const loadedTrack = await loadTrackAudio(firstTrack);
+          setCurrentTrack(loadedTrack);
+          setIsAutoPlaying(true);
           setCurrentTrackPlayCount(prev => ({
             ...prev,
             [firstTrack.id]: 0
@@ -518,16 +536,15 @@ const Index = () => {
     });
   };
 
-  const handlePlayLikedMusic = () => {
+  const handlePlayLikedMusic = async () => {
     const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
     if (likedTracksList.length > 0) {
-      // Force stop current playback by briefly clearing track
       setCurrentTrack(null);
       setIsAutoPlaying(false);
       
-      // Use setTimeout to ensure state updates and then start liked music
-      setTimeout(() => {
-        setCurrentTrack(likedTracksList[0]);
+      setTimeout(async () => {
+        const loadedTrack = await loadTrackAudio(likedTracksList[0]);
+        setCurrentTrack(loadedTrack);
         setCurrentPlaylistId('liked-music');
         setCurrentPlaylistName('Liked Music');
         setIsAutoPlaying(true);

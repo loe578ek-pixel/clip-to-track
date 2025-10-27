@@ -46,10 +46,18 @@ class NativeMediaControlsService {
   }
 
   private async setupNativeControls() {
-    console.log('Native media controls initialized');
+    console.log('🎵 Initializing native media controls...');
     if (!this.listenersSet) {
-      await this.setupActionHandlers();
+      this.setupActionHandlers();
       this.listenersSet = true;
+      
+      // CRITICAL: Must call listen() to start listening for control events
+      try {
+        await MusicControls.listen();
+        console.log('✅ Native media controls listening for events');
+      } catch (error) {
+        console.error('❌ Error starting to listen:', error);
+      }
     }
   }
 
@@ -94,34 +102,43 @@ class NativeMediaControlsService {
   private setupActionHandlers() {
     if (!this.isNative) return;
 
+    console.log('🎮 Setting up native media control action handlers...');
+
     // Subscribe to control events
     MusicControls.addListener('controlsNotification', (info: any) => {
-      console.log('Native media control action:', info.message);
+      console.log('🎵 Native media control action:', info.message);
       
       switch (info.message) {
         case 'music-controls-play':
+          console.log('▶️ Play button pressed on lockscreen');
           this.callbacks?.onPlay();
           break;
         case 'music-controls-pause':
+          console.log('⏸️ Pause button pressed on lockscreen');
           this.callbacks?.onPause();
           break;
         case 'music-controls-previous':
+          console.log('⏮️ Previous button pressed on lockscreen');
           this.callbacks?.onPrevious();
           break;
         case 'music-controls-next':
+          console.log('⏭️ Next button pressed on lockscreen');
           this.callbacks?.onNext();
           break;
         case 'music-controls-seek-to':
+          console.log('⏩ Seek to:', info.position);
           if (this.callbacks?.onSeek && info.position !== undefined) {
             this.callbacks.onSeek(info.position);
           }
           break;
+        default:
+          console.log('❓ Unknown media control action:', info.message);
       }
     });
 
     // Listen to when the notification is destroyed
     MusicControls.addListener('controlsDestroyed', () => {
-      console.log('Native media controls destroyed');
+      console.log('🗑️ Native media controls notification destroyed');
     });
   }
 
@@ -148,18 +165,9 @@ class NativeMediaControlsService {
 
     try {
       await MusicControls.destroy();
+      console.log('🗑️ Native media controls destroyed');
     } catch (error) {
-      console.error('Error destroying media controls:', error);
-    }
-  }
-
-  async listen() {
-    if (!this.isNative) return;
-
-    try {
-      await MusicControls.listen();
-    } catch (error) {
-      console.error('Error starting to listen:', error);
+      console.error('❌ Error destroying media controls:', error);
     }
   }
 }

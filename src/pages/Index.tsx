@@ -293,11 +293,12 @@ const Index = () => {
       const currentIndex = likedTracksList.findIndex(track => track.id === currentTrack.id);
       
       if (currentIndex !== -1) {
-        const nextTrackId = likedTracksList[currentIndex + 1];
-        if (nextTrackId) {
-          const loadedTrack = await loadTrackAudio(nextTrackId);
+        const nextTrack = likedTracksList[currentIndex + 1];
+        if (nextTrack) {
+          const loadedTrack = await loadTrackAudio(nextTrack);
           setCurrentTrack(loadedTrack);
         } else {
+          // Loop back to first track
           const firstTrack = likedTracksList[0];
           if (firstTrack) {
             const loadedTrack = await loadTrackAudio(firstTrack);
@@ -349,6 +350,13 @@ const Index = () => {
         if (prevTrack) {
           const loadedTrack = await loadTrackAudio(prevTrack);
           setCurrentTrack(loadedTrack);
+        } else {
+          // Loop back to last track
+          const lastTrack = likedTracksList[likedTracksList.length - 1];
+          if (lastTrack) {
+            const loadedTrack = await loadTrackAudio(lastTrack);
+            setCurrentTrack(loadedTrack);
+          }
         }
       }
       return;
@@ -369,6 +377,16 @@ const Index = () => {
       if (prevTrack) {
         const loadedTrack = await loadTrackAudio(prevTrack);
         setCurrentTrack(loadedTrack);
+      }
+    } else {
+      // Loop back to last track
+      const lastTrackId = playlist.tracks[playlist.tracks.length - 1];
+      if (lastTrackId) {
+        const lastTrack = tracks.find(t => t.id === lastTrackId);
+        if (lastTrack) {
+          const loadedTrack = await loadTrackAudio(lastTrack);
+          setCurrentTrack(loadedTrack);
+        }
       }
     }
   };

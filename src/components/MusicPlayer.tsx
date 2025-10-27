@@ -27,6 +27,47 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
   const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'all'>('off');
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Set up media session callbacks FIRST before initializing controls
+  useEffect(() => {
+    const isNative = Capacitor.isNativePlatform();
+    
+    const callbacks = {
+      onPlay: () => {
+        if (audioRef.current) {
+          audioRef.current.play().then(() => {
+            setIsPlaying(true);
+          }).catch(error => {
+            console.error('Error playing from media controls:', error);
+          });
+        }
+      },
+      onPause: () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        }
+      },
+      onNext: () => {
+        if (onNext) onNext();
+      },
+      onPrevious: () => {
+        if (onPrevious) onPrevious();
+      },
+      onSeek: (time: number) => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = time;
+          setCurrentTime(time);
+        }
+      }
+    };
+    
+    if (isNative) {
+      nativeMediaControls.setCallbacks(callbacks);
+    } else {
+      mediaSession.setCallbacks(callbacks);
+    }
+  }, [onNext, onPrevious]);
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.src = track.audioUrl;
@@ -158,47 +199,6 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       audioRef.current.volume = finalVolume;
     }
   }, [volume, isMuted, masterVolume]);
-
-  // Set up media session callbacks
-  useEffect(() => {
-    const isNative = Capacitor.isNativePlatform();
-    
-    const callbacks = {
-      onPlay: () => {
-        if (audioRef.current) {
-          audioRef.current.play().then(() => {
-            setIsPlaying(true);
-          }).catch(error => {
-            console.error('Error playing from media controls:', error);
-          });
-        }
-      },
-      onPause: () => {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          setIsPlaying(false);
-        }
-      },
-      onNext: () => {
-        if (onNext) onNext();
-      },
-      onPrevious: () => {
-        if (onPrevious) onPrevious();
-      },
-      onSeek: (time: number) => {
-        if (audioRef.current) {
-          audioRef.current.currentTime = time;
-          setCurrentTime(time);
-        }
-      }
-    };
-    
-    if (isNative) {
-      nativeMediaControls.setCallbacks(callbacks);
-    } else {
-      mediaSession.setCallbacks(callbacks);
-    }
-  }, [onNext, onPrevious]);
 
   const togglePlayPause = async () => {
     if (!audioRef.current) return;

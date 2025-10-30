@@ -28,6 +28,7 @@ export const extractAudioFromVideo = async (
             title: videoFile.name.replace(/\.[^/.]+$/, ""), // Remove extension
             duration: trimmedBuffer.duration,
             originalFileName: videoFile.name,
+            fileSize: wavBlob.size,
             createdAt: new Date()
           };
           
@@ -46,6 +47,7 @@ export const extractAudioFromVideo = async (
             duration: trimmedBuffer.duration,
             audioUrl,
             originalFileName: videoFile.name,
+            fileSize: wavBlob.size,
             createdAt: new Date()
           };
           

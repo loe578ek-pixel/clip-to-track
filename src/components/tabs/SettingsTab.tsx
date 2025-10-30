@@ -334,7 +334,11 @@ export const SettingsTab = ({
               <div>
                 <p className="font-medium text-primary">Storage Used</p>
                 <p className="text-muted-foreground">
-                  ~{audioStats.estimatedSizeMB >= 1024 ? `${(audioStats.estimatedSizeMB / 1024).toFixed(1)} GB` : `${audioStats.estimatedSizeMB.toFixed(1)} MB`}
+                  {audioStats.estimatedSizeMB >= 1024 
+                    ? `${(audioStats.estimatedSizeMB / 1024).toFixed(2)} GB` 
+                    : audioStats.estimatedSizeMB >= 1
+                    ? `${audioStats.estimatedSizeMB.toFixed(1)} MB`
+                    : `${(audioStats.estimatedSizeMB * 1024).toFixed(1)} KB`}
                 </p>
               </div>
             </div>

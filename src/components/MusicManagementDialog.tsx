@@ -55,9 +55,19 @@ export const MusicManagementDialog = ({
   };
 
   const formatFileSize = (sizeBytes?: number) => {
-    if (!sizeBytes) return "~ 3 MB";
-    const sizeMB = sizeBytes / (1024 * 1024);
-    return `${sizeMB.toFixed(1)} MB`;
+    if (!sizeBytes) return "Unknown";
+    
+    const kb = sizeBytes / 1024;
+    const mb = kb / 1024;
+    const gb = mb / 1024;
+    
+    if (gb >= 1) {
+      return `${gb.toFixed(2)} GB`;
+    } else if (mb >= 1) {
+      return `${mb.toFixed(1)} MB`;
+    } else {
+      return `${kb.toFixed(1)} KB`;
+    }
   };
 
   const handleDeleteTrack = async (trackId: string) => {
@@ -129,7 +139,7 @@ export const MusicManagementDialog = ({
                     <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
                       <span>{formatTime(track.duration)}</span>
                       <span>•</span>
-                      <span>{formatFileSize()}</span>
+                      <span>{formatFileSize(track.fileSize)}</span>
                     </div>
                   </div>
 

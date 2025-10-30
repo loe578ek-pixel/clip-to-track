@@ -28,6 +28,7 @@ export interface Track {
   audioUrl: string;
   originalFileName: string;
   createdAt: Date;
+  fileSize?: number; // File size in bytes
   repeatCount?: number; // For repeat functionality
   playbackKey?: string; // Force re-render for repeats
   localFilePath?: string; // Local storage path for offline access

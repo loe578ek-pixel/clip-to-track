@@ -10,6 +10,7 @@ export interface UserProfile {
   premium_type: string | null;
   premium_expires_at: string | null;
   trial_start: string | null;
+  trial_ends_at: string | null;
   created_at: string;
 }
 

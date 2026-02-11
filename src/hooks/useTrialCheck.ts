@@ -4,11 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 interface TrialStatus {
   loading: boolean;
   trialExpired: boolean;
+  daysRemaining: number | null;
+  isPremium: boolean;
 }
 
 export const useTrialCheck = (): TrialStatus => {
   const [loading, setLoading] = useState(true);
   const [trialExpired, setTrialExpired] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     const checkTrial = async () => {
@@ -16,7 +20,6 @@ export const useTrialCheck = (): TrialStatus => {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-          // No user logged in – don't block (auth handles that)
           setLoading(false);
           return;
         }
@@ -32,13 +35,21 @@ export const useTrialCheck = (): TrialStatus => {
           return;
         }
 
-        const isPremium = profile.is_premium === true;
+        const premium = profile.is_premium === true;
+        setIsPremium(premium);
+
         const trialEndsAt = profile.trial_ends_at
           ? new Date(profile.trial_ends_at)
           : null;
 
-        if (!isPremium && trialEndsAt && new Date() > trialEndsAt) {
-          setTrialExpired(true);
+        if (!premium && trialEndsAt) {
+          const now = new Date();
+          if (now > trialEndsAt) {
+            setTrialExpired(true);
+          } else {
+            const diffMs = trialEndsAt.getTime() - now.getTime();
+            setDaysRemaining(Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+          }
         }
       } catch (err) {
         console.error("Trial check error:", err);
@@ -50,5 +61,5 @@ export const useTrialCheck = (): TrialStatus => {
     checkTrial();
   }, []);
 
-  return { loading, trialExpired };
+  return { loading, trialExpired, daysRemaining, isPremium };
 };

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import { useTrialCheck } from "@/hooks/useTrialCheck";
 interface HomeTabProps {
   tracks: Track[];
   playlists: Playlist[];
@@ -44,6 +45,7 @@ export const HomeTab = ({
 }: HomeTabProps) => {
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
   const [showManageLikedMusic, setShowManageLikedMusic] = useState(false);
+  const { daysRemaining, isPremium } = useTrialCheck();
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -58,7 +60,16 @@ export const HomeTab = ({
     paddingBottom: '6rem'
   }}>
       {/* Header */}
-      
+
+      {/* Trial Banner */}
+      {!isPremium && daysRemaining !== null && (
+        <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
+          <p className="text-sm text-foreground">
+            You have <span className="font-bold text-primary">{daysRemaining}</span> day{daysRemaining !== 1 ? 's' : ''} remaining in your free trial.
+          </p>
+        </div>
+      )}
+
 
       {/* Quick Access Playlists */}
       {playlists.length > 0 && <div>

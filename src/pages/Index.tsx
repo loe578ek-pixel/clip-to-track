@@ -6,6 +6,8 @@ import { PlaylistManagerTab } from "@/components/tabs/PlaylistManagerTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { VolumeProvider } from "@/contexts/VolumeContext";
+import { useTrialCheck } from "@/hooks/useTrialCheck";
+import SubscriptionRequired from "@/pages/SubscriptionRequired";
 
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
@@ -45,6 +47,7 @@ export interface Playlist {
 }
 
 const Index = () => {
+  const { loading: trialLoading, trialExpired } = useTrialCheck();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -664,7 +667,18 @@ const Index = () => {
 
   return (
     <VolumeProvider>
-      {!isAppReady ? (
+      {trialLoading ? (
+        <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground">
+          <div className="animate-pulse mb-4">
+            <svg className="w-16 h-16 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+          </div>
+          <p className="text-lg text-muted-foreground">Loading SoundWave...</p>
+        </div>
+      ) : trialExpired ? (
+        <SubscriptionRequired />
+      ) : !isAppReady ? (
         <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground">
           <div className="animate-pulse mb-4">
             <svg className="w-16 h-16 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -9,6 +9,7 @@ export interface UserProfile {
   is_premium: boolean;
   premium_type: string | null;
   premium_expires_at: string | null;
+  trial_start: string | null;
   created_at: string;
 }
 

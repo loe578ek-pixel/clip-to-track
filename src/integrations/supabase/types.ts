@@ -52,6 +52,7 @@ export type Database = {
           premium_expires_at: string | null
           premium_type: string | null
           provider: string | null
+          trial_start: string | null
           updated_at: string | null
         }
         Insert: {
@@ -64,6 +65,7 @@ export type Database = {
           premium_expires_at?: string | null
           premium_type?: string | null
           provider?: string | null
+          trial_start?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -76,6 +78,7 @@ export type Database = {
           premium_expires_at?: string | null
           premium_type?: string | null
           provider?: string | null
+          trial_start?: string | null
           updated_at?: string | null
         }
         Relationships: []

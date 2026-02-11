@@ -52,6 +52,7 @@ export type Database = {
           premium_expires_at: string | null
           premium_type: string | null
           provider: string | null
+          trial_ends_at: string | null
           trial_start: string | null
           updated_at: string | null
         }
@@ -65,6 +66,7 @@ export type Database = {
           premium_expires_at?: string | null
           premium_type?: string | null
           provider?: string | null
+          trial_ends_at?: string | null
           trial_start?: string | null
           updated_at?: string | null
         }
@@ -78,6 +80,7 @@ export type Database = {
           premium_expires_at?: string | null
           premium_type?: string | null
           provider?: string | null
+          trial_ends_at?: string | null
           trial_start?: string | null
           updated_at?: string | null
         }

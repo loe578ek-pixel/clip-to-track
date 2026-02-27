@@ -2,7 +2,7 @@ import { Capacitor } from "@capacitor/core";
 
 // RevenueCat configuration
 // Replace these with your actual RevenueCat values
-const REVENUECAT_API_KEY_ANDROID = "YOUR_REVENUECAT_GOOGLE_API_KEY";
+const REVENUECAT_API_KEY_ANDROID = "goog_UWpcVvaefmTIvDIYMrjNIUOZmZI";
 const REVENUECAT_API_KEY_IOS = "YOUR_REVENUECAT_APPLE_API_KEY";
 const ENTITLEMENT_ID = "premium";
 

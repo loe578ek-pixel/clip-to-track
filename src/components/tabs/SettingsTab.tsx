@@ -333,6 +333,11 @@ export const SettingsTab = ({
                 size="lg"
                 className="w-full text-base font-semibold"
                 onClick={async () => {
+                  const { Capacitor } = await import("@capacitor/core");
+                  if (!Capacitor.isNativePlatform()) {
+                    toast.info("Subscription is only available in the mobile app.");
+                    return;
+                  }
                   setIsPurchasing(true);
                   try {
                     const success = await onPurchase();

@@ -661,7 +661,7 @@ const Index = () => {
           />
         );
       case 'settings':
-        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} onRenameTrack={handleRenameTrack} />;
+        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} onRenameTrack={handleRenameTrack} isPremium={isPremium} daysRemaining={daysRemaining} onPurchase={purchase} onRestore={restore} />;
       default:
         return <HomeTab 
           tracks={tracks} 

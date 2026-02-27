@@ -1,4 +1,4 @@
-import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Crown } from "lucide-react";
+import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Crown, RotateCcw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useVolume } from "@/contexts/VolumeContext";
 import { storageService } from "@/lib/storageService";
@@ -25,6 +27,10 @@ interface SettingsTabProps {
   likedTracks: Set<string>;
   onToggleLike: (trackId: string) => void;
   onRenameTrack: (trackId: string, newTitle: string) => void;
+  isPremium: boolean;
+  daysRemaining: number | null;
+  onPurchase: () => Promise<boolean>;
+  onRestore: () => Promise<boolean>;
 }
 export const SettingsTab = ({
   onClearAllData,
@@ -33,7 +39,11 @@ export const SettingsTab = ({
   onDeleteTrack,
   likedTracks,
   onToggleLike,
-  onRenameTrack
+  onRenameTrack,
+  isPremium,
+  daysRemaining,
+  onPurchase,
+  onRestore
 }: SettingsTabProps) => {
   const {
     masterVolume,
@@ -57,6 +67,8 @@ export const SettingsTab = ({
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   // Check authentication state
   useEffect(() => {
@@ -270,6 +282,111 @@ export const SettingsTab = ({
                 Continue with Google
               </Button>
             </div>}
+        </CardContent>
+      </Card>
+
+      {/* Premium / Subscription Section */}
+      <Card className="soundwave-card border-white/10">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Crown className="h-5 w-5 text-primary" />
+            <span>Abonnement</span>
+          </CardTitle>
+          <CardDescription>
+            {isPremium ? "Vous êtes abonné Premium" : "Gérez votre abonnement"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isPremium ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <Crown className="h-6 w-6 text-primary shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">Premium actif</p>
+                  {daysRemaining !== null && (
+                    <p className="text-sm text-muted-foreground">
+                      {daysRemaining} jour{daysRemaining > 1 ? 's' : ''} restant{daysRemaining > 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+                <Badge className="bg-primary/20 text-primary border-primary/30">Actif</Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-muted-foreground"
+                onClick={async () => {
+                  setIsRestoring(true);
+                  try {
+                    const success = await onRestore();
+                    if (success) toast.success("Achats restaurés !");
+                    else toast.info("Aucun achat à restaurer.");
+                  } catch { toast.error("Erreur lors de la restauration."); }
+                  finally { setIsRestoring(false); }
+                }}
+                disabled={isRestoring}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                {isRestoring ? "Restauration..." : "Restaurer mes achats"}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Trial countdown */}
+              {daysRemaining !== null && (
+                <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-medium text-foreground">Période d'essai gratuite</p>
+                  </div>
+                  <p className="text-2xl font-bold text-primary mb-1">
+                    {daysRemaining} jour{daysRemaining > 1 ? 's' : ''} restant{daysRemaining > 1 ? 's' : ''}
+                  </p>
+                  <Progress value={((30 - daysRemaining) / 30) * 100} className="h-2 mt-2" />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Accès complet pendant votre essai
+                  </p>
+                </div>
+              )}
+
+              <Button
+                size="lg"
+                className="w-full text-base font-semibold"
+                onClick={async () => {
+                  setIsPurchasing(true);
+                  try {
+                    const success = await onPurchase();
+                    if (success) toast.success("Bienvenue en Premium ! 🎉");
+                    else toast.error("L'achat a échoué ou a été annulé.");
+                  } catch { toast.error("Une erreur est survenue."); }
+                  finally { setIsPurchasing(false); }
+                }}
+                disabled={isPurchasing}
+              >
+                <Crown className="h-5 w-5 mr-2" />
+                {isPurchasing ? "Chargement..." : "S'abonner à Premium"}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-muted-foreground"
+                onClick={async () => {
+                  setIsRestoring(true);
+                  try {
+                    const success = await onRestore();
+                    if (success) toast.success("Achats restaurés !");
+                    else toast.info("Aucun achat à restaurer.");
+                  } catch { toast.error("Erreur lors de la restauration."); }
+                  finally { setIsRestoring(false); }
+                }}
+                disabled={isRestoring}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                {isRestoring ? "Restauration..." : "Restaurer mes achats"}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

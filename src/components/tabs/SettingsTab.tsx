@@ -290,45 +290,25 @@ export const SettingsTab = ({
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Crown className="h-5 w-5 text-primary" />
-            <span>Abonnement</span>
+            <span>Subscription</span>
           </CardTitle>
           <CardDescription>
-            {isPremium ? "Vous êtes abonné Premium" : "Gérez votre abonnement"}
+            {isPremium ? "You are a Premium subscriber" : "Manage your subscription"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {isPremium ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 border border-primary/20">
-                <Crown className="h-6 w-6 text-primary shrink-0" />
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">Premium actif</p>
-                  {daysRemaining !== null && (
-                    <p className="text-sm text-muted-foreground">
-                      {daysRemaining} jour{daysRemaining > 1 ? 's' : ''} restant{daysRemaining > 1 ? 's' : ''}
-                    </p>
-                  )}
-                </div>
-                <Badge className="bg-primary/20 text-primary border-primary/30">Actif</Badge>
+            <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 border border-primary/20">
+              <Crown className="h-6 w-6 text-primary shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">Premium Active</p>
+                {daysRemaining !== null && (
+                  <p className="text-sm text-muted-foreground">
+                    {daysRemaining} day{daysRemaining > 1 ? 's' : ''} remaining
+                  </p>
+                )}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-muted-foreground"
-                onClick={async () => {
-                  setIsRestoring(true);
-                  try {
-                    const success = await onRestore();
-                    if (success) toast.success("Achats restaurés !");
-                    else toast.info("Aucun achat à restaurer.");
-                  } catch { toast.error("Erreur lors de la restauration."); }
-                  finally { setIsRestoring(false); }
-                }}
-                disabled={isRestoring}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                {isRestoring ? "Restauration..." : "Restaurer mes achats"}
-              </Button>
+              <Badge className="bg-primary/20 text-primary border-primary/30">Active</Badge>
             </div>
           ) : (
             <div className="space-y-4">
@@ -337,14 +317,14 @@ export const SettingsTab = ({
                 <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-medium text-foreground">Période d'essai gratuite</p>
+                    <p className="text-sm font-medium text-foreground">Free Trial</p>
                   </div>
                   <p className="text-2xl font-bold text-primary mb-1">
-                    {daysRemaining} jour{daysRemaining > 1 ? 's' : ''} restant{daysRemaining > 1 ? 's' : ''}
+                    {daysRemaining} day{daysRemaining > 1 ? 's' : ''} remaining
                   </p>
                   <Progress value={((30 - daysRemaining) / 30) * 100} className="h-2 mt-2" />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Accès complet pendant votre essai
+                    Full access during your trial
                   </p>
                 </div>
               )}
@@ -356,34 +336,15 @@ export const SettingsTab = ({
                   setIsPurchasing(true);
                   try {
                     const success = await onPurchase();
-                    if (success) toast.success("Bienvenue en Premium ! 🎉");
-                    else toast.error("L'achat a échoué ou a été annulé.");
-                  } catch { toast.error("Une erreur est survenue."); }
+                    if (success) toast.success("Welcome to Premium! 🎉");
+                    else toast.error("Purchase failed or was cancelled.");
+                  } catch { toast.error("An error occurred."); }
                   finally { setIsPurchasing(false); }
                 }}
                 disabled={isPurchasing}
               >
                 <Crown className="h-5 w-5 mr-2" />
-                {isPurchasing ? "Chargement..." : "S'abonner à Premium"}
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-muted-foreground"
-                onClick={async () => {
-                  setIsRestoring(true);
-                  try {
-                    const success = await onRestore();
-                    if (success) toast.success("Achats restaurés !");
-                    else toast.info("Aucun achat à restaurer.");
-                  } catch { toast.error("Erreur lors de la restauration."); }
-                  finally { setIsRestoring(false); }
-                }}
-                disabled={isRestoring}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                {isRestoring ? "Restauration..." : "Restaurer mes achats"}
+                {isPurchasing ? "Loading..." : "Subscribe to Premium"}
               </Button>
             </div>
           )}

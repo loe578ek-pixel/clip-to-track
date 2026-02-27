@@ -6,11 +6,12 @@ import { PlaylistManagerTab } from "@/components/tabs/PlaylistManagerTab";
 import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { VolumeProvider } from "@/contexts/VolumeContext";
-import { useTrialCheck } from "@/hooks/useTrialCheck";
+import { usePremium } from "@/hooks/usePremium";
 import SubscriptionRequired from "@/pages/SubscriptionRequired";
 
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
+import { toast } from "sonner";
 
 // Type definition
 type UserProfile = {
@@ -47,7 +48,7 @@ export interface Playlist {
 }
 
 const Index = () => {
-  const { loading: trialLoading, trialExpired } = useTrialCheck();
+  const { loading: trialLoading, trialExpired, isPremium, daysRemaining, purchase, restore } = usePremium();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -149,6 +150,11 @@ const Index = () => {
   };
 
   const handlePlayTrack = async (track: Track) => {
+    // Block playback if trial expired and not premium
+    if (trialExpired && !isPremium) {
+      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      return;
+    }
     const loadedTrack = await loadTrackAudio(track);
     setCurrentTrack(loadedTrack);
     setCurrentPlaylistId(null);
@@ -396,6 +402,10 @@ const Index = () => {
   };
 
   const handlePlayPlaylistFromTrack = async (playlistId: string, trackId: string) => {
+    if (trialExpired && !isPremium) {
+      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      return;
+    }
     setCurrentTrack(null);
     setIsAutoPlaying(false);
     
@@ -419,6 +429,10 @@ const Index = () => {
   };
 
   const handlePlayPlaylist = async (playlistId: string) => {
+    if (trialExpired && !isPremium) {
+      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      return;
+    }
     setCurrentTrack(null);
     setIsAutoPlaying(false);
     
@@ -559,6 +573,10 @@ const Index = () => {
   };
 
   const handlePlayLikedMusic = async () => {
+    if (trialExpired && !isPremium) {
+      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      return;
+    }
     const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
     if (likedTracksList.length > 0) {
       setCurrentTrack(null);
@@ -677,7 +695,7 @@ const Index = () => {
           <p className="text-lg text-muted-foreground">Loading SoundWave...</p>
         </div>
       ) : trialExpired ? (
-        <SubscriptionRequired />
+        <SubscriptionRequired onPurchase={purchase} onRestore={restore} />
       ) : !isAppReady ? (
         <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground">
           <div className="animate-pulse mb-4">

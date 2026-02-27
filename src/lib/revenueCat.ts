@@ -1,0 +1,105 @@
+import { Capacitor } from "@capacitor/core";
+
+// RevenueCat configuration
+// Replace these with your actual RevenueCat values
+const REVENUECAT_API_KEY_ANDROID = "YOUR_REVENUECAT_GOOGLE_API_KEY";
+const REVENUECAT_API_KEY_IOS = "YOUR_REVENUECAT_APPLE_API_KEY";
+const ENTITLEMENT_ID = "premium";
+
+interface PremiumStatus {
+  isPremium: boolean;
+  expirationDate: string | null;
+}
+
+class RevenueCatService {
+  private initialized = false;
+  private Purchases: any = null;
+
+  async initialize(): Promise<void> {
+    if (this.initialized || !Capacitor.isNativePlatform()) return;
+
+    try {
+      const { Purchases } = await import("@revenuecat/purchases-capacitor");
+      this.Purchases = Purchases;
+
+      const platform = Capacitor.getPlatform();
+      const apiKey = platform === "ios" ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
+
+      await Purchases.configure({ apiKey });
+      this.initialized = true;
+      console.log("✅ RevenueCat initialized");
+    } catch (error) {
+      console.error("❌ RevenueCat init error:", error);
+    }
+  }
+
+  async checkPremiumStatus(): Promise<PremiumStatus> {
+    if (!this.initialized || !this.Purchases) {
+      return { isPremium: false, expirationDate: null };
+    }
+
+    try {
+      const { customerInfo } = await this.Purchases.getCustomerInfo();
+      const entitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];
+
+      if (entitlement) {
+        return {
+          isPremium: true,
+          expirationDate: entitlement.expirationDate || null,
+        };
+      }
+
+      return { isPremium: false, expirationDate: null };
+    } catch (error) {
+      console.error("❌ RevenueCat status check error:", error);
+      return { isPremium: false, expirationDate: null };
+    }
+  }
+
+  async purchasePremium(): Promise<boolean> {
+    if (!this.initialized || !this.Purchases) {
+      console.error("RevenueCat not initialized");
+      return false;
+    }
+
+    try {
+      const { offerings } = await this.Purchases.getOfferings();
+
+      if (!offerings.current || offerings.current.availablePackages.length === 0) {
+        console.error("No offerings available");
+        return false;
+      }
+
+      const packageToPurchase = offerings.current.availablePackages[0];
+      const { customerInfo } = await this.Purchases.purchasePackage({ aPackage: packageToPurchase });
+
+      const entitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];
+      return !!entitlement;
+    } catch (error: any) {
+      if (error?.code === "1" || error?.userCancelled) {
+        console.log("Purchase cancelled by user");
+      } else {
+        console.error("❌ Purchase error:", error);
+      }
+      return false;
+    }
+  }
+
+  async restorePurchases(): Promise<boolean> {
+    if (!this.initialized || !this.Purchases) {
+      console.error("RevenueCat not initialized");
+      return false;
+    }
+
+    try {
+      const { customerInfo } = await this.Purchases.restorePurchases();
+      const entitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];
+      return !!entitlement;
+    } catch (error) {
+      console.error("❌ Restore error:", error);
+      return false;
+    }
+  }
+}
+
+export const revenueCatService = new RevenueCatService();

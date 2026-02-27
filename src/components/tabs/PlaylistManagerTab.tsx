@@ -116,9 +116,9 @@ export const PlaylistManagerTab = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto space-y-6" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 20px)', paddingBottom: '6rem' }}>
+    <div className="flex-1 overflow-auto space-y-6" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)', paddingBottom: '6rem' }}>
       {/* Header */}
-      <div className="sticky bg-background/80 backdrop-blur-md z-10 pb-4 pl-4" style={{ top: 'calc(env(safe-area-inset-top) + 16px)' }}>
+      <div className="sticky bg-background/80 backdrop-blur-md z-10 pb-4 pl-4" style={{ top: 'calc(env(safe-area-inset-top) + 4px)' }}>
         <h1 className="text-3xl font-bold mb-2">Playlist Manager</h1>
         <p className="text-muted-foreground">Rename playlists and manage song repeats</p>
       </div>

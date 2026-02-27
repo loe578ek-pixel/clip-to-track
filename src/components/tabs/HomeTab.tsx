@@ -56,7 +56,7 @@ export const HomeTab = ({
     return <ManageLikedMusic tracks={tracks} likedTracks={likedTracks} likedTracksOrder={likedTracksOrder} trackRepeatCounts={trackRepeatCounts} onToggleLike={onToggleLike} onPlayTrack={onPlayTrack} onUpdateTrackRepeat={onUpdateTrackRepeat} onReorderLikedTracks={onReorderLikedTracks} onBack={() => setShowManageLikedMusic(false)} />;
   }
   return <div className="flex-1 overflow-auto p-4 space-y-6" style={{
-    paddingTop: 'calc(env(safe-area-inset-top) + 20px)',
+    paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
     paddingBottom: '6rem'
   }}>
       {/* Header */}

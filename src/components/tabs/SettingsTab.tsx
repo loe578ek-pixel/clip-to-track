@@ -197,11 +197,11 @@ export const SettingsTab = ({
     return 'U';
   };
   return <div className="flex-1 overflow-auto p-4 space-y-6" style={{
-    paddingTop: 'calc(env(safe-area-inset-top) + 20px)',
+    paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
     paddingBottom: '6rem'
   }}>
       {/* Header */}
-      <div className="sticky bg-background/80 backdrop-blur-md z-10 pb-4" style={{ top: 'calc(env(safe-area-inset-top) + 16px)' }}>
+      <div className="sticky bg-background/80 backdrop-blur-md z-10 pb-4" style={{ top: 'calc(env(safe-area-inset-top) + 4px)' }}>
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-muted-foreground">Customize your music experience</p>
       </div>
@@ -473,16 +473,10 @@ export const SettingsTab = ({
             </Dialog>
           </div>
 
-          
-
-          
         </CardContent>
       </Card>
 
       {/* Music Management Dialog */}
       <MusicManagementDialog isOpen={isMusicManagementOpen} onClose={() => setIsMusicManagementOpen(false)} tracks={tracks} onDeleteTrack={handleDeleteIndividualTrack} likedTracks={likedTracks} onToggleLike={onToggleLike} onRenameTrack={onRenameTrack} />
-
-      {/* App Information */}
-      
     </div>;
 };

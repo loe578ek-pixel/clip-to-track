@@ -154,17 +154,26 @@ export const SettingsTab = ({
   const handleSignInWithGoogle = async () => {
     setIsAuthLoading(true);
     try {
-      const {
-        error
-      } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
-      if (error) console.error('Google sign in error:', error);
+      if (result.error) console.error('Google sign in error:', result.error);
     } catch (error) {
       console.error('Google sign in error:', error);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleSignInWithApple = async () => {
+    setIsAuthLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("apple", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) console.error('Apple sign in error:', result.error);
+    } catch (error) {
+      console.error('Apple sign in error:', error);
     } finally {
       setIsAuthLoading(false);
     }

@@ -7,7 +7,6 @@ import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { VolumeProvider } from "@/contexts/VolumeContext";
 import { usePremium } from "@/hooks/usePremium";
-import SubscriptionRequired from "@/pages/SubscriptionRequired";
 
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
@@ -152,7 +151,7 @@ const Index = () => {
   const handlePlayTrack = async (track: Track) => {
     // Block playback if trial expired and not premium
     if (trialExpired && !isPremium) {
-      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
     const loadedTrack = await loadTrackAudio(track);
@@ -403,7 +402,7 @@ const Index = () => {
 
   const handlePlayPlaylistFromTrack = async (playlistId: string, trackId: string) => {
     if (trialExpired && !isPremium) {
-      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
     setCurrentTrack(null);
@@ -430,7 +429,7 @@ const Index = () => {
 
   const handlePlayPlaylist = async (playlistId: string) => {
     if (trialExpired && !isPremium) {
-      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
     setCurrentTrack(null);
@@ -574,7 +573,7 @@ const Index = () => {
 
   const handlePlayLikedMusic = async () => {
     if (trialExpired && !isPremium) {
-      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
     const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
@@ -694,8 +693,6 @@ const Index = () => {
           </div>
           <p className="text-lg text-muted-foreground">Loading SoundWave...</p>
         </div>
-      ) : trialExpired ? (
-        <SubscriptionRequired onPurchase={purchase} onRestore={restore} />
       ) : !isAppReady ? (
         <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground">
           <div className="animate-pulse mb-4">

@@ -573,7 +573,7 @@ const Index = () => {
 
   const handlePlayLikedMusic = async () => {
     if (trialExpired && !isPremium) {
-      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
     const likedTracksList = tracks.filter(track => likedTracks.has(track.id));

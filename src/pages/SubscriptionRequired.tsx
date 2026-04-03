@@ -17,12 +17,12 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
     try {
       const success = await onPurchase();
       if (success) {
-        toast.success("Bienvenue en Premium ! 🎉");
+        toast.success("Welcome to Premium! 🎉");
       } else {
-        toast.error("L'achat a échoué ou a été annulé.");
+        toast.error("Purchase failed or was cancelled.");
       }
     } catch {
-      toast.error("Une erreur est survenue. Réessayez.");
+      toast.error("An error occurred. Please try again.");
     } finally {
       setPurchasing(false);
     }
@@ -33,12 +33,12 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
     try {
       const success = await onRestore();
       if (success) {
-        toast.success("Achats restaurés avec succès ! 🎉");
+        toast.success("Purchases restored successfully! 🎉");
       } else {
-        toast.info("Aucun achat trouvé à restaurer.");
+        toast.info("No purchases found to restore.");
       }
     } catch {
-      toast.error("Erreur lors de la restauration.");
+      toast.error("Error restoring purchases.");
     } finally {
       setRestoring(false);
     }
@@ -47,38 +47,31 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground px-6">
       <div className="flex flex-col items-center gap-8 max-w-sm w-full text-center">
-        {/* Icon */}
         <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
           <Crown className="w-12 h-12 text-primary" />
         </div>
-
-        {/* Title */}
         <div className="space-y-3">
           <h1 className="text-3xl font-bold text-foreground">
-            Passez à Premium
+            Upgrade to Premium
           </h1>
           <p className="text-muted-foreground text-base leading-relaxed">
-            Accès illimité à toutes vos musiques sans restriction.
+            Unlimited access to all your music without restrictions.
           </p>
         </div>
-
-        {/* Features */}
         <div className="w-full space-y-3 text-left">
           <div className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
             <Music className="w-5 h-5 text-primary shrink-0" />
-            <span className="text-sm text-foreground">Lecture illimitée de toutes vos musiques</span>
+            <span className="text-sm text-foreground">Unlimited playback of all your music</span>
           </div>
           <div className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
             <Sparkles className="w-5 h-5 text-primary shrink-0" />
-            <span className="text-sm text-foreground">Playlists et répétitions sans limites</span>
+            <span className="text-sm text-foreground">Playlists and repeats without limits</span>
           </div>
           <div className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border border-border/50">
             <Shield className="w-5 h-5 text-primary shrink-0" />
-            <span className="text-sm text-foreground">Mises à jour et fonctionnalités futures</span>
+            <span className="text-sm text-foreground">Updates and future features</span>
           </div>
         </div>
-
-        {/* Buttons */}
         <div className="w-full space-y-3 mt-2">
           <Button
             size="lg"
@@ -86,9 +79,8 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
             onClick={handlePurchase}
             disabled={purchasing}
           >
-            {purchasing ? "Chargement..." : "S'abonner"}
+            {purchasing ? "Loading..." : "Subscribe"}
           </Button>
-
           <Button
             variant="ghost"
             size="sm"
@@ -97,7 +89,7 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
             disabled={restoring}
           >
             <RotateCcw className="w-4 h-4 mr-2" />
-            {restoring ? "Restauration..." : "Restaurer mes achats"}
+            {restoring ? "Restoring..." : "Restore my purchases"}
           </Button>
         </div>
       </div>

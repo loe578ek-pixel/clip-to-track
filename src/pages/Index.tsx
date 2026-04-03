@@ -693,8 +693,6 @@ const Index = () => {
           </div>
           <p className="text-lg text-muted-foreground">Loading SoundWave...</p>
         </div>
-      ) : trialExpired ? (
-        <SubscriptionRequired onPurchase={purchase} onRestore={restore} />
       ) : !isAppReady ? (
         <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground">
           <div className="animate-pulse mb-4">

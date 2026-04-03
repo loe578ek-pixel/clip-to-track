@@ -31,17 +31,24 @@ export const usePremium = (): PremiumState => {
 
   const checkStatus = useCallback(async () => {
     try {
+      // On web (non-native), skip trial expiration — subscriptions only work on native
+      if (!Capacitor.isNativePlatform()) {
+        setIsPremium(false);
+        setTrialExpired(false);
+        setDaysRemaining(null);
+        setLoading(false);
+        return;
+      }
+
       // 1. Check RevenueCat on native platforms
-      if (Capacitor.isNativePlatform()) {
-        await revenueCatService.initialize();
-        const rcStatus = await revenueCatService.checkPremiumStatus();
-        if (rcStatus.isPremium) {
-          setIsPremium(true);
-          setTrialExpired(false);
-          setLoading(false);
-          await syncPremiumToSupabase(true);
-          return;
-        }
+      await revenueCatService.initialize();
+      const rcStatus = await revenueCatService.checkPremiumStatus();
+      if (rcStatus.isPremium) {
+        setIsPremium(true);
+        setTrialExpired(false);
+        setLoading(false);
+        await syncPremiumToSupabase(true);
+        return;
       }
 
       // 2. Check Supabase profile

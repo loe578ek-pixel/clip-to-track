@@ -7,7 +7,6 @@ import { SettingsTab } from "@/components/tabs/SettingsTab";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { VolumeProvider } from "@/contexts/VolumeContext";
 import { usePremium } from "@/hooks/usePremium";
-import SubscriptionRequired from "@/pages/SubscriptionRequired";
 
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";

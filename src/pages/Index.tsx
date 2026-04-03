@@ -151,7 +151,7 @@ const Index = () => {
   const handlePlayTrack = async (track: Track) => {
     // Block playback if trial expired and not premium
     if (trialExpired && !isPremium) {
-      toast.error("Votre essai gratuit est terminé. Passez à Premium pour continuer.");
+      toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
     const loadedTrack = await loadTrackAudio(track);

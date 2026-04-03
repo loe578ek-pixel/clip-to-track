@@ -31,11 +31,11 @@ export const usePremium = (): PremiumState => {
 
   const checkStatus = useCallback(async () => {
     try {
-      // On web (non-native), skip trial expiration — subscriptions only work on native
+      // On web (non-native), skip RevenueCat but still check trial
       if (!Capacitor.isNativePlatform()) {
         setIsPremium(false);
-        setTrialExpired(false);
-        setDaysRemaining(null);
+        // Check local trial for web preview
+        checkLocalTrial();
         setLoading(false);
         return;
       }

@@ -72,15 +72,15 @@ export const HomeTab = ({
       {/* Header */}
 
       {/* Trial Banner */}
-      {!isPremium && daysRemaining !== null && daysRemaining > 0 && (
+      {!isPremium && trialStarted && localDaysRemaining !== null && localDaysRemaining > 0 && (
         <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
           <p className="text-sm text-foreground">
-            You have <span className="font-bold text-primary">{daysRemaining}</span> day{daysRemaining !== 1 ? 's' : ''} remaining in your free trial.
+            You have <span className="font-bold text-primary">{localDaysRemaining}</span> day{localDaysRemaining !== 1 ? 's' : ''} remaining in your free trial.
           </p>
         </div>
       )}
 
-      {!isPremium && daysRemaining !== null && daysRemaining <= 0 && (
+      {!isPremium && trialStarted && localTrialExpired && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3">
           <p className="text-sm text-foreground">
             Your free trial has ended. Go to <span className="font-bold">Settings</span> to subscribe and continue playing.

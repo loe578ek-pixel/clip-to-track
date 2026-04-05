@@ -47,7 +47,7 @@ export interface Playlist {
 }
 
 const Index = () => {
-  const { loading: trialLoading, trialExpired, isPremium, daysRemaining, purchase, restore } = usePremium();
+  const { loading: trialLoading, trialExpired, trialStarted, isPremium, daysRemaining, purchase, restore, startTrial } = usePremium();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -154,6 +154,8 @@ const Index = () => {
       toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
+    // Start trial on first ever play
+    startTrial();
     const loadedTrack = await loadTrackAudio(track);
     setCurrentTrack(loadedTrack);
     setCurrentPlaylistId(null);
@@ -405,6 +407,7 @@ const Index = () => {
       toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
+    startTrial();
     setCurrentTrack(null);
     setIsAutoPlaying(false);
     
@@ -432,6 +435,7 @@ const Index = () => {
       toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
+    startTrial();
     setCurrentTrack(null);
     setIsAutoPlaying(false);
     
@@ -576,6 +580,7 @@ const Index = () => {
       toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
+    startTrial();
     const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
     if (likedTracksList.length > 0) {
       setCurrentTrack(null);

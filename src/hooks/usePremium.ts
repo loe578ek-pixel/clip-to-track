@@ -3,19 +3,25 @@ import { Capacitor } from "@capacitor/core";
 import { revenueCatService } from "@/lib/revenueCat";
 import { supabase } from "@/integrations/supabase/client";
 
+const TRIAL_KEY = "soundwave-first-play";
+const TRIAL_DAYS = 30;
+
 interface PremiumState {
   loading: boolean;
   isPremium: boolean;
   trialExpired: boolean;
+  trialStarted: boolean;
   daysRemaining: number | null;
   purchase: () => Promise<boolean>;
   restore: () => Promise<boolean>;
+  startTrial: () => void;
 }
 
 export const usePremium = (): PremiumState => {
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [trialExpired, setTrialExpired] = useState(false);
+  const [trialStarted, setTrialStarted] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
 
   const syncPremiumToSupabase = useCallback(async (premium: boolean) => {
@@ -29,13 +35,36 @@ export const usePremium = (): PremiumState => {
     }
   }, []);
 
+  const evaluateLocalTrial = useCallback(() => {
+    const firstPlay = localStorage.getItem(TRIAL_KEY);
+    if (!firstPlay) {
+      // Trial not started yet — no restrictions
+      setTrialStarted(false);
+      setTrialExpired(false);
+      setDaysRemaining(null);
+      return;
+    }
+    setTrialStarted(true);
+    const firstPlayDate = new Date(firstPlay);
+    const now = new Date();
+    const diffMs = now.getTime() - firstPlayDate.getTime();
+    const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (daysPassed >= TRIAL_DAYS) {
+      setTrialExpired(true);
+      setDaysRemaining(0);
+    } else {
+      setTrialExpired(false);
+      setDaysRemaining(TRIAL_DAYS - daysPassed);
+    }
+  }, []);
+
   const checkStatus = useCallback(async () => {
     try {
-      // On web (non-native), skip RevenueCat but still check trial
+      // On web (non-native), use local trial only
       if (!Capacitor.isNativePlatform()) {
         setIsPremium(false);
-        // Check local trial for web preview
-        checkLocalTrial();
+        evaluateLocalTrial();
         setLoading(false);
         return;
       }
@@ -51,68 +80,59 @@ export const usePremium = (): PremiumState => {
         return;
       }
 
-      // 2. Check Supabase profile
+      // 2. Check Supabase profile for premium
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        // No user — check local trial
-        checkLocalTrial();
-        setLoading(false);
-        return;
-      }
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_premium")
+          .eq("id", user.id)
+          .single();
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_premium, trial_ends_at")
-        .eq("id", user.id)
-        .single();
-
-      if (profile?.is_premium) {
-        setIsPremium(true);
-        setTrialExpired(false);
-        setLoading(false);
-        return;
-      }
-
-      // 3. Check trial from profile
-      if (profile?.trial_ends_at) {
-        const trialEnd = new Date(profile.trial_ends_at);
-        const now = new Date();
-        if (now > trialEnd) {
-          setTrialExpired(true);
-        } else {
-          const diffMs = trialEnd.getTime() - now.getTime();
-          setDaysRemaining(Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        if (profile?.is_premium) {
+          setIsPremium(true);
+          setTrialExpired(false);
+          setLoading(false);
+          return;
         }
-      } else {
-        // No trial_ends_at — fallback to local storage trial
-        checkLocalTrial();
       }
+
+      // 3. Always use local trial (based on first play)
+      evaluateLocalTrial();
     } catch (err) {
       console.error("Premium check error:", err);
-      checkLocalTrial();
+      evaluateLocalTrial();
     } finally {
       setLoading(false);
     }
-  }, [syncPremiumToSupabase]);
+  }, [syncPremiumToSupabase, evaluateLocalTrial]);
 
-  const checkLocalTrial = () => {
-    const TRIAL_KEY = "soundwave-first-open";
-    let firstOpen = localStorage.getItem(TRIAL_KEY);
-    if (!firstOpen) {
-      firstOpen = new Date().toISOString();
-      localStorage.setItem(TRIAL_KEY, firstOpen);
-    }
-    const firstOpenDate = new Date(firstOpen);
-    const now = new Date();
-    const diffMs = now.getTime() - firstOpenDate.getTime();
-    const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  // Called on the very first play — starts the 30-day countdown
+  const startTrial = useCallback(() => {
+    const existing = localStorage.getItem(TRIAL_KEY);
+    if (!existing) {
+      const now = new Date().toISOString();
+      localStorage.setItem(TRIAL_KEY, now);
+      setTrialStarted(true);
+      setDaysRemaining(TRIAL_DAYS);
+      setTrialExpired(false);
 
-    if (daysPassed >= 30) {
-      setTrialExpired(true);
-    } else {
-      setDaysRemaining(30 - daysPassed);
+      // Also sync to Supabase profile if signed in
+      (async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from("profiles").update({
+              trial_start: now,
+              trial_ends_at: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+            }).eq("id", user.id);
+          }
+        } catch (err) {
+          console.error("Error syncing trial start:", err);
+        }
+      })();
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkStatus();
@@ -138,5 +158,5 @@ export const usePremium = (): PremiumState => {
     return success;
   }, [syncPremiumToSupabase]);
 
-  return { loading, isPremium, trialExpired, daysRemaining, purchase, restore };
+  return { loading, isPremium, trialExpired, trialStarted, daysRemaining, purchase, restore, startTrial };
 };

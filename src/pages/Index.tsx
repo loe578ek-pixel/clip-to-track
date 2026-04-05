@@ -47,7 +47,7 @@ export interface Playlist {
 }
 
 const Index = () => {
-  const { loading: trialLoading, trialExpired, isPremium, daysRemaining, purchase, restore } = usePremium();
+  const { loading: trialLoading, trialExpired, trialStarted, isPremium, daysRemaining, purchase, restore, startTrial } = usePremium();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);

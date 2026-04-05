@@ -154,6 +154,8 @@ const Index = () => {
       toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
+    // Start trial on first ever play
+    startTrial();
     const loadedTrack = await loadTrackAudio(track);
     setCurrentTrack(loadedTrack);
     setCurrentPlaylistId(null);

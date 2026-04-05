@@ -407,6 +407,7 @@ const Index = () => {
       toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
+    startTrial();
     setCurrentTrack(null);
     setIsAutoPlaying(false);
     

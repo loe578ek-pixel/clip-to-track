@@ -580,6 +580,7 @@ const Index = () => {
       toast.error("Your free trial has ended. Subscribe to Premium to continue playing.");
       return;
     }
+    startTrial();
     const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
     if (likedTracksList.length > 0) {
       setCurrentTrack(null);

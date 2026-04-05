@@ -45,7 +45,17 @@ export const HomeTab = ({
 }: HomeTabProps) => {
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
   const [showManageLikedMusic, setShowManageLikedMusic] = useState(false);
-  const { daysRemaining, isPremium } = useTrialCheck();
+  const firstPlay = localStorage.getItem("soundwave-first-play");
+  const trialStarted = !!firstPlay;
+  let localDaysRemaining: number | null = null;
+  let localTrialExpired = false;
+  if (firstPlay) {
+    const diffMs = Date.now() - new Date(firstPlay).getTime();
+    const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    localDaysRemaining = Math.max(0, 30 - daysPassed);
+    localTrialExpired = daysPassed >= 30;
+  }
+  const { isPremium } = useTrialCheck();
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);

@@ -116,72 +116,75 @@ export const PlaylistManagerTab = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto space-y-6" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)', paddingBottom: '6rem' }}>
+    <div className="flex flex-col h-full overflow-hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)', paddingBottom: '6rem' }}>
       {/* Header */}
-      <div className="sticky bg-background/80 backdrop-blur-md z-10 pb-4 pl-4" style={{ top: 'calc(env(safe-area-inset-top) + 4px)' }}>
-        <h1 className="text-3xl font-bold mb-2">Playlist Manager</h1>
-        <p className="text-muted-foreground">Rename playlists and manage song repeats</p>
+      <div className="px-4 pb-3 pt-1 shrink-0">
+        <h1 className="text-2xl font-bold">Playlists</h1>
       </div>
 
-      {/* Playlists */}
-      <div className="space-y-6">
+      {/* Playlists - flex to fill remaining space equally */}
+      <div className="flex-1 flex flex-col gap-2.5 px-3 min-h-0 overflow-hidden">
         {playlists.map((playlist) => {
           const playlistTracks = playlist.tracks.map(getTrackById).filter(Boolean) as Track[];
           const totalDuration = playlistTracks.reduce((sum, track) => sum + track.duration, 0);
 
           return (
-            <div key={playlist.id} className="soundwave-card py-6 pl-0 pr-2">
-              <div className="flex items-center justify-between mb-4 pl-4">
-                <div className="flex items-center space-x-4">
+            <div
+              key={playlist.id}
+              className="flex-1 min-h-0 flex flex-col rounded-2xl border border-white/[0.06] bg-card/60 backdrop-blur-sm overflow-hidden transition-all"
+            >
+              {/* Playlist header */}
+              <div className="flex items-center justify-between px-4 py-2.5 shrink-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   {editingPlaylist === playlist.id ? (
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleRenamePlaylist(playlist.id)}
-                        onBlur={() => handleRenamePlaylist(playlist.id)}
-                        className="bg-secondary border-white/10 text-lg font-semibold"
-                        autoFocus
-                      />
-                    </div>
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleRenamePlaylist(playlist.id)}
+                      onBlur={() => handleRenamePlaylist(playlist.id)}
+                      className="bg-secondary border-white/10 text-base font-semibold h-8"
+                      autoFocus
+                    />
                   ) : (
-                    <div>
-                      <h2 className="text-xl font-semibold">{playlist.name}</h2>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="min-w-0">
+                      <h2 className="text-base font-semibold truncate">{playlist.name}</h2>
+                      <p className="text-xs text-muted-foreground">
                         {playlist.tracks.length} songs • {formatTime(totalDuration)}
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-1 shrink-0">
                   <Button
                     onClick={() => onPlayPlaylist(playlist.id)}
-                    className="soundwave-button-primary"
+                    size="sm"
+                    className="h-8 px-3 rounded-full bg-primary hover:bg-primary/80 text-primary-foreground text-xs font-medium"
                     disabled={playlist.tracks.length === 0}
                   >
-                    <Play className="h-4 w-4 mr-2" />
+                    <Play className="h-3.5 w-3.5 mr-1" />
                     Play
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-7 w-7"
                     onClick={() => {
                       setEditingPlaylist(playlist.id);
                       setEditName(playlist.name);
                     }}
                   >
-                    <Edit3 className="h-4 w-4" />
+                    <Edit3 className="h-3.5 w-3.5" />
                   </Button>
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
+                        className="h-7 w-7 text-destructive hover:text-destructive-foreground hover:bg-destructive/90"
                         disabled={playlist.tracks.length === 0}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-card border-white/10">
@@ -189,12 +192,12 @@ export const PlaylistManagerTab = ({
                         <DialogTitle>Clear All Tracks</DialogTitle>
                       </DialogHeader>
                       <p className="text-muted-foreground">
-                        Are you sure you want to clear all tracks from "{playlist.name}"? The playlist will be kept but all tracks will be removed.
+                        Are you sure you want to clear all tracks from "{playlist.name}"?
                       </p>
                       <div className="flex justify-end space-x-2 mt-4">
                         <Button variant="outline">Cancel</Button>
-                        <Button 
-                          variant="destructive" 
+                        <Button
+                          variant="destructive"
                           onClick={() => onClearPlaylistTracks(playlist.id)}
                         >
                           Clear Tracks
@@ -205,70 +208,37 @@ export const PlaylistManagerTab = ({
                 </div>
               </div>
 
-              {/* Playlist Tracks */}
-              {playlistTracks.length > 0 ? (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={(event) => handleDragEnd(event, playlist.id)}
-                >
-                  <div className="space-y-2">
-                    {/* Display tracks based on expansion state */}
-                    {(() => {
-                      const isExpanded = expandedPlaylists.has(playlist.id);
-                      const tracksToShow = isExpanded ? playlistTracks : playlistTracks.slice(0, 2);
-                      const trackIdsToShow = tracksToShow.map(track => track.id);
-                      
-                      return (
-                        <SortableContext items={trackIdsToShow} strategy={verticalListSortingStrategy}>
-                          {tracksToShow.map((track, index) => (
-                            <PlaylistSortableTrackItem
-                              key={track.id}
-                              track={track}
-                              index={index}
-                              isLiked={likedTracks.has(track.id)}
-                              repeatCount={playlist.repeatCounts?.[track.id] || 1}
-                              onPlayTrack={onPlayTrack}
-                              onToggleLike={onToggleLike}
-                              onUpdateTrackRepeat={(trackId, count) => onUpdatePlaylistTrackRepeat(playlist.id, trackId, count)}
-                              onRemoveFromPlaylist={() => onRemoveFromPlaylist(playlist.id, track.id)}
-                              formatTime={formatTime}
-                            />
-                          ))}
-                        </SortableContext>
-                      );
-                    })()}
-                  
-                  {/* Expand/Collapse Button */}
-                  {playlistTracks.length > 2 && (
-                    <div className="flex justify-center pt-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => togglePlaylistExpansion(playlist.id)}
-                        className="flex items-center space-x-2 text-primary hover:text-primary/80 hover:bg-primary/10 transition-all rounded-full px-4 py-2 text-sm font-medium"
-                      >
-                        {expandedPlaylists.has(playlist.id) ? (
-                          <>
-                            <ChevronUp className="h-4 w-4" />
-                            <span>Less</span>
-                          </>
-                        ) : (
-                          <>
-                            <ChevronDown className="h-4 w-4" />
-                            <span>More ({playlistTracks.length - 2} more songs)</span>
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
+              {/* Tracks list - scrollable within its card */}
+              <div className="flex-1 min-h-0 overflow-y-auto px-1">
+                {playlistTracks.length > 0 ? (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(event) => handleDragEnd(event, playlist.id)}
+                  >
+                    <SortableContext items={playlist.tracks} strategy={verticalListSortingStrategy}>
+                      {playlistTracks.map((track, index) => (
+                        <PlaylistSortableTrackItem
+                          key={track.id}
+                          track={track}
+                          index={index}
+                          isLiked={likedTracks.has(track.id)}
+                          repeatCount={playlist.repeatCounts?.[track.id] || 1}
+                          onPlayTrack={onPlayTrack}
+                          onToggleLike={onToggleLike}
+                          onUpdateTrackRepeat={(trackId, count) => onUpdatePlaylistTrackRepeat(playlist.id, trackId, count)}
+                          onRemoveFromPlaylist={() => onRemoveFromPlaylist(playlist.id, track.id)}
+                          formatTime={formatTime}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <p className="text-xs">Empty — add songs from your library</p>
                   </div>
-                </DndContext>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">This playlist is empty</p>
-                  <p className="text-xs">Add songs from your library</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           );
         })}

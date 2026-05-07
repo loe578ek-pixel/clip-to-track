@@ -44,6 +44,7 @@ export const SettingsTab = ({
   onRenameTrack,
   isPremium,
   daysRemaining,
+  trialExpired,
   onPurchase,
   onRestore
 }: SettingsTabProps) => {

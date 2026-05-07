@@ -57,12 +57,19 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
       <div
         {...getRootProps()}
         className={`
-          relative border-2 border-dashed rounded-xl p-12 text-center cursor-pointer
-          transition-all duration-300 hover:scale-[1.02]
-          ${isDragActive ? 'border-primary bg-primary/5' : 'border-glass hover:border-primary/50'}
-          ${isProcessing ? 'cursor-not-allowed opacity-50' : ''}
+          relative overflow-hidden rounded-2xl p-10 text-center cursor-pointer
+          transition-all duration-300
+          bg-gradient-to-br from-primary/10 via-card to-card
+          border border-white/[0.06]
+          shadow-[inset_0_1px_0_0_hsl(var(--primary)/0.08)]
+          hover:border-primary/40 hover:shadow-[0_8px_30px_-10px_hsl(var(--primary)/0.4)]
+          ${isDragActive ? 'border-primary/60 bg-primary/10 scale-[1.01]' : ''}
+          ${isProcessing ? 'cursor-not-allowed opacity-60' : ''}
         `}
       >
+        {/* Decorative glow */}
+        <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-primary/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-primary/10 blur-3xl" />
         <input {...getInputProps()} />
         
         <div className="flex flex-col items-center space-y-4">

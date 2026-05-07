@@ -51,77 +51,82 @@ export const PlaylistSortableTrackItem = ({
       style={style}
       {...attributes}
       {...listeners}
-      className={`group track-item cursor-grab active:cursor-grabbing touch-none flex items-center py-3 rounded-lg hover:bg-secondary/30 transition-colors ${isDragging ? 'opacity-50 shadow-lg scale-105' : ''}`}
+      className={`group relative flex items-center gap-2 px-2 py-2 my-0.5 rounded-xl cursor-grab active:cursor-grabbing touch-none transition-all
+        hover:bg-white/[0.04]
+        ${isDragging ? 'opacity-60 shadow-2xl bg-white/[0.06] scale-[1.01]' : ''}
+      `}
     >
-      {/* Tight Left Section: Number + Play + Title */}
-      <div className="flex items-center flex-1 min-w-0 mr-2">
-        {/* Song Number - Close to left edge */}
-        <div className="w-3 flex justify-start items-center flex-shrink-0">
-          <span className="text-muted-foreground text-sm font-medium">
-            {index + 1}
-          </span>
-        </div>
-
-        {/* Play Button - Minimal gap from number */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onPlayTrack(track)}
-          className="w-6 h-6 flex-shrink-0 hover:bg-primary/20 p-0 ml-1"
-        >
-          <Play className="h-3 w-3" />
-        </Button>
-
-        {/* Song Title - Maximum space available */}
-        <div className="flex-1 min-w-0 ml-1">
-          <h4 className="font-medium text-sm truncate leading-tight">{track.title}</h4>
-          <p className="text-xs text-muted-foreground truncate">
-            {formatTime(track.duration)}
-          </p>
-        </div>
+      {/* Index */}
+      <div className="w-5 flex justify-center flex-shrink-0">
+        <span className="text-muted-foreground/70 text-[11px] font-semibold tabular-nums">
+          {String(index + 1).padStart(2, '0')}
+        </span>
       </div>
 
-      {/* Right Side Buttons - Flush to right edge */}
+      {/* Play */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => { e.stopPropagation(); onPlayTrack(track); }}
+        onPointerDown={(e) => e.stopPropagation()}
+        className="w-7 h-7 flex-shrink-0 rounded-full bg-primary/15 hover:bg-primary/30 text-primary p-0"
+      >
+        <Play className="h-3 w-3 fill-current" />
+      </Button>
+
+      {/* Title + duration */}
+      <div className="flex-1 min-w-0">
+        <h4 className="font-medium text-sm truncate leading-snug">{track.title}</h4>
+        <p className="text-[11px] text-muted-foreground/70 leading-tight tabular-nums">
+          {formatTime(track.duration)}
+        </p>
+      </div>
+
+      {/* Right side controls */}
       <div className="flex items-center gap-1 flex-shrink-0">
-        {/* Repeat Controls */}
-        <div className="flex items-center gap-0.5">
+        {/* Repeat pill */}
+        <div
+          className="flex items-center rounded-full bg-white/[0.04] border border-white/[0.06] h-6"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onUpdateTrackRepeat(track.id, Math.max(1, repeatCount - 1))}
-            className="w-5 h-5 text-xs text-muted-foreground hover:text-foreground"
+            onClick={(e) => { e.stopPropagation(); onUpdateTrackRepeat(track.id, Math.max(1, repeatCount - 1)); }}
+            className="w-5 h-6 text-muted-foreground hover:text-foreground hover:bg-transparent rounded-l-full"
             disabled={repeatCount <= 1}
           >
-            -
+            −
           </Button>
-          <div className="flex items-center justify-center min-w-[24px]">
-            <span className="text-xs font-medium">{repeatCount}×</span>
-          </div>
+          <span className="text-[10px] font-semibold text-foreground/90 w-6 text-center tabular-nums">
+            ×{repeatCount}
+          </span>
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onUpdateTrackRepeat(track.id, repeatCount + 1)}
-            className="w-5 h-5 text-xs text-muted-foreground hover:text-foreground"
+            onClick={(e) => { e.stopPropagation(); onUpdateTrackRepeat(track.id, repeatCount + 1); }}
+            className="w-5 h-6 text-muted-foreground hover:text-foreground hover:bg-transparent rounded-r-full"
           >
             +
           </Button>
         </div>
 
-        {/* Like Button */}
-        <HeartButton
-          isLiked={isLiked}
-          onToggle={() => onToggleLike(track.id)}
-          size="sm"
-        />
+        <div onPointerDown={(e) => e.stopPropagation()}>
+          <HeartButton
+            isLiked={isLiked}
+            onToggle={() => onToggleLike(track.id)}
+            size="sm"
+          />
+        </div>
 
-        {/* Delete Button - Flush to right edge */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={onRemoveFromPlaylist}
-          className="w-6 h-6 text-destructive hover:bg-destructive/20"
+          onClick={(e) => { e.stopPropagation(); onRemoveFromPlaylist(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="w-7 h-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

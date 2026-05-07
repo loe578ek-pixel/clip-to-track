@@ -84,11 +84,12 @@ class NativeMediaControlsService {
     this.currentTrack = track;
 
     try {
+      const cover = track.artwork || `${window.location.origin}/app-icon.png`;
       await MusicControls.create({
         track: track.title,
         artist: track.artist,
         album: playlistName || track.album || '',
-        cover: track.artwork || '',
+        cover,
         isPlaying: this.isPlaying,
         dismissable: false,
         hasPrev: true,

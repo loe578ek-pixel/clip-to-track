@@ -30,6 +30,7 @@ interface SettingsTabProps {
   onRenameTrack: (trackId: string, newTitle: string) => void;
   isPremium: boolean;
   daysRemaining: number | null;
+  trialExpired: boolean;
   onPurchase: () => Promise<boolean>;
   onRestore: () => Promise<boolean>;
 }

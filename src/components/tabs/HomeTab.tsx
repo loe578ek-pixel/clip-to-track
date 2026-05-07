@@ -59,24 +59,6 @@ export const HomeTab = ({
   }}>
       {/* Header */}
 
-      {/* Trial Banner */}
-      {!isPremium && trialStarted && localDaysRemaining !== null && localDaysRemaining > 0 && (
-        <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
-          <p className="text-sm text-foreground">
-            You have <span className="font-bold text-primary">{localDaysRemaining}</span> day{localDaysRemaining !== 1 ? 's' : ''} remaining in your free trial.
-          </p>
-        </div>
-      )}
-
-      {!isPremium && trialStarted && localTrialExpired && (
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3">
-          <p className="text-sm text-foreground">
-            Your free trial has ended. Go to <span className="font-bold">Settings</span> to subscribe and continue playing.
-          </p>
-        </div>
-      )}
-
-
       {/* Quick Access Playlists */}
       {playlists.length > 0 && <div>
           <h2 className="text-xl font-semibold mb-4">Your Playlists</h2>

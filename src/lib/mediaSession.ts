@@ -53,17 +53,14 @@ class MediaSessionService {
       }
     });
 
-    navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-      const seekOffset = details.seekOffset || 10;
-      const newTime = Math.max(0, this.currentTime - seekOffset);
-      this.callbacks?.onSeek(newTime);
-    });
-
-    navigator.mediaSession.setActionHandler('seekforward', (details) => {
-      const seekOffset = details.seekOffset || 10;
-      const newTime = Math.min(this.duration, this.currentTime + seekOffset);
-      this.callbacks?.onSeek(newTime);
-    });
+    // Disable seek backward/forward (the +10/-10 buttons) so iOS shows
+    // previous/next track buttons instead on the lockscreen.
+    try {
+      navigator.mediaSession.setActionHandler('seekbackward', null);
+      navigator.mediaSession.setActionHandler('seekforward', null);
+    } catch (e) {
+      // Some browsers throw if null isn't supported; safely ignore.
+    }
   }
 
   setCallbacks(callbacks: MediaSessionCallbacks) {
@@ -76,12 +73,20 @@ class MediaSessionService {
     this.currentTrack = track;
     this.duration = track.duration;
 
-    // Update metadata with black background and blue accent color styling
+    // Update metadata with the app icon as artwork (shown on lockscreen)
+    const artworkUrl = `${window.location.origin}/app-icon.png`;
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title,
       artist: playlistName ? `${track.artist} • ${playlistName}` : track.artist,
       album: track.album || '',
-      // No artwork - text only as requested
+      artwork: [
+        { src: artworkUrl, sizes: '96x96', type: 'image/png' },
+        { src: artworkUrl, sizes: '192x192', type: 'image/png' },
+        { src: artworkUrl, sizes: '256x256', type: 'image/png' },
+        { src: artworkUrl, sizes: '384x384', type: 'image/png' },
+        { src: artworkUrl, sizes: '512x512', type: 'image/png' },
+        { src: artworkUrl, sizes: '1024x1024', type: 'image/png' },
+      ],
     });
 
     this.updatePositionState();

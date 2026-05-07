@@ -30,6 +30,7 @@ interface SettingsTabProps {
   onRenameTrack: (trackId: string, newTitle: string) => void;
   isPremium: boolean;
   daysRemaining: number | null;
+  trialExpired: boolean;
   onPurchase: () => Promise<boolean>;
   onRestore: () => Promise<boolean>;
 }
@@ -43,6 +44,7 @@ export const SettingsTab = ({
   onRenameTrack,
   isPremium,
   daysRemaining,
+  trialExpired,
   onPurchase,
   onRestore
 }: SettingsTabProps) => {
@@ -329,8 +331,8 @@ export const SettingsTab = ({
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Trial countdown */}
-              {daysRemaining !== null && (
+              {/* Trial countdown or expired */}
+              {daysRemaining !== null && !trialExpired ? (
                 <div className="p-4 rounded-lg bg-secondary/30 border border-border/50">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="h-4 w-4 text-primary" />
@@ -344,7 +346,13 @@ export const SettingsTab = ({
                     Full access during your trial
                   </p>
                 </div>
-              )}
+              ) : trialExpired ? (
+                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <p className="text-sm text-foreground font-medium">
+                    Your free trial has ended. Subscribe to Premium to continue playing.
+                  </p>
+                </div>
+              ) : null}
 
               <Button
                 size="lg"

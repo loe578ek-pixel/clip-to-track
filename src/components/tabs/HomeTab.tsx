@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-import { useTrialCheck } from "@/hooks/useTrialCheck";
 interface HomeTabProps {
   tracks: Track[];
   playlists: Playlist[];
@@ -45,17 +44,6 @@ export const HomeTab = ({
 }: HomeTabProps) => {
   const [deletingTrackId, setDeletingTrackId] = useState<string | null>(null);
   const [showManageLikedMusic, setShowManageLikedMusic] = useState(false);
-  const firstPlay = localStorage.getItem("soundwave-first-play");
-  const trialStarted = !!firstPlay;
-  let localDaysRemaining: number | null = null;
-  let localTrialExpired = false;
-  if (firstPlay) {
-    const diffMs = Date.now() - new Date(firstPlay).getTime();
-    const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    localDaysRemaining = Math.max(0, 30 - daysPassed);
-    localTrialExpired = daysPassed >= 30;
-  }
-  const { isPremium } = useTrialCheck();
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -70,24 +58,6 @@ export const HomeTab = ({
     paddingBottom: '6rem'
   }}>
       {/* Header */}
-
-      {/* Trial Banner */}
-      {!isPremium && trialStarted && localDaysRemaining !== null && localDaysRemaining > 0 && (
-        <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
-          <p className="text-sm text-foreground">
-            You have <span className="font-bold text-primary">{localDaysRemaining}</span> day{localDaysRemaining !== 1 ? 's' : ''} remaining in your free trial.
-          </p>
-        </div>
-      )}
-
-      {!isPremium && trialStarted && localTrialExpired && (
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg px-4 py-3">
-          <p className="text-sm text-foreground">
-            Your free trial has ended. Go to <span className="font-bold">Settings</span> to subscribe and continue playing.
-          </p>
-        </div>
-      )}
-
 
       {/* Quick Access Playlists */}
       {playlists.length > 0 && <div>

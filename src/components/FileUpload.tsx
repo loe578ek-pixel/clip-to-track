@@ -57,12 +57,19 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
       <div
         {...getRootProps()}
         className={`
-          relative border-2 border-dashed rounded-xl p-12 text-center cursor-pointer
-          transition-all duration-300 hover:scale-[1.02]
-          ${isDragActive ? 'border-primary bg-primary/5' : 'border-glass hover:border-primary/50'}
-          ${isProcessing ? 'cursor-not-allowed opacity-50' : ''}
+          relative overflow-hidden rounded-2xl p-10 text-center cursor-pointer
+          transition-all duration-300
+          bg-gradient-to-br from-primary/10 via-card to-card
+          border border-white/[0.06]
+          shadow-[inset_0_1px_0_0_hsl(var(--primary)/0.08)]
+          hover:border-primary/40 hover:shadow-[0_8px_30px_-10px_hsl(var(--primary)/0.4)]
+          ${isDragActive ? 'border-primary/60 bg-primary/10 scale-[1.01]' : ''}
+          ${isProcessing ? 'cursor-not-allowed opacity-60' : ''}
         `}
       >
+        {/* Decorative glow */}
+        <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-primary/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-primary/10 blur-3xl" />
         <input {...getInputProps()} />
         
         <div className="flex flex-col items-center space-y-4">
@@ -81,27 +88,29 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
           ) : (
             <>
               <div className="relative">
-                <div className="p-4 bg-gradient-primary rounded-full shadow-glow">
-                  <Film className="h-12 w-12 text-white" />
+                <div className="p-5 bg-gradient-to-br from-primary to-primary/60 rounded-2xl shadow-[0_10px_40px_-10px_hsl(var(--primary)/0.6)]">
+                  <Film className="h-10 w-10 text-primary-foreground" />
                 </div>
-                <Upload className="absolute -top-2 -right-2 h-6 w-6 text-primary" />
+                <div className="absolute -top-1.5 -right-1.5 p-1.5 bg-card rounded-full border border-primary/40">
+                  <Upload className="h-3.5 w-3.5 text-primary" />
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">
-                  {isDragActive ? "Drop your video here" : "Upload Video File"}
+
+              <div className="space-y-1.5">
+                <h3 className="text-xl font-semibold tracking-tight">
+                  {isDragActive ? "Drop your video here" : "Add a video"}
                 </h3>
-                <p className="text-muted-foreground">
-                  Drag & drop a video file or click to select
-                </p>
                 <p className="text-sm text-muted-foreground">
-                  Supports MP4, AVI, MOV, MKV, WebM, M4V
+                  Drag & drop or pick a file to extract the audio
+                </p>
+                <p className="text-[11px] text-muted-foreground/70 uppercase tracking-wider pt-1">
+                  MP4 · MOV · MKV · WEBM · AVI · M4V
                 </p>
               </div>
-              
-              <Button 
-                variant="outline" 
-                className="mt-4 border-primary/20 hover:bg-primary/10"
+
+              <Button
+                size="lg"
+                className="mt-2 rounded-full px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_6px_20px_-6px_hsl(var(--primary)/0.6)]"
               >
                 <Upload className="mr-2 h-4 w-4" />
                 Choose File

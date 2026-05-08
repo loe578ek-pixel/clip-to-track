@@ -168,6 +168,16 @@ export const PlaylistManagerTab = ({
 
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
+                    onClick={() => toggleManage(playlist.id)}
+                    size="sm"
+                    variant="ghost"
+                    className={`h-8 px-3 rounded-full text-xs font-medium bg-transparent hover:bg-primary/10 text-primary ${managingPlaylists.has(playlist.id) ? 'bg-primary/15' : ''}`}
+                    disabled={playlist.tracks.length === 0}
+                  >
+                    <Cog className="h-3.5 w-3.5 mr-1" />
+                    {managingPlaylists.has(playlist.id) ? 'Done' : 'Manage'}
+                  </Button>
+                  <Button
                     onClick={() => onPlayPlaylist(playlist.id)}
                     size="sm"
                     className="h-8 px-3 rounded-full bg-primary hover:bg-primary/80 text-primary-foreground text-xs font-medium"

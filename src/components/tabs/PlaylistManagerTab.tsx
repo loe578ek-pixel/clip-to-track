@@ -89,8 +89,8 @@ export const PlaylistManagerTab = ({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 500,
-        tolerance: 5,
+        delay: 220,
+        tolerance: 8,
       },
     }),
     useSensor(KeyboardSensor, {

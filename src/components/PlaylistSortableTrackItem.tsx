@@ -1,4 +1,4 @@
-import { Play, RotateCcw, Trash2 } from "lucide-react";
+import { GripVertical, Play, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeartButton } from "@/components/HeartButton";
 import { Track } from "@/pages/Index";
@@ -13,6 +13,7 @@ interface PlaylistSortableTrackItemProps {
   sortableId?: string;
   isLiked: boolean;
   repeatCount: number;
+  manageMode?: boolean;
   onPlayTrack: (track: Track) => void;
   onToggleLike: (trackId: string) => void;
   onUpdateTrackRepeat: (trackId: string, repeatCount: number) => void;
@@ -26,6 +27,7 @@ export const PlaylistSortableTrackItem = ({
   sortableId,
   isLiked,
   repeatCount,
+  manageMode = false,
   onPlayTrack,
   onToggleLike,
   onUpdateTrackRepeat,
@@ -39,7 +41,7 @@ export const PlaylistSortableTrackItem = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: sortableId ?? track.id });
+  } = useSortable({ id: sortableId ?? track.id, disabled: !manageMode });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -51,13 +53,22 @@ export const PlaylistSortableTrackItem = ({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`group relative flex items-center gap-2 px-2 py-2 my-0.5 rounded-xl cursor-grab active:cursor-grabbing touch-none transition-all
+      {...(manageMode ? attributes : {})}
+      className={`group relative flex items-center gap-2 px-2 py-2 my-0.5 rounded-xl touch-none transition-all
         hover:bg-white/[0.04]
         ${isDragging ? 'opacity-60 shadow-2xl bg-white/[0.06] scale-[1.01]' : ''}
+        ${manageMode ? 'bg-white/[0.03] ring-1 ring-primary/20' : ''}
       `}
     >
+      {manageMode && (
+        <div
+          {...listeners}
+          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-primary p-1 -ml-1"
+        >
+          <GripVertical className="h-4 w-4" />
+        </div>
+      )}
+
       {/* Index */}
       <div className="w-5 flex justify-center flex-shrink-0">
         <span className="text-muted-foreground/70 text-[11px] font-semibold tabular-nums">

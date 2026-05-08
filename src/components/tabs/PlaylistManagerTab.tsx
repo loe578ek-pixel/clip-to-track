@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Edit3, Plus, Trash2, GripVertical, RotateCcw, Play, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit3, Plus, Trash2, GripVertical, RotateCcw, Play, Settings, ChevronDown, ChevronUp, Cog } from "lucide-react";
 import { Track, Playlist } from "@/pages/Index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,17 @@ export const PlaylistManagerTab = ({
 }: PlaylistManagerTabProps) => {
   const [editingPlaylist, setEditingPlaylist] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [managingPlaylists, setManagingPlaylists] = useState<Set<string>>(new Set());
   const [expandedPlaylists, setExpandedPlaylists] = useState<Set<string>>(new Set());
+
+  const toggleManage = (playlistId: string) => {
+    setManagingPlaylists(prev => {
+      const next = new Set(prev);
+      if (next.has(playlistId)) next.delete(playlistId);
+      else next.add(playlistId);
+      return next;
+    });
+  };
 
   const handleRenamePlaylist = (playlistId: string) => {
     if (editName.trim()) {
@@ -158,6 +168,16 @@ export const PlaylistManagerTab = ({
 
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
+                    onClick={() => toggleManage(playlist.id)}
+                    size="sm"
+                    variant="ghost"
+                    className={`h-8 px-3 rounded-full text-xs font-medium bg-transparent hover:bg-primary/10 text-primary ${managingPlaylists.has(playlist.id) ? 'bg-primary/15' : ''}`}
+                    disabled={playlist.tracks.length === 0}
+                  >
+                    <Cog className="h-3.5 w-3.5 mr-1" />
+                    {managingPlaylists.has(playlist.id) ? 'Done' : 'Manage'}
+                  </Button>
+                  <Button
                     onClick={() => onPlayPlaylist(playlist.id)}
                     size="sm"
                     className="h-8 px-3 rounded-full bg-primary hover:bg-primary/80 text-primary-foreground text-xs font-medium"
@@ -220,6 +240,7 @@ export const PlaylistManagerTab = ({
                     <SortableContext items={playlist.tracks.map((id, i) => `${id}__${i}`)} strategy={verticalListSortingStrategy}>
                       {playlistTracks.map((track, index) => (
                         <PlaylistSortableTrackItem
+                          manageMode={managingPlaylists.has(playlist.id)}
                           key={`${track.id}__${index}`}
                           sortableId={`${track.id}__${index}`}
                           track={track}

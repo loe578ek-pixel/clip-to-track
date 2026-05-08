@@ -217,10 +217,11 @@ export const PlaylistManagerTab = ({
                     collisionDetection={closestCenter}
                     onDragEnd={(event) => handleDragEnd(event, playlist.id)}
                   >
-                    <SortableContext items={playlist.tracks} strategy={verticalListSortingStrategy}>
+                    <SortableContext items={playlist.tracks.map((id, i) => `${id}__${i}`)} strategy={verticalListSortingStrategy}>
                       {playlistTracks.map((track, index) => (
                         <PlaylistSortableTrackItem
-                          key={track.id}
+                          key={`${track.id}__${index}`}
+                          sortableId={`${track.id}__${index}`}
                           track={track}
                           index={index}
                           isLiked={likedTracks.has(track.id)}
@@ -228,7 +229,7 @@ export const PlaylistManagerTab = ({
                           onPlayTrack={onPlayTrack}
                           onToggleLike={onToggleLike}
                           onUpdateTrackRepeat={(trackId, count) => onUpdatePlaylistTrackRepeat(playlist.id, trackId, count)}
-                          onRemoveFromPlaylist={() => onRemoveFromPlaylist(playlist.id, track.id)}
+                          onRemoveFromPlaylist={() => onRemoveFromPlaylist(playlist.id, index)}
                           formatTime={formatTime}
                         />
                       ))}

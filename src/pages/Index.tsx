@@ -55,6 +55,7 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string | null>(null);
   const [currentPlaylistName, setCurrentPlaylistName] = useState<string | null>(null);
+  const [currentPlaylistTrackIndex, setCurrentPlaylistTrackIndex] = useState<number>(-1);
   const [trackRepeatCounts, setTrackRepeatCounts] = useState<Record<string, number>>({});
   const [currentTrackPlayCount, setCurrentTrackPlayCount] = useState<Record<string, number>>({});
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
@@ -191,36 +192,32 @@ const Index = () => {
   const handleAddToPlaylist = (playlistId: string, trackId: string) => {
     const playlist = playlists.find(p => p.id === playlistId);
     const track = tracks.find(t => t.id === trackId);
-    
-    // Check if track is already in playlist
-    if (playlist && track && !playlist.tracks.includes(trackId)) {
-      setPlaylists(prev => prev.map(p => 
-        p.id === playlistId ? { 
-          ...p, 
+
+    // Allow same track to be added multiple times in a playlist
+    if (playlist && track) {
+      setPlaylists(prev => prev.map(p =>
+        p.id === playlistId ? {
+          ...p,
           tracks: [...p.tracks, trackId],
-          repeatCounts: { ...(p.repeatCounts || {}), [trackId]: 1 } // Initialize with 1x repeat
+          repeatCounts: {
+            ...(p.repeatCounts || {}),
+            [trackId]: p.repeatCounts?.[trackId] ?? 1, // shared repeat per trackId
+          },
         } : p
       ));
     }
   };
 
-  const handleRemoveFromPlaylist = (playlistId: string, trackId: string) => {
-    const playlist = playlists.find(p => p.id === playlistId);
-    const track = tracks.find(t => t.id === trackId);
-    
-    if (playlist && track) {
-      setPlaylists(prev => prev.map(p => 
-        p.id === playlistId 
-          ? { 
-              ...p, 
-              tracks: p.tracks.filter(id => id !== trackId),
-              repeatCounts: Object.fromEntries(
-                Object.entries(p.repeatCounts || {}).filter(([id]) => id !== trackId)
-              )
-            }
-          : p
-      ));
-    }
+  const handleRemoveFromPlaylist = (playlistId: string, trackIndex: number) => {
+    setPlaylists(prev => prev.map(p => {
+      if (p.id !== playlistId) return p;
+      const newTracks = p.tracks.filter((_, i) => i !== trackIndex);
+      const removedTrackId = p.tracks[trackIndex];
+      const stillPresent = newTracks.includes(removedTrackId);
+      const newRepeatCounts = { ...(p.repeatCounts || {}) };
+      if (!stillPresent) delete newRepeatCounts[removedTrackId];
+      return { ...p, tracks: newTracks, repeatCounts: newRepeatCounts };
+    }));
   };
 
   const handleRenamePlaylist = (playlistId: string, newName: string) => {
@@ -322,28 +319,23 @@ const Index = () => {
     
     // Handle regular playlists
     if (!currentPlaylistId) return;
-    
+
     const playlist = playlists.find(p => p.id === currentPlaylistId);
     if (!playlist) return;
-    
-    const currentIndex = playlist.tracks.findIndex(id => id === currentTrack.id);
+
+    const currentIndex = currentPlaylistTrackIndex >= 0
+      ? currentPlaylistTrackIndex
+      : playlist.tracks.findIndex(id => id === currentTrack.id);
     if (currentIndex === -1) return;
-    
-    const nextTrackId = playlist.tracks[currentIndex + 1];
+
+    const nextIndex = currentIndex + 1 < playlist.tracks.length ? currentIndex + 1 : 0;
+    const nextTrackId = playlist.tracks[nextIndex];
     if (nextTrackId) {
       const nextTrack = tracks.find(t => t.id === nextTrackId);
       if (nextTrack) {
         const loadedTrack = await loadTrackAudio(nextTrack);
         setCurrentTrack(loadedTrack);
-      }
-    } else {
-      const firstTrackId = playlist.tracks[0];
-      if (firstTrackId) {
-        const firstTrack = tracks.find(t => t.id === firstTrackId);
-        if (firstTrack) {
-          const loadedTrack = await loadTrackAudio(firstTrack);
-          setCurrentTrack(loadedTrack);
-        }
+        setCurrentPlaylistTrackIndex(nextIndex);
       }
     }
   };
@@ -375,29 +367,23 @@ const Index = () => {
     
     // Handle regular playlists
     if (!currentPlaylistId) return;
-    
+
     const playlist = playlists.find(p => p.id === currentPlaylistId);
     if (!playlist) return;
-    
-    const currentIndex = playlist.tracks.findIndex(id => id === currentTrack.id);
+
+    const currentIndex = currentPlaylistTrackIndex >= 0
+      ? currentPlaylistTrackIndex
+      : playlist.tracks.findIndex(id => id === currentTrack.id);
     if (currentIndex === -1) return;
-    
-    const prevTrackId = playlist.tracks[currentIndex - 1];
+
+    const prevIndex = currentIndex - 1 >= 0 ? currentIndex - 1 : playlist.tracks.length - 1;
+    const prevTrackId = playlist.tracks[prevIndex];
     if (prevTrackId) {
       const prevTrack = tracks.find(t => t.id === prevTrackId);
       if (prevTrack) {
         const loadedTrack = await loadTrackAudio(prevTrack);
         setCurrentTrack(loadedTrack);
-      }
-    } else {
-      // Loop back to last track
-      const lastTrackId = playlist.tracks[playlist.tracks.length - 1];
-      if (lastTrackId) {
-        const lastTrack = tracks.find(t => t.id === lastTrackId);
-        if (lastTrack) {
-          const loadedTrack = await loadTrackAudio(lastTrack);
-          setCurrentTrack(loadedTrack);
-        }
+        setCurrentPlaylistTrackIndex(prevIndex);
       }
     }
   };
@@ -410,7 +396,7 @@ const Index = () => {
     startTrial();
     setCurrentTrack(null);
     setIsAutoPlaying(false);
-    
+
     setTimeout(async () => {
       setCurrentPlaylistId(playlistId);
       const playlist = playlists.find(p => p.id === playlistId);
@@ -422,6 +408,7 @@ const Index = () => {
         const loadedTrack = await loadTrackAudio(track);
         setCurrentTrack(loadedTrack);
         setIsAutoPlaying(true);
+        setCurrentPlaylistTrackIndex(playlist?.tracks.findIndex(id => id === trackId) ?? -1);
         setCurrentTrackPlayCount(prev => ({
           ...prev,
           [track.id]: 0
@@ -438,7 +425,7 @@ const Index = () => {
     startTrial();
     setCurrentTrack(null);
     setIsAutoPlaying(false);
-    
+
     setTimeout(async () => {
       setCurrentPlaylistId(playlistId);
       const playlist = playlists.find(p => p.id === playlistId);
@@ -449,6 +436,7 @@ const Index = () => {
           const loadedTrack = await loadTrackAudio(firstTrack);
           setCurrentTrack(loadedTrack);
           setIsAutoPlaying(true);
+          setCurrentPlaylistTrackIndex(0);
           setCurrentTrackPlayCount(prev => ({
             ...prev,
             [firstTrack.id]: 0

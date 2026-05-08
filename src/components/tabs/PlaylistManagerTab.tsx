@@ -30,7 +30,7 @@ interface PlaylistManagerTabProps {
   onRenamePlaylist: (playlistId: string, newName: string) => void;
   onClearPlaylistTracks: (playlistId: string) => void;
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
-  onRemoveFromPlaylist: (playlistId: string, trackId: string) => void;
+  onRemoveFromPlaylist: (playlistId: string, trackIndex: number) => void;
   onUpdatePlaylistTrackRepeat: (playlistId: string, trackId: string, repeatCount: number) => void;
   onPlayPlaylist: (playlistId: string) => void;
   onPlayTrack: (track: Track) => void;
@@ -98,19 +98,20 @@ export const PlaylistManagerTab = ({
     })
   );
 
-  // Handle drag end for playlist tracks
+  // Handle drag end for playlist tracks (uses positional ids: "trackId__index")
   const handleDragEnd = (event: DragEndEvent, playlistId: string) => {
     const { active, over } = event;
 
-    if (active.id !== over?.id) {
+    if (over && active.id !== over.id) {
       const playlist = playlists.find(p => p.id === playlistId);
       if (!playlist) return;
 
-      const trackIds = playlist.tracks;
-      const oldIndex = trackIds.findIndex((id: string) => id === active.id);
-      const newIndex = trackIds.findIndex((id: string) => id === over?.id);
+      const ids = playlist.tracks.map((id, i) => `${id}__${i}`);
+      const oldIndex = ids.indexOf(String(active.id));
+      const newIndex = ids.indexOf(String(over.id));
+      if (oldIndex < 0 || newIndex < 0) return;
 
-      const newTrackIds = arrayMove(trackIds, oldIndex, newIndex);
+      const newTrackIds = arrayMove(playlist.tracks, oldIndex, newIndex);
       onReorderPlaylistTracks(playlistId, newTrackIds);
     }
   };
@@ -216,10 +217,11 @@ export const PlaylistManagerTab = ({
                     collisionDetection={closestCenter}
                     onDragEnd={(event) => handleDragEnd(event, playlist.id)}
                   >
-                    <SortableContext items={playlist.tracks} strategy={verticalListSortingStrategy}>
+                    <SortableContext items={playlist.tracks.map((id, i) => `${id}__${i}`)} strategy={verticalListSortingStrategy}>
                       {playlistTracks.map((track, index) => (
                         <PlaylistSortableTrackItem
-                          key={track.id}
+                          key={`${track.id}__${index}`}
+                          sortableId={`${track.id}__${index}`}
                           track={track}
                           index={index}
                           isLiked={likedTracks.has(track.id)}
@@ -227,7 +229,7 @@ export const PlaylistManagerTab = ({
                           onPlayTrack={onPlayTrack}
                           onToggleLike={onToggleLike}
                           onUpdateTrackRepeat={(trackId, count) => onUpdatePlaylistTrackRepeat(playlist.id, trackId, count)}
-                          onRemoveFromPlaylist={() => onRemoveFromPlaylist(playlist.id, track.id)}
+                          onRemoveFromPlaylist={() => onRemoveFromPlaylist(playlist.id, index)}
                           formatTime={formatTime}
                         />
                       ))}

@@ -55,7 +55,17 @@ export const PlaylistManagerTab = ({
 }: PlaylistManagerTabProps) => {
   const [editingPlaylist, setEditingPlaylist] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [managingPlaylists, setManagingPlaylists] = useState<Set<string>>(new Set());
   const [expandedPlaylists, setExpandedPlaylists] = useState<Set<string>>(new Set());
+
+  const toggleManage = (playlistId: string) => {
+    setManagingPlaylists(prev => {
+      const next = new Set(prev);
+      if (next.has(playlistId)) next.delete(playlistId);
+      else next.add(playlistId);
+      return next;
+    });
+  };
 
   const handleRenamePlaylist = (playlistId: string) => {
     if (editName.trim()) {

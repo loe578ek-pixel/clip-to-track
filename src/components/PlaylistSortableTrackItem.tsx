@@ -10,6 +10,7 @@ import { CSS } from '@dnd-kit/utilities';
 interface PlaylistSortableTrackItemProps {
   track: Track;
   index: number;
+  sortableId?: string;
   isLiked: boolean;
   repeatCount: number;
   onPlayTrack: (track: Track) => void;
@@ -22,6 +23,7 @@ interface PlaylistSortableTrackItemProps {
 export const PlaylistSortableTrackItem = ({
   track,
   index,
+  sortableId,
   isLiked,
   repeatCount,
   onPlayTrack,
@@ -37,7 +39,7 @@ export const PlaylistSortableTrackItem = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: track.id });
+  } = useSortable({ id: sortableId ?? track.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),

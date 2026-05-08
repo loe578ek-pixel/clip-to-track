@@ -126,7 +126,7 @@ export const PlaylistSortableTrackItem = ({
           size="icon"
           onClick={(e) => { e.stopPropagation(); onRemoveFromPlaylist(); }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="w-7 h-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
+          className="w-7 h-7 -translate-y-[2px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>

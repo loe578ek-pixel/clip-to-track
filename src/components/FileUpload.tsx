@@ -15,31 +15,37 @@ interface FileUploadProps {
 export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: FileUploadProps) => {
   const [progress, setProgress] = useState(0);
   const [currentFileName, setCurrentFileName] = useState("");
+  const [queueTotal, setQueueTotal] = useState(0);
+  const [queueIndex, setQueueIndex] = useState(0);
 
-  const processVideoFile = async (file: File) => {
+  const processQueue = async (files: File[]) => {
+    if (files.length === 0) return;
     setIsProcessing(true);
-    setCurrentFileName(file.name);
-    setProgress(0);
+    setQueueTotal(files.length);
 
-    try {
-      const track = await extractAudioFromVideo(file, (progress) => {
-        setProgress(progress);
-      });
-      
-      onTrackExtracted(track);
-    } catch (error) {
-      console.error('Error processing video:', error);
-    } finally {
-      setIsProcessing(false);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      setQueueIndex(i + 1);
+      setCurrentFileName(file.name);
       setProgress(0);
-      setCurrentFileName("");
+      try {
+        const track = await extractAudioFromVideo(file, (p) => setProgress(p));
+        onTrackExtracted(track);
+      } catch (error) {
+        console.error('Error processing video:', file.name, error);
+      }
     }
+
+    setIsProcessing(false);
+    setProgress(0);
+    setCurrentFileName("");
+    setQueueTotal(0);
+    setQueueIndex(0);
   };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const videoFile = acceptedFiles[0];
-    if (videoFile) {
-      processVideoFile(videoFile);
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      processQueue(acceptedFiles);
     }
   }, []);
 
@@ -48,7 +54,7 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
     accept: {
       'video/*': ['.mp4', '.avi', '.mov', '.mkv', '.webm', '.m4v']
     },
-    maxFiles: 1,
+    multiple: true,
     disabled: isProcessing
   });
 
@@ -80,9 +86,11 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
                 <div className="absolute inset-0 bg-gradient-primary rounded-full opacity-20 animate-pulse" />
               </div>
               <div className="space-y-2 w-full max-w-sm">
-                <p className="text-lg font-medium">Processing {currentFileName}</p>
+                <p className="text-lg font-medium truncate">Processing {currentFileName}</p>
                 <Progress value={progress} className="w-full" />
-                <p className="text-sm text-muted-foreground">{Math.round(progress)}% complete</p>
+                <p className="text-sm text-muted-foreground">
+                  {Math.round(progress)}% complete{queueTotal > 1 ? ` • ${queueIndex}/${queueTotal}` : ''}
+                </p>
               </div>
             </>
           ) : (

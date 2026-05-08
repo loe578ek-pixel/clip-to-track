@@ -319,28 +319,23 @@ const Index = () => {
     
     // Handle regular playlists
     if (!currentPlaylistId) return;
-    
+
     const playlist = playlists.find(p => p.id === currentPlaylistId);
     if (!playlist) return;
-    
-    const currentIndex = playlist.tracks.findIndex(id => id === currentTrack.id);
+
+    const currentIndex = currentPlaylistTrackIndex >= 0
+      ? currentPlaylistTrackIndex
+      : playlist.tracks.findIndex(id => id === currentTrack.id);
     if (currentIndex === -1) return;
-    
-    const nextTrackId = playlist.tracks[currentIndex + 1];
+
+    const nextIndex = currentIndex + 1 < playlist.tracks.length ? currentIndex + 1 : 0;
+    const nextTrackId = playlist.tracks[nextIndex];
     if (nextTrackId) {
       const nextTrack = tracks.find(t => t.id === nextTrackId);
       if (nextTrack) {
         const loadedTrack = await loadTrackAudio(nextTrack);
         setCurrentTrack(loadedTrack);
-      }
-    } else {
-      const firstTrackId = playlist.tracks[0];
-      if (firstTrackId) {
-        const firstTrack = tracks.find(t => t.id === firstTrackId);
-        if (firstTrack) {
-          const loadedTrack = await loadTrackAudio(firstTrack);
-          setCurrentTrack(loadedTrack);
-        }
+        setCurrentPlaylistTrackIndex(nextIndex);
       }
     }
   };

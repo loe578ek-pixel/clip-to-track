@@ -60,40 +60,59 @@ export const PlaylistSortableTrackItem = ({
         ${manageMode ? 'bg-white/[0.03] ring-1 ring-primary/20' : ''}
       `}
     >
-      {manageMode && (
+      {manageMode ? (
         <div
           {...listeners}
-          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-primary p-1 -ml-1"
+          className="flex items-center gap-2 flex-1 min-w-0 cursor-grab active:cursor-grabbing py-1 -my-1 rounded-lg hover:bg-primary/5"
         >
-          <GripVertical className="h-4 w-4" />
+          <div className="flex-shrink-0 text-primary">
+            <GripVertical className="h-5 w-5" />
+          </div>
+          <div className="w-5 flex justify-center flex-shrink-0">
+            <span className="text-muted-foreground/70 text-[11px] font-semibold tabular-nums">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => { e.stopPropagation(); onPlayTrack(track); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="w-7 h-7 flex-shrink-0 rounded-full bg-primary/15 hover:bg-primary/30 text-primary p-0"
+          >
+            <Play className="h-3 w-3 fill-current" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-[12px] truncate leading-snug">{track.title}</h4>
+            <p className="text-[10px] text-muted-foreground/70 leading-tight tabular-nums">
+              {formatTime(track.duration)}
+            </p>
+          </div>
         </div>
+      ) : (
+        <>
+          <div className="w-5 flex justify-center flex-shrink-0">
+            <span className="text-muted-foreground/70 text-[11px] font-semibold tabular-nums">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => { e.stopPropagation(); onPlayTrack(track); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="w-7 h-7 flex-shrink-0 rounded-full bg-primary/15 hover:bg-primary/30 text-primary p-0"
+          >
+            <Play className="h-3 w-3 fill-current" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-medium text-[12px] truncate leading-snug">{track.title}</h4>
+            <p className="text-[10px] text-muted-foreground/70 leading-tight tabular-nums">
+              {formatTime(track.duration)}
+            </p>
+          </div>
+        </>
       )}
-
-      {/* Index */}
-      <div className="w-5 flex justify-center flex-shrink-0">
-        <span className="text-muted-foreground/70 text-[11px] font-semibold tabular-nums">
-          {String(index + 1).padStart(2, '0')}
-        </span>
-      </div>
-
-      {/* Play */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => { e.stopPropagation(); onPlayTrack(track); }}
-        onPointerDown={(e) => e.stopPropagation()}
-        className="w-7 h-7 flex-shrink-0 rounded-full bg-primary/15 hover:bg-primary/30 text-primary p-0"
-      >
-        <Play className="h-3 w-3 fill-current" />
-      </Button>
-
-      {/* Title + duration */}
-      <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-[12px] truncate leading-snug">{track.title}</h4>
-        <p className="text-[10px] text-muted-foreground/70 leading-tight tabular-nums">
-          {formatTime(track.duration)}
-        </p>
-      </div>
 
       {/* Right side controls */}
       <div className="flex items-center gap-1 flex-shrink-0">

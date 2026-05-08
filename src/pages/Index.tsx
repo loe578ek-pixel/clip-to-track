@@ -191,36 +191,32 @@ const Index = () => {
   const handleAddToPlaylist = (playlistId: string, trackId: string) => {
     const playlist = playlists.find(p => p.id === playlistId);
     const track = tracks.find(t => t.id === trackId);
-    
-    // Check if track is already in playlist
-    if (playlist && track && !playlist.tracks.includes(trackId)) {
-      setPlaylists(prev => prev.map(p => 
-        p.id === playlistId ? { 
-          ...p, 
+
+    // Allow same track to be added multiple times in a playlist
+    if (playlist && track) {
+      setPlaylists(prev => prev.map(p =>
+        p.id === playlistId ? {
+          ...p,
           tracks: [...p.tracks, trackId],
-          repeatCounts: { ...(p.repeatCounts || {}), [trackId]: 1 } // Initialize with 1x repeat
+          repeatCounts: {
+            ...(p.repeatCounts || {}),
+            [trackId]: p.repeatCounts?.[trackId] ?? 1, // shared repeat per trackId
+          },
         } : p
       ));
     }
   };
 
-  const handleRemoveFromPlaylist = (playlistId: string, trackId: string) => {
-    const playlist = playlists.find(p => p.id === playlistId);
-    const track = tracks.find(t => t.id === trackId);
-    
-    if (playlist && track) {
-      setPlaylists(prev => prev.map(p => 
-        p.id === playlistId 
-          ? { 
-              ...p, 
-              tracks: p.tracks.filter(id => id !== trackId),
-              repeatCounts: Object.fromEntries(
-                Object.entries(p.repeatCounts || {}).filter(([id]) => id !== trackId)
-              )
-            }
-          : p
-      ));
-    }
+  const handleRemoveFromPlaylist = (playlistId: string, trackIndex: number) => {
+    setPlaylists(prev => prev.map(p => {
+      if (p.id !== playlistId) return p;
+      const newTracks = p.tracks.filter((_, i) => i !== trackIndex);
+      const removedTrackId = p.tracks[trackIndex];
+      const stillPresent = newTracks.includes(removedTrackId);
+      const newRepeatCounts = { ...(p.repeatCounts || {}) };
+      if (!stillPresent) delete newRepeatCounts[removedTrackId];
+      return { ...p, tracks: newTracks, repeatCounts: newRepeatCounts };
+    }));
   };
 
   const handleRenamePlaylist = (playlistId: string, newName: string) => {

@@ -78,8 +78,8 @@ export const PlaylistSortableTrackItem = ({
 
       {/* Title + duration */}
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-sm truncate leading-snug">{track.title}</h4>
-        <p className="text-[11px] text-muted-foreground/70 leading-tight tabular-nums">
+        <h4 className="font-medium text-[12px] truncate leading-snug">{track.title}</h4>
+        <p className="text-[10px] text-muted-foreground/70 leading-tight tabular-nums">
           {formatTime(track.duration)}
         </p>
       </div>
@@ -88,26 +88,26 @@ export const PlaylistSortableTrackItem = ({
       <div className="flex items-center gap-1 flex-shrink-0">
         {/* Repeat pill */}
         <div
-          className="flex items-center rounded-full bg-white/[0.04] border border-white/[0.06] h-6"
+          className="flex items-center rounded-full bg-white/[0.06] border border-white/[0.08] h-8"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <Button
             variant="ghost"
             size="icon"
             onClick={(e) => { e.stopPropagation(); onUpdateTrackRepeat(track.id, Math.max(1, repeatCount - 1)); }}
-            className="w-5 h-6 text-muted-foreground hover:text-foreground hover:bg-transparent rounded-l-full"
+            className="w-7 h-8 text-base text-muted-foreground hover:text-foreground hover:bg-white/[0.06] rounded-l-full"
             disabled={repeatCount <= 1}
           >
             −
           </Button>
-          <span className="text-[10px] font-semibold text-foreground/90 w-6 text-center tabular-nums">
+          <span className="text-[12px] font-semibold text-foreground/90 w-8 text-center tabular-nums">
             ×{repeatCount}
           </span>
           <Button
             variant="ghost"
             size="icon"
             onClick={(e) => { e.stopPropagation(); onUpdateTrackRepeat(track.id, repeatCount + 1); }}
-            className="w-5 h-6 text-muted-foreground hover:text-foreground hover:bg-transparent rounded-r-full"
+            className="w-7 h-8 text-base text-muted-foreground hover:text-foreground hover:bg-white/[0.06] rounded-r-full"
           >
             +
           </Button>

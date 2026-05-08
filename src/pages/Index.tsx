@@ -367,29 +367,23 @@ const Index = () => {
     
     // Handle regular playlists
     if (!currentPlaylistId) return;
-    
+
     const playlist = playlists.find(p => p.id === currentPlaylistId);
     if (!playlist) return;
-    
-    const currentIndex = playlist.tracks.findIndex(id => id === currentTrack.id);
+
+    const currentIndex = currentPlaylistTrackIndex >= 0
+      ? currentPlaylistTrackIndex
+      : playlist.tracks.findIndex(id => id === currentTrack.id);
     if (currentIndex === -1) return;
-    
-    const prevTrackId = playlist.tracks[currentIndex - 1];
+
+    const prevIndex = currentIndex - 1 >= 0 ? currentIndex - 1 : playlist.tracks.length - 1;
+    const prevTrackId = playlist.tracks[prevIndex];
     if (prevTrackId) {
       const prevTrack = tracks.find(t => t.id === prevTrackId);
       if (prevTrack) {
         const loadedTrack = await loadTrackAudio(prevTrack);
         setCurrentTrack(loadedTrack);
-      }
-    } else {
-      // Loop back to last track
-      const lastTrackId = playlist.tracks[playlist.tracks.length - 1];
-      if (lastTrackId) {
-        const lastTrack = tracks.find(t => t.id === lastTrackId);
-        if (lastTrack) {
-          const loadedTrack = await loadTrackAudio(lastTrack);
-          setCurrentTrack(loadedTrack);
-        }
+        setCurrentPlaylistTrackIndex(prevIndex);
       }
     }
   };
@@ -402,7 +396,7 @@ const Index = () => {
     startTrial();
     setCurrentTrack(null);
     setIsAutoPlaying(false);
-    
+
     setTimeout(async () => {
       setCurrentPlaylistId(playlistId);
       const playlist = playlists.find(p => p.id === playlistId);
@@ -414,6 +408,7 @@ const Index = () => {
         const loadedTrack = await loadTrackAudio(track);
         setCurrentTrack(loadedTrack);
         setIsAutoPlaying(true);
+        setCurrentPlaylistTrackIndex(playlist?.tracks.findIndex(id => id === trackId) ?? -1);
         setCurrentTrackPlayCount(prev => ({
           ...prev,
           [track.id]: 0
@@ -430,7 +425,7 @@ const Index = () => {
     startTrial();
     setCurrentTrack(null);
     setIsAutoPlaying(false);
-    
+
     setTimeout(async () => {
       setCurrentPlaylistId(playlistId);
       const playlist = playlists.find(p => p.id === playlistId);
@@ -441,6 +436,7 @@ const Index = () => {
           const loadedTrack = await loadTrackAudio(firstTrack);
           setCurrentTrack(loadedTrack);
           setIsAutoPlaying(true);
+          setCurrentPlaylistTrackIndex(0);
           setCurrentTrackPlayCount(prev => ({
             ...prev,
             [firstTrack.id]: 0

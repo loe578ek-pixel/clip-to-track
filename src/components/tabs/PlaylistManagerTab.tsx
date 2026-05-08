@@ -30,7 +30,7 @@ interface PlaylistManagerTabProps {
   onRenamePlaylist: (playlistId: string, newName: string) => void;
   onClearPlaylistTracks: (playlistId: string) => void;
   onAddToPlaylist: (playlistId: string, trackId: string) => void;
-  onRemoveFromPlaylist: (playlistId: string, trackId: string) => void;
+  onRemoveFromPlaylist: (playlistId: string, trackIndex: number) => void;
   onUpdatePlaylistTrackRepeat: (playlistId: string, trackId: string, repeatCount: number) => void;
   onPlayPlaylist: (playlistId: string) => void;
   onPlayTrack: (track: Track) => void;

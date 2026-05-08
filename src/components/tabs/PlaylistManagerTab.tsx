@@ -98,19 +98,20 @@ export const PlaylistManagerTab = ({
     })
   );
 
-  // Handle drag end for playlist tracks
+  // Handle drag end for playlist tracks (uses positional ids: "trackId__index")
   const handleDragEnd = (event: DragEndEvent, playlistId: string) => {
     const { active, over } = event;
 
-    if (active.id !== over?.id) {
+    if (over && active.id !== over.id) {
       const playlist = playlists.find(p => p.id === playlistId);
       if (!playlist) return;
 
-      const trackIds = playlist.tracks;
-      const oldIndex = trackIds.findIndex((id: string) => id === active.id);
-      const newIndex = trackIds.findIndex((id: string) => id === over?.id);
+      const ids = playlist.tracks.map((id, i) => `${id}__${i}`);
+      const oldIndex = ids.indexOf(String(active.id));
+      const newIndex = ids.indexOf(String(over.id));
+      if (oldIndex < 0 || newIndex < 0) return;
 
-      const newTrackIds = arrayMove(trackIds, oldIndex, newIndex);
+      const newTrackIds = arrayMove(playlist.tracks, oldIndex, newIndex);
       onReorderPlaylistTracks(playlistId, newTrackIds);
     }
   };

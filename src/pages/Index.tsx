@@ -55,6 +55,7 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string | null>(null);
   const [currentPlaylistName, setCurrentPlaylistName] = useState<string | null>(null);
+  const [currentPlaylistTrackIndex, setCurrentPlaylistTrackIndex] = useState<number>(-1);
   const [trackRepeatCounts, setTrackRepeatCounts] = useState<Record<string, number>>({});
   const [currentTrackPlayCount, setCurrentTrackPlayCount] = useState<Record<string, number>>({});
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);

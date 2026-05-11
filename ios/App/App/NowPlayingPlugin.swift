@@ -24,6 +24,7 @@ public class NowPlayingPlugin: CAPPlugin {
 
     private var commandsRegistered = false
     private var cachedArtwork: MPMediaItemArtwork?
+    private var commandSequence = 0
 
     // MARK: - Lifecycle
 
@@ -111,31 +112,31 @@ public class NowPlayingPlugin: CAPPlugin {
 
         center.playCommand.isEnabled = true
         center.playCommand.addTarget { [weak self] _ in
-            self?.notifyListeners("remoteCommand", data: ["action": "play"])
+            self?.emitRemoteCommand(action: "play")
             return .success
         }
 
         center.pauseCommand.isEnabled = true
         center.pauseCommand.addTarget { [weak self] _ in
-            self?.notifyListeners("remoteCommand", data: ["action": "pause"])
+            self?.emitRemoteCommand(action: "pause")
             return .success
         }
 
         center.togglePlayPauseCommand.isEnabled = true
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
-            self?.notifyListeners("remoteCommand", data: ["action": "toggle"])
+            self?.emitRemoteCommand(action: "toggle")
             return .success
         }
 
         center.nextTrackCommand.isEnabled = true
         center.nextTrackCommand.addTarget { [weak self] _ in
-            self?.notifyListeners("remoteCommand", data: ["action": "next"])
+            self?.emitRemoteCommand(action: "next")
             return .success
         }
 
         center.previousTrackCommand.isEnabled = true
         center.previousTrackCommand.addTarget { [weak self] _ in
-            self?.notifyListeners("remoteCommand", data: ["action": "previous"])
+            self?.emitRemoteCommand(action: "previous")
             return .success
         }
 
@@ -144,10 +145,7 @@ public class NowPlayingPlugin: CAPPlugin {
             guard let event = event as? MPChangePlaybackPositionCommandEvent else {
                 return .commandFailed
             }
-            self?.notifyListeners("remoteCommand", data: [
-                "action": "seek",
-                "position": event.positionTime
-            ])
+            self?.emitRemoteCommand(action: "seek", position: event.positionTime)
             return .success
         }
 
@@ -160,6 +158,33 @@ public class NowPlayingPlugin: CAPPlugin {
 
     private func prepareArtwork() {
         cachedArtwork = buildArtwork()
+    }
+
+    private func emitRemoteCommand(action: String, position: Double? = nil) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+
+            self.commandSequence += 1
+
+            var payload: [String: Any] = [
+                "action": action,
+                "eventId": self.commandSequence
+            ]
+
+            if let position = position {
+                payload["position"] = position
+            }
+
+            self.notifyListeners("remoteCommand", data: payload)
+
+            guard let bridge = self.bridge,
+                  let data = try? JSONSerialization.data(withJSONObject: payload, options: []),
+                  let json = String(data: data, encoding: .utf8) else {
+                return
+            }
+
+            bridge.triggerDocumentJSEvent(eventName: "nowPlayingRemoteCommand", data: json)
+        }
     }
 
     /// Loads the app icon from the asset catalog (AppIcon) and wraps it as

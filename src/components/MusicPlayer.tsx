@@ -147,6 +147,24 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       const newTime = audio.currentTime;
       setCurrentTime(newTime);
     };
+    const handlePlay = () => {
+      setIsPlaying(true);
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        nativeMediaControls.updatePlaybackState(true, audio.currentTime);
+      } else {
+        mediaSession.updatePlaybackState(true, audio.currentTime);
+      }
+    };
+    const handlePause = () => {
+      setIsPlaying(false);
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        nativeMediaControls.updatePlaybackState(false, audio.currentTime);
+      } else {
+        mediaSession.updatePlaybackState(false, audio.currentTime);
+      }
+    };
     
     const handleEnded = () => {
       setIsPlaying(false);
@@ -164,10 +182,14 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     };
 
     audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
     audio.addEventListener('ended', handleEnded);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('ended', handleEnded);
     };
   }, [onEnded, isPlaying]);

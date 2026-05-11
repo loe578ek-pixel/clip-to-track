@@ -16,7 +16,7 @@ export interface NowPlayingPluginShape {
   clear(): Promise<void>;
   addListener(
     eventName: 'remoteCommand',
-    listener: (event: { action: 'play' | 'pause' | 'toggle' | 'next' | 'previous' | 'seek'; position?: number }) => void
+    listener: (event: { action: 'play' | 'pause' | 'toggle' | 'next' | 'previous' | 'seek'; position?: number; eventId?: number }) => void
   ): Promise<{ remove: () => Promise<void> }>;
 }
 

@@ -1,7 +1,8 @@
 import { Capacitor } from '@capacitor/core';
 import * as MusicControlsModule from 'capacitor-music-controls-plugin-v3';
+import { NowPlayingNative } from './iosNowPlaying';
 
-// Access the MusicControls object from the module
+// Access the MusicControls object from the module (Android only)
 const MusicControls = (MusicControlsModule as any).MusicControls || MusicControlsModule;
 
 export interface NativeMediaTrack {
@@ -24,27 +25,25 @@ export interface NativeMediaCallbacks {
 class NativeMediaControlsService {
   private callbacks: NativeMediaCallbacks | null = null;
   private currentTrack: NativeMediaTrack | null = null;
+  private currentPlaylistName?: string;
   private isPlaying = false;
   private isNative = false;
+  private platform: 'ios' | 'android' | 'web' = 'web';
   private listenersSet = false;
   private initialized = false;
 
   constructor() {
     this.isNative = Capacitor.isNativePlatform();
-    // Don't initialize immediately - wait for first use
+    this.platform = (Capacitor.getPlatform() as 'ios' | 'android' | 'web');
   }
 
   private async ensureInitialized() {
     if (this.initialized || !this.isNative) return;
-    
-    // CRITICAL: Don't initialize until callbacks are set
     if (!this.callbacks) {
       console.log('⚠️ Skipping initialization - callbacks not set yet');
       return;
     }
-    
     this.initialized = true;
-    
     try {
       await this.setupNativeControls();
     } catch (error) {
@@ -53,25 +52,59 @@ class NativeMediaControlsService {
   }
 
   private async setupNativeControls() {
-    console.log('🎵 Initializing native media controls...');
-    if (!this.listenersSet) {
-      this.setupActionHandlers();
-      this.listenersSet = true;
-      
-      // CRITICAL: Must call listen() to start listening for control events
+    if (this.listenersSet) return;
+    this.listenersSet = true;
+
+    if (this.platform === 'ios') {
+      console.log('🍎 Initializing iOS NowPlayingPlugin (custom)');
       try {
-        await MusicControls.listen();
-        console.log('✅ Native media controls listening for events');
+        await NowPlayingNative.activate();
+        await NowPlayingNative.addListener('remoteCommand', (event) => {
+          console.log('🍎 iOS remote command:', event);
+          switch (event.action) {
+            case 'play':
+              this.callbacks?.onPlay();
+              break;
+            case 'pause':
+              this.callbacks?.onPause();
+              break;
+            case 'toggle':
+              if (this.isPlaying) this.callbacks?.onPause();
+              else this.callbacks?.onPlay();
+              break;
+            case 'next':
+              this.callbacks?.onNext();
+              break;
+            case 'previous':
+              this.callbacks?.onPrevious();
+              break;
+            case 'seek':
+              if (typeof event.position === 'number') {
+                this.callbacks?.onSeek?.(event.position);
+              }
+              break;
+          }
+        });
+        console.log('✅ iOS NowPlayingPlugin ready');
       } catch (error) {
-        console.error('❌ Error starting to listen:', error);
+        console.error('❌ iOS NowPlayingPlugin init error:', error);
       }
+      return;
+    }
+
+    // Android
+    console.log('🤖 Initializing Android MusicControls plugin');
+    this.setupAndroidHandlers();
+    try {
+      await MusicControls.listen();
+      console.log('✅ Android media controls listening');
+    } catch (error) {
+      console.error('❌ Error starting Android listener:', error);
     }
   }
 
   setCallbacks(callbacks: NativeMediaCallbacks) {
-    console.log('🎮 Setting native media control callbacks');
     this.callbacks = callbacks;
-    // Trigger initialization now that we have callbacks
     if (this.isNative && !this.initialized) {
       this.ensureInitialized();
     }
@@ -82,7 +115,26 @@ class NativeMediaControlsService {
     await this.ensureInitialized();
 
     this.currentTrack = track;
+    this.currentPlaylistName = playlistName;
 
+    if (this.platform === 'ios') {
+      try {
+        await NowPlayingNative.setNowPlaying({
+          title: track.title,
+          artist: track.artist,
+          album: playlistName || track.album || '',
+          duration: track.duration,
+          elapsed: track.elapsed || 0,
+          isPlaying: this.isPlaying,
+        });
+        console.log('✅ iOS Now Playing updated:', track.title);
+      } catch (error) {
+        console.error('❌ iOS setNowPlaying error:', error);
+      }
+      return;
+    }
+
+    // Android via capacitor-music-controls-plugin-v3
     try {
       const cover = track.artwork || `${window.location.origin}/app-icon.png`;
       await MusicControls.create({
@@ -104,100 +156,36 @@ class NativeMediaControlsService {
         hasScrubbing: true,
         notificationIcon: 'notification'
       });
-
       await MusicControls.updateIsPlaying({ isPlaying: this.isPlaying });
-      console.log('✅ Native media notification created with track:', track.title);
+      console.log('✅ Android notification created:', track.title);
     } catch (error) {
-      console.error('❌ Error updating native media controls:', error);
+      console.error('❌ Android updateTrack error:', error);
     }
   }
 
-  private setupActionHandlers() {
-    if (!this.isNative) return;
-
-    console.log('🎮 Setting up native media control action handlers...');
-
-    // Android 13+ has a bug with notifyListeners, must use document.addEventListener
-    // See: https://github.com/ionic-team/capacitor/issues/6234
-    if (Capacitor.getPlatform() === 'android') {
-      console.log('🤖 Setting up Android-specific event listeners via document.addEventListener');
-      
-      document.addEventListener('controlsNotification', (event: any) => {
-        console.log('🎵 Native media control action (Android):', event);
-        const message = event.message || event.detail?.message;
-        
-        console.log('📱 Android control event message:', message);
-        
-        switch (message) {
-          case 'music-controls-play':
-            console.log('▶️ Play button pressed on lockscreen');
-            this.callbacks?.onPlay();
-            break;
-          case 'music-controls-pause':
-            console.log('⏸️ Pause button pressed on lockscreen');
-            this.callbacks?.onPause();
-            break;
-          case 'music-controls-previous':
-            console.log('⏮️ Previous button pressed on lockscreen');
-            this.callbacks?.onPrevious();
-            break;
-          case 'music-controls-next':
-            console.log('⏭️ Next button pressed on lockscreen');
-            this.callbacks?.onNext();
-            break;
-          case 'music-controls-seek-to':
-            console.log('⏩ Seek to:', event.position);
-            if (this.callbacks?.onSeek && event.position !== undefined) {
-              this.callbacks.onSeek(event.position);
-            }
-            break;
-          default:
-            console.log('❓ Unknown media control action:', message);
-        }
-      });
-
-      document.addEventListener('controlsDestroyed', () => {
-        console.log('🗑️ Native media controls notification destroyed (Android)');
-      });
-    } else {
-      // iOS uses standard addListener
-      console.log('🍎 Setting up iOS-specific event listeners via addListener');
-      
-      MusicControls.addListener('controlsNotification', (info: any) => {
-        console.log('🎵 Native media control action (iOS):', info.message);
-        
-        switch (info.message) {
-          case 'music-controls-play':
-            console.log('▶️ Play button pressed on lockscreen');
-            this.callbacks?.onPlay();
-            break;
-          case 'music-controls-pause':
-            console.log('⏸️ Pause button pressed on lockscreen');
-            this.callbacks?.onPause();
-            break;
-          case 'music-controls-previous':
-            console.log('⏮️ Previous button pressed on lockscreen');
-            this.callbacks?.onPrevious();
-            break;
-          case 'music-controls-next':
-            console.log('⏭️ Next button pressed on lockscreen');
-            this.callbacks?.onNext();
-            break;
-          case 'music-controls-seek-to':
-            console.log('⏩ Seek to:', info.position);
-            if (this.callbacks?.onSeek && info.position !== undefined) {
-              this.callbacks.onSeek(info.position);
-            }
-            break;
-          default:
-            console.log('❓ Unknown media control action:', info.message);
-        }
-      });
-
-      MusicControls.addListener('controlsDestroyed', () => {
-        console.log('🗑️ Native media controls notification destroyed (iOS)');
-      });
-    }
+  private setupAndroidHandlers() {
+    document.addEventListener('controlsNotification', (event: any) => {
+      const message = event.message || event.detail?.message;
+      switch (message) {
+        case 'music-controls-play':
+          this.callbacks?.onPlay();
+          break;
+        case 'music-controls-pause':
+          this.callbacks?.onPause();
+          break;
+        case 'music-controls-previous':
+          this.callbacks?.onPrevious();
+          break;
+        case 'music-controls-next':
+          this.callbacks?.onNext();
+          break;
+        case 'music-controls-seek-to':
+          if (this.callbacks?.onSeek && event.position !== undefined) {
+            this.callbacks.onSeek(event.position);
+          }
+          break;
+      }
+    });
   }
 
   async updatePlaybackState(isPlaying: boolean, currentTime: number) {
@@ -206,24 +194,31 @@ class NativeMediaControlsService {
 
     this.isPlaying = isPlaying;
 
+    if (this.platform === 'ios') {
+      try {
+        await NowPlayingNative.updatePlayback({ elapsed: currentTime, isPlaying });
+      } catch (error) {
+        console.error('❌ iOS updatePlayback error:', error);
+      }
+      return;
+    }
+
     try {
-      await MusicControls.updateIsPlaying({ isPlaying: isPlaying });
-      await MusicControls.updateElapsed({ 
-        elapsed: currentTime,
-        isPlaying: isPlaying 
-      });
-      console.log(`🎵 Playback state: ${isPlaying ? 'PLAYING' : 'PAUSED'} at ${currentTime.toFixed(1)}s`);
+      await MusicControls.updateIsPlaying({ isPlaying });
+      await MusicControls.updateElapsed({ elapsed: currentTime, isPlaying });
     } catch (error) {
-      console.error('❌ Error updating playback state:', error);
+      console.error('❌ Android updatePlaybackState error:', error);
     }
   }
 
   async destroy() {
     if (!this.isNative) return;
-
     try {
-      await MusicControls.destroy();
-      console.log('🗑️ Native media controls destroyed');
+      if (this.platform === 'ios') {
+        await NowPlayingNative.clear();
+      } else {
+        await MusicControls.destroy();
+      }
     } catch (error) {
       console.error('❌ Error destroying media controls:', error);
     }

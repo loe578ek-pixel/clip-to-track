@@ -31,6 +31,7 @@ class NativeMediaControlsService {
   private platform: 'ios' | 'android' | 'web' = 'web';
   private listenersSet = false;
   private initialized = false;
+  private lastHandledRemoteEventId: number | null = null;
 
   constructor() {
     this.isNative = Capacitor.isNativePlatform();
@@ -60,31 +61,10 @@ class NativeMediaControlsService {
       try {
         await NowPlayingNative.activate();
         await NowPlayingNative.addListener('remoteCommand', (event) => {
-          console.log('🍎 iOS remote command:', event);
-          switch (event.action) {
-            case 'play':
-              this.callbacks?.onPlay();
-              break;
-            case 'pause':
-              this.callbacks?.onPause();
-              break;
-            case 'toggle':
-              if (this.isPlaying) this.callbacks?.onPause();
-              else this.callbacks?.onPlay();
-              break;
-            case 'next':
-              this.callbacks?.onNext();
-              break;
-            case 'previous':
-              this.callbacks?.onPrevious();
-              break;
-            case 'seek':
-              if (typeof event.position === 'number') {
-                this.callbacks?.onSeek?.(event.position);
-              }
-              break;
-          }
+          this.handleIosRemoteCommand(event);
         });
+
+        document.addEventListener('nowPlayingRemoteCommand', this.handleDocumentRemoteCommand as EventListener);
         console.log('✅ iOS NowPlayingPlugin ready');
       } catch (error) {
         console.error('❌ iOS NowPlayingPlugin init error:', error);
@@ -107,6 +87,46 @@ class NativeMediaControlsService {
     this.callbacks = callbacks;
     if (this.isNative && !this.initialized) {
       this.ensureInitialized();
+    }
+  }
+
+  private handleDocumentRemoteCommand = (event: Event) => {
+    const customEvent = event as CustomEvent<{ action: 'play' | 'pause' | 'toggle' | 'next' | 'previous' | 'seek'; position?: number; eventId?: number }>;
+    if (!customEvent.detail) return;
+    this.handleIosRemoteCommand(customEvent.detail);
+  };
+
+  private handleIosRemoteCommand(event: { action: 'play' | 'pause' | 'toggle' | 'next' | 'previous' | 'seek'; position?: number; eventId?: number }) {
+    if (typeof event.eventId === 'number') {
+      if (this.lastHandledRemoteEventId === event.eventId) {
+        return;
+      }
+      this.lastHandledRemoteEventId = event.eventId;
+    }
+
+    console.log('🍎 iOS remote command:', event);
+    switch (event.action) {
+      case 'play':
+        this.callbacks?.onPlay();
+        break;
+      case 'pause':
+        this.callbacks?.onPause();
+        break;
+      case 'toggle':
+        if (this.isPlaying) this.callbacks?.onPause();
+        else this.callbacks?.onPlay();
+        break;
+      case 'next':
+        this.callbacks?.onNext();
+        break;
+      case 'previous':
+        this.callbacks?.onPrevious();
+        break;
+      case 'seek':
+        if (typeof event.position === 'number') {
+          this.callbacks?.onSeek?.(event.position);
+        }
+        break;
     }
   }
 

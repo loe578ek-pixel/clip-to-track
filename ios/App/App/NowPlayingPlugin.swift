@@ -1,0 +1,188 @@
+import Foundation
+import Capacitor
+import AVFoundation
+import MediaPlayer
+import UIKit
+
+/**
+ * NowPlayingPlugin
+ *
+ * Custom Capacitor plugin to drive the iOS lockscreen / Control Center
+ * "Now Playing" widget. Handles:
+ *  - AVAudioSession activation (.playback) so audio keeps playing in background
+ *    and lockscreen controls are routed to this app.
+ *  - MPRemoteCommandCenter handlers for play / pause / next / previous / seek.
+ *  - MPNowPlayingInfoCenter metadata + artwork (uses AppIcon from the bundle).
+ *
+ * IMPORTANT: this plugin is auto-registered by Capacitor as long as the .swift
+ * file is added to the iOS App target in Xcode. After `npx cap sync` make sure
+ * Xcode shows this file in App > App. Also enable Background Modes -> Audio,
+ * AirPlay, and Picture in Picture in the Signing & Capabilities tab.
+ */
+@objc(NowPlayingPlugin)
+public class NowPlayingPlugin: CAPPlugin {
+
+    private var commandsRegistered = false
+    private var cachedArtwork: MPMediaItemArtwork?
+
+    // MARK: - Lifecycle
+
+    override public func load() {
+        configureAudioSession()
+        registerCommands()
+        prepareArtwork()
+    }
+
+    // MARK: - JS API
+
+    @objc func activate(_ call: CAPPluginCall) {
+        configureAudioSession()
+        registerCommands()
+        call.resolve()
+    }
+
+    @objc func setNowPlaying(_ call: CAPPluginCall) {
+        let title = call.getString("title") ?? ""
+        let artist = call.getString("artist") ?? ""
+        let album = call.getString("album") ?? ""
+        let duration = call.getDouble("duration") ?? 0
+        let elapsed = call.getDouble("elapsed") ?? 0
+        let isPlaying = call.getBool("isPlaying") ?? false
+
+        var info: [String: Any] = [:]
+        info[MPMediaItemPropertyTitle] = title
+        info[MPMediaItemPropertyArtist] = artist
+        info[MPMediaItemPropertyAlbumTitle] = album
+        info[MPMediaItemPropertyPlaybackDuration] = duration
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+
+        if let art = cachedArtwork ?? buildArtwork() {
+            cachedArtwork = art
+            info[MPMediaItemPropertyArtwork] = art
+        }
+
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+
+        // Make sure session is active so lockscreen shows our app
+        do {
+            try AVAudioSession.sharedInstance().setActive(true, options: [])
+        } catch {
+            // ignore
+        }
+
+        call.resolve()
+    }
+
+    @objc func updatePlayback(_ call: CAPPluginCall) {
+        let elapsed = call.getDouble("elapsed") ?? 0
+        let isPlaying = call.getBool("isPlaying") ?? false
+
+        var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+
+        call.resolve()
+    }
+
+    @objc func clear(_ call: CAPPluginCall) {
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+        call.resolve()
+    }
+
+    // MARK: - Private helpers
+
+    private func configureAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playback, mode: .default, options: [])
+            try session.setActive(true, options: [])
+        } catch {
+            print("NowPlayingPlugin: AVAudioSession error: \(error)")
+        }
+    }
+
+    private func registerCommands() {
+        if commandsRegistered { return }
+        commandsRegistered = true
+
+        let center = MPRemoteCommandCenter.shared()
+
+        center.playCommand.isEnabled = true
+        center.playCommand.addTarget { [weak self] _ in
+            self?.notifyListeners("remoteCommand", data: ["action": "play"])
+            return .success
+        }
+
+        center.pauseCommand.isEnabled = true
+        center.pauseCommand.addTarget { [weak self] _ in
+            self?.notifyListeners("remoteCommand", data: ["action": "pause"])
+            return .success
+        }
+
+        center.togglePlayPauseCommand.isEnabled = true
+        center.togglePlayPauseCommand.addTarget { [weak self] _ in
+            self?.notifyListeners("remoteCommand", data: ["action": "toggle"])
+            return .success
+        }
+
+        center.nextTrackCommand.isEnabled = true
+        center.nextTrackCommand.addTarget { [weak self] _ in
+            self?.notifyListeners("remoteCommand", data: ["action": "next"])
+            return .success
+        }
+
+        center.previousTrackCommand.isEnabled = true
+        center.previousTrackCommand.addTarget { [weak self] _ in
+            self?.notifyListeners("remoteCommand", data: ["action": "previous"])
+            return .success
+        }
+
+        center.changePlaybackPositionCommand.isEnabled = true
+        center.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let event = event as? MPChangePlaybackPositionCommandEvent else {
+                return .commandFailed
+            }
+            self?.notifyListeners("remoteCommand", data: [
+                "action": "seek",
+                "position": event.positionTime
+            ])
+            return .success
+        }
+
+        // Disable +10/-10 so iOS shows previous/next instead
+        center.skipForwardCommand.isEnabled = false
+        center.skipBackwardCommand.isEnabled = false
+
+        UIApplication.shared.beginReceivingRemoteControlEvents()
+    }
+
+    private func prepareArtwork() {
+        cachedArtwork = buildArtwork()
+    }
+
+    /// Loads the app icon from the asset catalog (AppIcon) and wraps it as
+    /// MPMediaItemArtwork. Falls back to nil if the icon can't be loaded.
+    private func buildArtwork() -> MPMediaItemArtwork? {
+        if let image = loadAppIconImage() {
+            return MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+        }
+        return nil
+    }
+
+    private func loadAppIconImage() -> UIImage? {
+        // Try Info.plist CFBundleIcons (primary AppIcon set)
+        if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+           let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
+           let files = primary["CFBundleIconFiles"] as? [String],
+           let last = files.last,
+           let img = UIImage(named: last) {
+            return img
+        }
+        // Fallbacks
+        if let img = UIImage(named: "AppIcon") { return img }
+        if let img = UIImage(named: "AppIcon60x60") { return img }
+        return nil
+    }
+}

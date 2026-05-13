@@ -6,6 +6,7 @@ import { Track } from "@/pages/Index";
 import { useVolume } from "@/contexts/VolumeContext";
 import { mediaSession } from "@/lib/mediaSession";
 import { nativeMediaControls } from "@/lib/nativeMediaControls";
+import { NowPlayingNative } from "@/lib/iosNowPlaying";
 import { Capacitor } from "@capacitor/core";
 
 interface MusicPlayerProps {
@@ -17,6 +18,11 @@ interface MusicPlayerProps {
   playlistName?: string;
 }
 
+// On iOS we use a native AVPlayer (Swift) for playback so the lockscreen
+// pause/play/seek/next/prev controls work reliably even when JS is frozen
+// in background. On web/Android we keep the HTML5 <audio> element.
+const IS_IOS_NATIVE = Capacitor.getPlatform() === 'ios';
+
 export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = false, playlistName }: MusicPlayerProps) => {
   const { masterVolume } = useVolume();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -27,34 +33,72 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
   const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'all'>('off');
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Set up media session callbacks FIRST before initializing controls
+  // Decide whether to use native AVPlayer for the current track.
+  // We need a file URI (Capacitor Filesystem) for AVPlayer; if missing, fall back to HTML5.
+  const useNative = IS_IOS_NATIVE && !!track.localFilePath;
+
+  // ---- Native AVPlayer event listener (iOS only) ----
+  useEffect(() => {
+    if (!IS_IOS_NATIVE) return;
+    let removeFn: (() => Promise<void>) | null = null;
+    let cancelled = false;
+
+    NowPlayingNative.addListener('nativeAudio', (event) => {
+      if (event.event === 'timeupdate') {
+        setCurrentTime((event as any).currentTime || 0);
+      } else if (event.event === 'play') {
+        setIsPlaying(true);
+      } else if (event.event === 'pause') {
+        setIsPlaying(false);
+      } else if (event.event === 'ended') {
+        setIsPlaying(false);
+        setCurrentTime(0);
+        if (onEnded) onEnded();
+      }
+    }).then((handle) => {
+      if (cancelled) {
+        handle.remove();
+      } else {
+        removeFn = handle.remove.bind(handle);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (removeFn) removeFn();
+    };
+  }, [onEnded]);
+
+  // Set up media session callbacks (for next/previous from lockscreen).
+  // On iOS, play/pause/toggle/seek are handled natively by AVPlayer in Swift.
   useEffect(() => {
     const isNative = Capacitor.isNativePlatform();
     
     const callbacks = {
       onPlay: () => {
-        if (audioRef.current) {
-          audioRef.current.play().then(() => {
-            setIsPlaying(true);
-          }).catch(error => {
-            console.error('Error playing from media controls:', error);
+        if (useNative) {
+          NowPlayingNative.playNative().catch(() => {});
+        } else if (audioRef.current) {
+          audioRef.current.play().then(() => setIsPlaying(true)).catch(err => {
+            console.error('Error playing from media controls:', err);
           });
         }
       },
       onPause: () => {
-        if (audioRef.current) {
+        if (useNative) {
+          NowPlayingNative.pauseNative().catch(() => {});
+        } else if (audioRef.current) {
           audioRef.current.pause();
           setIsPlaying(false);
         }
       },
-      onNext: () => {
-        if (onNext) onNext();
-      },
-      onPrevious: () => {
-        if (onPrevious) onPrevious();
-      },
+      onNext: () => { if (onNext) onNext(); },
+      onPrevious: () => { if (onPrevious) onPrevious(); },
       onSeek: (time: number) => {
-        if (audioRef.current) {
+        if (useNative) {
+          NowPlayingNative.seekNative({ position: time }).catch(() => {});
+          setCurrentTime(time);
+        } else if (audioRef.current) {
           audioRef.current.currentTime = time;
           setCurrentTime(time);
         }
@@ -66,25 +110,51 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     } else {
       mediaSession.setCallbacks(callbacks);
     }
-  }, [onNext, onPrevious]);
+  }, [onNext, onPrevious, useNative]);
 
+  // Load track when it changes
   useEffect(() => {
+    if (useNative) {
+      // Native AVPlayer: load via Swift plugin
+      NowPlayingNative.loadTrack({
+        uri: track.localFilePath!,
+        title: track.title,
+        artist: track.originalFileName,
+        album: playlistName || '',
+        duration: track.duration,
+        autoPlay,
+      }).then(() => {
+        if (autoPlay) setIsPlaying(true);
+        // Apply current volume
+        const finalVolume = isMuted ? 0 : (volume[0] / 100) * (masterVolume / 100);
+        NowPlayingNative.setVolumeNative({ volume: finalVolume }).catch(() => {});
+      }).catch(err => {
+        console.error('Native loadTrack failed:', err);
+      });
+      // Also push Now Playing metadata (in case loadTrack metadata path differs)
+      nativeMediaControls.updateTrack({
+        title: track.title,
+        artist: track.originalFileName,
+        duration: track.duration
+      }, playlistName);
+      setCurrentTime(0);
+      return;
+    }
+
+    // HTML5 audio path (web / Android / iOS without localFilePath)
     if (audioRef.current) {
       audioRef.current.src = track.audioUrl;
       audioRef.current.load();
       
-      // Enable background playback and update media session
       const isNative = Capacitor.isNativePlatform();
       
       if (isNative) {
-        // Use native media controls for mobile
         nativeMediaControls.updateTrack({
           title: track.title,
           artist: track.originalFileName,
           duration: track.duration
         }, playlistName);
       } else {
-        // Use web media session for web
         mediaSession.enableBackgroundPlayback();
         mediaSession.updateTrack({
           title: track.title,
@@ -93,7 +163,6 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         }, playlistName);
       }
       
-      // Always play when autoPlay is true, regardless of current playing state
       if (autoPlay) {
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
@@ -106,16 +175,10 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
             }
           }).catch(error => {
             console.error('Error playing audio:', error);
-            // Retry after a short delay if autoPlay fails
             setTimeout(() => {
               if (audioRef.current) {
                 audioRef.current.play().then(() => {
                   setIsPlaying(true);
-                  if (isNative) {
-                    nativeMediaControls.updatePlaybackState(true, currentTime);
-                  } else {
-                    mediaSession.updatePlaybackState(true, currentTime);
-                  }
                 }).catch(retryError => {
                   console.error('Retry failed:', retryError);
                 });
@@ -123,62 +186,36 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
             }, 100);
           });
         }
-      } else if (isPlaying) {
-        // Manual play when not auto-playing but was already playing
-        audioRef.current.play().then(() => {
-          setIsPlaying(true);
-          if (isNative) {
-            nativeMediaControls.updatePlaybackState(true, currentTime);
-          } else {
-            mediaSession.updatePlaybackState(true, currentTime);
-          }
-        }).catch(error => {
-          console.error('Error playing audio:', error);
-        });
       }
     }
-  }, [track.audioUrl, track.playbackKey, autoPlay, playlistName]);
+  }, [track.audioUrl, track.localFilePath, track.playbackKey, autoPlay, playlistName, useNative]);
 
+  // HTML5 audio element listeners (skipped on native iOS path)
   useEffect(() => {
+    if (useNative) return;
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => {
-      const newTime = audio.currentTime;
-      setCurrentTime(newTime);
-    };
+    const updateTime = () => setCurrentTime(audio.currentTime);
     const handlePlay = () => {
       setIsPlaying(true);
       const isNative = Capacitor.isNativePlatform();
-      if (isNative) {
-        nativeMediaControls.updatePlaybackState(true, audio.currentTime);
-      } else {
-        mediaSession.updatePlaybackState(true, audio.currentTime);
-      }
+      if (isNative) nativeMediaControls.updatePlaybackState(true, audio.currentTime);
+      else mediaSession.updatePlaybackState(true, audio.currentTime);
     };
     const handlePause = () => {
       setIsPlaying(false);
       const isNative = Capacitor.isNativePlatform();
-      if (isNative) {
-        nativeMediaControls.updatePlaybackState(false, audio.currentTime);
-      } else {
-        mediaSession.updatePlaybackState(false, audio.currentTime);
-      }
+      if (isNative) nativeMediaControls.updatePlaybackState(false, audio.currentTime);
+      else mediaSession.updatePlaybackState(false, audio.currentTime);
     };
-    
     const handleEnded = () => {
       setIsPlaying(false);
       setCurrentTime(0);
       const isNative = Capacitor.isNativePlatform();
-      if (isNative) {
-        nativeMediaControls.updatePlaybackState(false, 0);
-      } else {
-        mediaSession.updatePlaybackState(false, 0);
-      }
-      // Always call onEnded to let parent handle repeat logic and next track
-      if (onEnded) {
-        onEnded();
-      }
+      if (isNative) nativeMediaControls.updatePlaybackState(false, 0);
+      else mediaSession.updatePlaybackState(false, 0);
+      if (onEnded) onEnded();
     };
 
     audio.addEventListener('timeupdate', updateTime);
@@ -192,58 +229,62 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [onEnded, isPlaying]);
+  }, [onEnded, useNative]);
 
-  // Smooth position updates for lockscreen notification (Android/iOS)
+  // Smooth lockscreen position updates (HTML5 only; native AVPlayer pushes its own)
   useEffect(() => {
+    if (useNative) return;
     if (!isPlaying || !audioRef.current) return;
 
     const isNative = Capacitor.isNativePlatform();
-    
-    // Update lockscreen position every second for smooth progress
     const updateInterval = setInterval(() => {
       const audio = audioRef.current;
       if (audio && !isNaN(audio.currentTime)) {
-        if (isNative) {
-          nativeMediaControls.updatePlaybackState(true, audio.currentTime);
-        } else {
-          mediaSession.updatePlaybackState(true, audio.currentTime);
-        }
+        if (isNative) nativeMediaControls.updatePlaybackState(true, audio.currentTime);
+        else mediaSession.updatePlaybackState(true, audio.currentTime);
       }
     }, 1000);
 
     return () => clearInterval(updateInterval);
-  }, [isPlaying]);
+  }, [isPlaying, useNative]);
 
+  // Volume sync
   useEffect(() => {
-    if (audioRef.current) {
-      const finalVolume = isMuted ? 0 : (volume[0] / 100) * (masterVolume / 100);
+    const finalVolume = isMuted ? 0 : (volume[0] / 100) * (masterVolume / 100);
+    if (useNative) {
+      NowPlayingNative.setVolumeNative({ volume: finalVolume }).catch(() => {});
+    } else if (audioRef.current) {
       audioRef.current.volume = finalVolume;
     }
-  }, [volume, isMuted, masterVolume]);
+  }, [volume, isMuted, masterVolume, useNative]);
 
   const togglePlayPause = async () => {
-    if (!audioRef.current) return;
+    if (useNative) {
+      try {
+        if (isPlaying) {
+          await NowPlayingNative.pauseNative();
+        } else {
+          await NowPlayingNative.playNative();
+        }
+      } catch (e) {
+        console.error('Native toggle error:', e);
+      }
+      return;
+    }
 
+    if (!audioRef.current) return;
     const isNative = Capacitor.isNativePlatform();
-    
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
-      if (isNative) {
-        nativeMediaControls.updatePlaybackState(false, currentTime);
-      } else {
-        mediaSession.updatePlaybackState(false, currentTime);
-      }
+      if (isNative) nativeMediaControls.updatePlaybackState(false, currentTime);
+      else mediaSession.updatePlaybackState(false, currentTime);
     } else {
       try {
         await audioRef.current.play();
         setIsPlaying(true);
-        if (isNative) {
-          nativeMediaControls.updatePlaybackState(true, currentTime);
-        } else {
-          mediaSession.updatePlaybackState(true, currentTime);
-        }
+        if (isNative) nativeMediaControls.updatePlaybackState(true, currentTime);
+        else mediaSession.updatePlaybackState(true, currentTime);
       } catch (error) {
         console.error('Error playing audio:', error);
       }
@@ -251,8 +292,12 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
   };
 
   const handleSeek = (value: number[]) => {
-    if (audioRef.current && track.duration) {
-      const newTime = (value[0] / 100) * track.duration;
+    if (!track.duration) return;
+    const newTime = (value[0] / 100) * track.duration;
+    if (useNative) {
+      NowPlayingNative.seekNative({ position: newTime }).catch(() => {});
+      setCurrentTime(newTime);
+    } else if (audioRef.current) {
       audioRef.current.currentTime = newTime;
       setCurrentTime(newTime);
     }
@@ -264,27 +309,22 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const getRepeatIcon = () => {
-    if (repeatMode === 'one') return <Repeat className="h-4 w-4" />;
-    if (repeatMode === 'all') return <Repeat className="h-4 w-4" />;
-    return <Repeat className="h-4 w-4" />;
-  };
+  const getRepeatIcon = () => <Repeat className="h-4 w-4" />;
 
   const toggleRepeat = () => {
     const modes: ('off' | 'one' | 'all')[] = ['off', 'one', 'all'];
     const currentIndex = modes.indexOf(repeatMode);
-    const nextIndex = (currentIndex + 1) % modes.length;
-    setRepeatMode(modes[nextIndex]);
+    setRepeatMode(modes[(currentIndex + 1) % modes.length]);
   };
 
   const progressPercentage = track.duration ? (currentTime / track.duration) * 100 : 0;
 
   return (
     <div className="bg-card/95 backdrop-blur-md border-t border-white/10 p-4">
-      <audio ref={audioRef} />
+      {/* HTML5 audio element only used when not on native iOS AVPlayer path */}
+      {!useNative && <audio ref={audioRef} />}
       
       <div className="flex items-center justify-between max-w-screen-xl mx-auto">
-        {/* Track Info */}
         <div className="flex items-center space-x-4 min-w-0 flex-1">
           <div className="min-w-0">
             <h4 className="font-medium truncate text-white">{track.title}</h4>
@@ -294,7 +334,6 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
           </div>
         </div>
 
-        {/* Player Controls */}
         <div className="flex flex-col items-center space-y-2 flex-1 max-w-md">
           <div className="flex items-center space-x-4">
             <Button
@@ -351,7 +390,6 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
             </Button>
           </div>
 
-          {/* Progress Bar */}
           <div className="flex items-center space-x-2 w-full">
             <span className="text-xs text-muted-foreground min-w-10">
               {formatTime(currentTime)}
@@ -371,7 +409,6 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
           </div>
         </div>
 
-        {/* Volume Controls */}
         <div className="flex items-center space-x-2 flex-1 justify-end">
           <Button
             variant="ghost"

@@ -110,16 +110,13 @@ class NativeMediaControlsService {
     }
 
     console.log('🍎 iOS remote command:', event);
+    // NOTE: play/pause/toggle are handled natively by AVPlayer in Swift now.
+    // We intentionally ignore them here to avoid double-handling. UI state is
+    // updated via the 'nativeAudio' event listener in MusicPlayer.tsx.
     switch (event.action) {
       case 'play':
-        this.callbacks?.onPlay();
-        break;
       case 'pause':
-        this.callbacks?.onPause();
-        break;
       case 'toggle':
-        if (this.isPlaying) this.callbacks?.onPause();
-        else this.callbacks?.onPlay();
         break;
       case 'next':
         this.callbacks?.onNext();

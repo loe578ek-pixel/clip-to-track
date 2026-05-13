@@ -121,18 +121,21 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
         center.playCommand.isEnabled = true
         center.playCommand.addTarget { [weak self] _ in
+            self?.nativePlayAudio()
             self?.emitRemoteCommand(action: "play")
             return .success
         }
 
         center.pauseCommand.isEnabled = true
         center.pauseCommand.addTarget { [weak self] _ in
+            self?.nativePauseAudio()
             self?.emitRemoteCommand(action: "pause")
             return .success
         }
 
         center.togglePlayPauseCommand.isEnabled = true
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
+            self?.nativeToggleAudio()
             self?.emitRemoteCommand(action: "toggle")
             return .success
         }

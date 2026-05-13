@@ -193,11 +193,47 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func pauseNative(_ call: CAPPluginCall) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.player?.pause()
-            let elapsed = self.currentElapsed()
-            self.updateNowPlayingInfo(elapsed: elapsed, isPlaying: false)
-            self.emitNativeAudio(event: "pause")
+            self.hardPause()
             call.resolve()
+        }
+    }
+
+    /// Belt-and-braces pause: stops AVPlayer AND any HTML5 <audio> still playing
+    /// in the WKWebView. Called from JS pauseNative + lockscreen pause/toggle.
+    private func hardPause() {
+        // 1) Native AVPlayer
+        self.player?.pause()
+        let elapsed = self.currentElapsed()
+        self.updateNowPlayingInfo(elapsed: elapsed, isPlaying: false)
+        self.emitNativeAudio(event: "pause")
+
+        // 2) Kill any HTML5 audio/video still playing in the webview
+        let js = """
+        (function(){
+          try {
+            var els = document.querySelectorAll('audio, video');
+            var n = 0;
+            els.forEach(function(e){ try { if (!e.paused) { e.pause(); n++; } } catch(_){} });
+            return 'paused_html5=' + n + ' total=' + els.length;
+          } catch(e) { return 'err:' + e.message; }
+        })();
+        """
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.bridge?.webView?.evaluateJavaScript(js) { result, error in
+                if let error = error {
+                    print("NowPlayingPlugin: hardPause JS error: \(error)")
+                } else {
+                    print("NowPlayingPlugin: hardPause JS result: \(String(describing: result))")
+                }
+            }
+        }
+
+        // 3) Log AVPlayer state to help debugging
+        if let p = self.player {
+            print("NowPlayingPlugin: AVPlayer rate=\(p.rate) status=\(p.status.rawValue) item=\(String(describing: p.currentItem))")
+        } else {
+            print("NowPlayingPlugin: AVPlayer is nil at pause time")
         }
     }
 

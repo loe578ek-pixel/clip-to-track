@@ -7,17 +7,16 @@ import UIKit
 /**
  * NowPlayingPlugin
  *
- * Custom Capacitor plugin to drive the iOS lockscreen / Control Center
- * "Now Playing" widget. Handles:
- *  - AVAudioSession activation (.playback) so audio keeps playing in background
- *    and lockscreen controls are routed to this app.
- *  - MPRemoteCommandCenter handlers for play / pause / next / previous / seek.
- *  - MPNowPlayingInfoCenter metadata + artwork (uses AppIcon from the bundle).
+ * Custom Capacitor plugin that:
+ *  - Owns a native AVPlayer for audio playback (works reliably in background +
+ *    lockscreen, unlike HTML5 <audio> in WKWebView).
+ *  - Drives the iOS lockscreen / Control Center "Now Playing" widget.
+ *  - Routes MPRemoteCommandCenter (play/pause/next/prev/seek) directly into
+ *    the AVPlayer so the lockscreen pause button ALWAYS stops the sound,
+ *    even when JS is frozen in background.
  *
- * IMPORTANT: this plugin is auto-registered by Capacitor as long as the .swift
- * file is added to the iOS App target in Xcode. After `npx cap sync` make sure
- * Xcode shows this file in App > App. Also enable Background Modes -> Audio,
- * AirPlay, and Picture in Picture in the Signing & Capabilities tab.
+ * Background Modes -> Audio, AirPlay, and Picture in Picture must be enabled
+ * in the iOS app target's Signing & Capabilities tab.
  */
 @objc(NowPlayingPlugin)
 public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -28,12 +27,31 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "activate", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setNowPlaying", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "updatePlayback", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "clear", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "clear", returnType: CAPPluginReturnPromise),
+        // Native AVPlayer API
+        CAPPluginMethod(name: "loadTrack", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "playNative", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "pauseNative", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "seekNative", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setVolumeNative", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "stopNative", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getCurrentTime", returnType: CAPPluginReturnPromise)
     ]
 
     private var commandsRegistered = false
     private var cachedArtwork: MPMediaItemArtwork?
     private var commandSequence = 0
+
+    // AVPlayer state
+    private var player: AVPlayer?
+    private var currentItem: AVPlayerItem?
+    private var timeObserver: Any?
+    private var endObserver: NSObjectProtocol?
+    private var currentTitle: String = ""
+    private var currentArtist: String = ""
+    private var currentAlbum: String = ""
+    private var currentDuration: Double = 0
+    private var pendingVolume: Float = 1.0
 
     // MARK: - Lifecycle
 
@@ -43,7 +61,12 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         prepareArtwork()
     }
 
-    // MARK: - JS API
+    deinit {
+        if let obs = timeObserver { player?.removeTimeObserver(obs) }
+        if let endObs = endObserver { NotificationCenter.default.removeObserver(endObs) }
+    }
+
+    // MARK: - JS API: Now Playing metadata
 
     @objc func activate(_ call: CAPPluginCall) {
         configureAudioSession()
@@ -59,22 +82,13 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         let elapsed = call.getDouble("elapsed") ?? 0
         let isPlaying = call.getBool("isPlaying") ?? false
 
-        var info: [String: Any] = [:]
-        info[MPMediaItemPropertyTitle] = title
-        info[MPMediaItemPropertyArtist] = artist
-        info[MPMediaItemPropertyAlbumTitle] = album
-        info[MPMediaItemPropertyPlaybackDuration] = duration
-        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
-        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+        currentTitle = title
+        currentArtist = artist
+        currentAlbum = album
+        currentDuration = duration
 
-        if let art = cachedArtwork ?? buildArtwork() {
-            cachedArtwork = art
-            info[MPMediaItemPropertyArtwork] = art
-        }
+        updateNowPlayingInfo(elapsed: elapsed, isPlaying: isPlaying)
 
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-
-        // Make sure session is active so lockscreen shows our app
         do {
             try AVAudioSession.sharedInstance().setActive(true, options: [])
         } catch {
@@ -101,7 +115,198 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve()
     }
 
-    // MARK: - Private helpers
+    // MARK: - JS API: Native AVPlayer
+
+    @objc func loadTrack(_ call: CAPPluginCall) {
+        guard let uri = call.getString("uri"), !uri.isEmpty else {
+            call.reject("Missing uri")
+            return
+        }
+        let title = call.getString("title") ?? ""
+        let artist = call.getString("artist") ?? ""
+        let album = call.getString("album") ?? ""
+        let duration = call.getDouble("duration") ?? 0
+        let autoPlay = call.getBool("autoPlay") ?? false
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.configureAudioSession()
+
+            // Build URL from URI (file://...) or remote
+            let url: URL?
+            if uri.hasPrefix("file://") || uri.hasPrefix("http://") || uri.hasPrefix("https://") {
+                url = URL(string: uri)
+            } else {
+                url = URL(fileURLWithPath: uri)
+            }
+            guard let trackURL = url else {
+                call.reject("Invalid uri")
+                return
+            }
+
+            // Tear down previous item
+            self.teardownPlayerObservers()
+
+            let item = AVPlayerItem(url: trackURL)
+            self.currentItem = item
+
+            if let p = self.player {
+                p.replaceCurrentItem(with: item)
+            } else {
+                self.player = AVPlayer(playerItem: item)
+            }
+            self.player?.volume = self.pendingVolume
+            self.player?.automaticallyWaitsToMinimizeStalling = false
+
+            self.installPlayerObservers()
+
+            self.currentTitle = title
+            self.currentArtist = artist
+            self.currentAlbum = album
+            self.currentDuration = duration
+
+            self.updateNowPlayingInfo(elapsed: 0, isPlaying: autoPlay)
+
+            if autoPlay {
+                self.player?.play()
+                self.emitNativeAudio(event: "play")
+            }
+
+            call.resolve()
+        }
+    }
+
+    @objc func playNative(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                try AVAudioSession.sharedInstance().setActive(true, options: [])
+            } catch { }
+            self.player?.play()
+            let elapsed = self.currentElapsed()
+            self.updateNowPlayingInfo(elapsed: elapsed, isPlaying: true)
+            self.emitNativeAudio(event: "play")
+            call.resolve()
+        }
+    }
+
+    @objc func pauseNative(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.player?.pause()
+            let elapsed = self.currentElapsed()
+            self.updateNowPlayingInfo(elapsed: elapsed, isPlaying: false)
+            self.emitNativeAudio(event: "pause")
+            call.resolve()
+        }
+    }
+
+    @objc func seekNative(_ call: CAPPluginCall) {
+        let position = call.getDouble("position") ?? 0
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let player = self.player else {
+                call.resolve()
+                return
+            }
+            let cmTime = CMTime(seconds: position, preferredTimescale: 1000)
+            player.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero) { _ in
+                self.updateNowPlayingInfo(elapsed: position, isPlaying: player.rate != 0)
+                call.resolve()
+            }
+        }
+    }
+
+    @objc func setVolumeNative(_ call: CAPPluginCall) {
+        let volume = call.getDouble("volume") ?? 1.0
+        pendingVolume = Float(max(0.0, min(1.0, volume)))
+        DispatchQueue.main.async { [weak self] in
+            self?.player?.volume = self?.pendingVolume ?? 1.0
+            call.resolve()
+        }
+    }
+
+    @objc func stopNative(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.player?.pause()
+            self.player?.replaceCurrentItem(with: nil)
+            self.teardownPlayerObservers()
+            call.resolve()
+        }
+    }
+
+    @objc func getCurrentTime(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            let t = self?.currentElapsed() ?? 0
+            call.resolve(["currentTime": t])
+        }
+    }
+
+    // MARK: - AVPlayer observers
+
+    private func installPlayerObservers() {
+        guard let player = player else { return }
+
+        // Periodic time observer (every 0.5s) -> emit timeupdate
+        let interval = CMTime(seconds: 0.5, preferredTimescale: 1000)
+        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            guard let self = self else { return }
+            let secs = CMTimeGetSeconds(time)
+            if !secs.isNaN && !secs.isInfinite {
+                self.emitNativeAudio(event: "timeupdate", extra: ["currentTime": secs])
+                // Keep lockscreen elapsed in sync
+                var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+                info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = secs
+                info[MPNowPlayingInfoPropertyPlaybackRate] = (self.player?.rate ?? 0) > 0 ? 1.0 : 0.0
+                MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+            }
+        }
+
+        endObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: currentItem,
+            queue: .main
+        ) { [weak self] _ in
+            self?.emitNativeAudio(event: "ended")
+        }
+    }
+
+    private func teardownPlayerObservers() {
+        if let obs = timeObserver {
+            player?.removeTimeObserver(obs)
+            timeObserver = nil
+        }
+        if let endObs = endObserver {
+            NotificationCenter.default.removeObserver(endObs)
+            endObserver = nil
+        }
+    }
+
+    private func currentElapsed() -> Double {
+        guard let player = player else { return 0 }
+        let secs = CMTimeGetSeconds(player.currentTime())
+        return (secs.isNaN || secs.isInfinite) ? 0 : secs
+    }
+
+    // MARK: - Now Playing info
+
+    private func updateNowPlayingInfo(elapsed: Double, isPlaying: Bool) {
+        var info: [String: Any] = [:]
+        info[MPMediaItemPropertyTitle] = currentTitle
+        info[MPMediaItemPropertyArtist] = currentArtist
+        info[MPMediaItemPropertyAlbumTitle] = currentAlbum
+        info[MPMediaItemPropertyPlaybackDuration] = currentDuration
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
+        info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
+
+        if let art = cachedArtwork ?? buildArtwork() {
+            cachedArtwork = art
+            info[MPMediaItemPropertyArtwork] = art
+        }
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+    }
+
+    // MARK: - Audio session + remote commands
 
     private func configureAudioSession() {
         let session = AVAudioSession.sharedInstance()
@@ -121,22 +326,37 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
         center.playCommand.isEnabled = true
         center.playCommand.addTarget { [weak self] _ in
-            self?.nativePlayAudio()
-            self?.emitRemoteCommand(action: "play")
+            guard let self = self else { return .commandFailed }
+            self.player?.play()
+            self.updateNowPlayingInfo(elapsed: self.currentElapsed(), isPlaying: true)
+            self.emitNativeAudio(event: "play")
+            self.emitRemoteCommand(action: "play")
             return .success
         }
 
         center.pauseCommand.isEnabled = true
         center.pauseCommand.addTarget { [weak self] _ in
-            self?.nativePauseAudio()
-            self?.emitRemoteCommand(action: "pause")
+            guard let self = self else { return .commandFailed }
+            self.player?.pause()
+            self.updateNowPlayingInfo(elapsed: self.currentElapsed(), isPlaying: false)
+            self.emitNativeAudio(event: "pause")
+            self.emitRemoteCommand(action: "pause")
             return .success
         }
 
         center.togglePlayPauseCommand.isEnabled = true
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
-            self?.nativeToggleAudio()
-            self?.emitRemoteCommand(action: "toggle")
+            guard let self = self else { return .commandFailed }
+            if let p = self.player, p.rate != 0 {
+                p.pause()
+                self.updateNowPlayingInfo(elapsed: self.currentElapsed(), isPlaying: false)
+                self.emitNativeAudio(event: "pause")
+            } else {
+                self.player?.play()
+                self.updateNowPlayingInfo(elapsed: self.currentElapsed(), isPlaying: true)
+                self.emitNativeAudio(event: "play")
+            }
+            self.emitRemoteCommand(action: "toggle")
             return .success
         }
 
@@ -154,14 +374,18 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
         center.changePlaybackPositionCommand.isEnabled = true
         center.changePlaybackPositionCommand.addTarget { [weak self] event in
-            guard let event = event as? MPChangePlaybackPositionCommandEvent else {
+            guard let self = self,
+                  let event = event as? MPChangePlaybackPositionCommandEvent else {
                 return .commandFailed
             }
-            self?.emitRemoteCommand(action: "seek", position: event.positionTime)
+            let pos = event.positionTime
+            let cmTime = CMTime(seconds: pos, preferredTimescale: 1000)
+            self.player?.seek(to: cmTime, toleranceBefore: .zero, toleranceAfter: .zero)
+            self.updateNowPlayingInfo(elapsed: pos, isPlaying: (self.player?.rate ?? 0) > 0)
+            self.emitRemoteCommand(action: "seek", position: pos)
             return .success
         }
 
-        // Disable +10/-10 so iOS shows previous/next instead
         center.skipForwardCommand.isEnabled = false
         center.skipBackwardCommand.isEnabled = false
 
@@ -172,125 +396,36 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         cachedArtwork = buildArtwork()
     }
 
+    // MARK: - Event emission to JS
+
     private func emitRemoteCommand(action: String, position: Double? = nil) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-
             self.commandSequence += 1
-
             var payload: [String: Any] = [
                 "action": action,
                 "eventId": self.commandSequence
             ]
-
-            if let position = position {
-                payload["position"] = position
-            }
+            if let position = position { payload["position"] = position }
 
             self.notifyListeners("remoteCommand", data: payload)
 
-            guard let bridge = self.bridge,
-                  let data = try? JSONSerialization.data(withJSONObject: payload, options: []),
-                  let json = String(data: data, encoding: .utf8) else {
-                return
+            if let bridge = self.bridge,
+               let data = try? JSONSerialization.data(withJSONObject: payload, options: []),
+               let json = String(data: data, encoding: .utf8) {
+                bridge.triggerDocumentJSEvent(eventName: "nowPlayingRemoteCommand", data: json)
             }
-
-            bridge.triggerDocumentJSEvent(eventName: "nowPlayingRemoteCommand", data: json)
         }
     }
 
-    // MARK: - Native audio control (works even when JS event loop is throttled in background)
-
-    /// Pauses the HTML5 <audio> element directly via WKWebView, then deactivates
-    /// AVAudioSession. This guarantees the audio actually stops on lockscreen
-    /// pause, even if the JS callback is delayed by background throttling.
-    private func nativePauseAudio() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-
-            // 1) Try the JS path first (works when app is foreground / WebView is awake)
-            let js = """
-            (function(){
-              try {
-                var els = document.querySelectorAll('audio');
-                for (var i = 0; i < els.length; i++) { try { els[i].pause(); } catch(e){} }
-              } catch(e){}
-            })();
-            """
-            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
-
-            // 2) HARD STOP: deactivate AVAudioSession. iOS treats this like an
-            //    audio interruption (e.g. incoming call) and the WKWebView's
-            //    HTML5 <audio> element is paused by the system itself, even if
-            //    the JS event loop is frozen in background. This is what makes
-            //    the lockscreen pause button actually stop the sound.
-            do {
-                try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
-            } catch {
-                // ignore
-            }
-
-            // Reflect paused state in lockscreen UI immediately
-            var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
-            info[MPNowPlayingInfoPropertyPlaybackRate] = 0.0
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-        }
+    private func emitNativeAudio(event: String, extra: [String: Any] = [:]) {
+        var payload: [String: Any] = ["event": event]
+        for (k, v) in extra { payload[k] = v }
+        self.notifyListeners("nativeAudio", data: payload)
     }
 
-    /// Resumes the HTML5 <audio> element directly via WKWebView, after making
-    /// sure AVAudioSession is active so audio is actually routed.
-    private func nativePlayAudio() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            do {
-                try AVAudioSession.sharedInstance().setActive(true, options: [])
-            } catch {
-                // ignore
-            }
-            let js = """
-            (function(){
-              try {
-                var els = document.querySelectorAll('audio');
-                for (var i = 0; i < els.length; i++) {
-                  try { var p = els[i].play(); if (p && p.catch) p.catch(function(){}); } catch(e){}
-                }
-              } catch(e){}
-            })();
-            """
-            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+    // MARK: - Artwork
 
-            var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
-            info[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-        }
-    }
-
-    /// Toggles the first non-paused / paused HTML5 <audio> element.
-    private func nativeToggleAudio() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            let js = """
-            (function(){
-              try {
-                var els = document.querySelectorAll('audio');
-                if (!els.length) return 'none';
-                var a = els[0];
-                if (a.paused) {
-                  var p = a.play(); if (p && p.catch) p.catch(function(){});
-                  return 'play';
-                } else {
-                  a.pause();
-                  return 'pause';
-                }
-              } catch(e){ return 'err'; }
-            })();
-            """
-            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
-        }
-    }
-
-    /// Loads the app icon from the asset catalog (AppIcon) and wraps it as
-    /// MPMediaItemArtwork. Falls back to nil if the icon can't be loaded.
     private func buildArtwork() -> MPMediaItemArtwork? {
         if let image = loadAppIconImage() {
             return MPMediaItemArtwork(boundsSize: image.size) { _ in image }
@@ -299,7 +434,6 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     private func loadAppIconImage() -> UIImage? {
-        // Try Info.plist CFBundleIcons (primary AppIcon set)
         if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
            let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
            let files = primary["CFBundleIconFiles"] as? [String],
@@ -307,7 +441,6 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
            let img = UIImage(named: last) {
             return img
         }
-        // Fallbacks
         if let img = UIImage(named: "AppIcon") { return img }
         if let img = UIImage(named: "AppIcon60x60") { return img }
         return nil

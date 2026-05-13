@@ -373,9 +373,8 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         center.pauseCommand.isEnabled = true
         center.pauseCommand.addTarget { [weak self] _ in
             guard let self = self else { return .commandFailed }
-            self.player?.pause()
-            self.updateNowPlayingInfo(elapsed: self.currentElapsed(), isPlaying: false)
-            self.emitNativeAudio(event: "pause")
+            print("NowPlayingPlugin: lockscreen PAUSE command received")
+            self.hardPause()
             self.emitRemoteCommand(action: "pause")
             return .success
         }
@@ -384,10 +383,10 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
             guard let self = self else { return .commandFailed }
             if let p = self.player, p.rate != 0 {
-                p.pause()
-                self.updateNowPlayingInfo(elapsed: self.currentElapsed(), isPlaying: false)
-                self.emitNativeAudio(event: "pause")
+                print("NowPlayingPlugin: lockscreen TOGGLE -> pause")
+                self.hardPause()
             } else {
+                print("NowPlayingPlugin: lockscreen TOGGLE -> play")
                 self.player?.play()
                 self.updateNowPlayingInfo(elapsed: self.currentElapsed(), isPlaying: true)
                 self.emitNativeAudio(event: "play")

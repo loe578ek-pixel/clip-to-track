@@ -207,6 +207,8 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     private func nativePauseAudio() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
+
+            // 1) Try the JS path first (works when app is foreground / WebView is awake)
             let js = """
             (function(){
               try {
@@ -216,6 +218,17 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
             })();
             """
             self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+
+            // 2) HARD STOP: deactivate AVAudioSession. iOS treats this like an
+            //    audio interruption (e.g. incoming call) and the WKWebView's
+            //    HTML5 <audio> element is paused by the system itself, even if
+            //    the JS event loop is frozen in background. This is what makes
+            //    the lockscreen pause button actually stop the sound.
+            do {
+                try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+            } catch {
+                // ignore
+            }
 
             // Reflect paused state in lockscreen UI immediately
             var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]

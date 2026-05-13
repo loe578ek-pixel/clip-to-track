@@ -199,6 +199,83 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    // MARK: - Native audio control (works even when JS event loop is throttled in background)
+
+    /// Pauses the HTML5 <audio> element directly via WKWebView, then deactivates
+    /// AVAudioSession. This guarantees the audio actually stops on lockscreen
+    /// pause, even if the JS callback is delayed by background throttling.
+    private func nativePauseAudio() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let js = """
+            (function(){
+              try {
+                var els = document.querySelectorAll('audio');
+                for (var i = 0; i < els.length; i++) { try { els[i].pause(); } catch(e){} }
+              } catch(e){}
+            })();
+            """
+            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+
+            // Reflect paused state in lockscreen UI immediately
+            var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+            info[MPNowPlayingInfoPropertyPlaybackRate] = 0.0
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        }
+    }
+
+    /// Resumes the HTML5 <audio> element directly via WKWebView, after making
+    /// sure AVAudioSession is active so audio is actually routed.
+    private func nativePlayAudio() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            do {
+                try AVAudioSession.sharedInstance().setActive(true, options: [])
+            } catch {
+                // ignore
+            }
+            let js = """
+            (function(){
+              try {
+                var els = document.querySelectorAll('audio');
+                for (var i = 0; i < els.length; i++) {
+                  try { var p = els[i].play(); if (p && p.catch) p.catch(function(){}); } catch(e){}
+                }
+              } catch(e){}
+            })();
+            """
+            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+
+            var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+            info[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        }
+    }
+
+    /// Toggles the first non-paused / paused HTML5 <audio> element.
+    private func nativeToggleAudio() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let js = """
+            (function(){
+              try {
+                var els = document.querySelectorAll('audio');
+                if (!els.length) return 'none';
+                var a = els[0];
+                if (a.paused) {
+                  var p = a.play(); if (p && p.catch) p.catch(function(){});
+                  return 'play';
+                } else {
+                  a.pause();
+                  return 'pause';
+                }
+              } catch(e){ return 'err'; }
+            })();
+            """
+            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+        }
+    }
+
     /// Loads the app icon from the asset catalog (AppIcon) and wraps it as
     /// MPMediaItemArtwork. Falls back to nil if the icon can't be loaded.
     private func buildArtwork() -> MPMediaItemArtwork? {

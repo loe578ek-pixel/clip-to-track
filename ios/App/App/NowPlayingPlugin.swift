@@ -20,7 +20,16 @@ import UIKit
  * AirPlay, and Picture in Picture in the Signing & Capabilities tab.
  */
 @objc(NowPlayingPlugin)
-public class NowPlayingPlugin: CAPPlugin {
+public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
+
+    public let identifier = "NowPlayingPlugin"
+    public let jsName = "NowPlayingPlugin"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "activate", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setNowPlaying", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "updatePlayback", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clear", returnType: CAPPluginReturnPromise)
+    ]
 
     private var commandsRegistered = false
     private var cachedArtwork: MPMediaItemArtwork?

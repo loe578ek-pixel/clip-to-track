@@ -44,10 +44,11 @@ class NativeMediaControlsService {
       console.log('⚠️ Skipping initialization - callbacks not set yet');
       return;
     }
-    this.initialized = true;
     try {
       await this.setupNativeControls();
+      this.initialized = true;
     } catch (error) {
+      this.initialized = false;
       console.log('⚠️ Native media controls init skipped:', error);
     }
   }
@@ -67,7 +68,9 @@ class NativeMediaControlsService {
         document.addEventListener('nowPlayingRemoteCommand', this.handleDocumentRemoteCommand as EventListener);
         console.log('✅ iOS NowPlayingPlugin ready');
       } catch (error) {
+        this.listenersSet = false;
         console.error('❌ iOS NowPlayingPlugin init error:', error);
+        throw error;
       }
       return;
     }
@@ -79,7 +82,9 @@ class NativeMediaControlsService {
       await MusicControls.listen();
       console.log('✅ Android media controls listening');
     } catch (error) {
+      this.listenersSet = false;
       console.error('❌ Error starting Android listener:', error);
+      throw error;
     }
   }
 

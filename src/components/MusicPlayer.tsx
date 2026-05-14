@@ -347,8 +347,8 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
 
   return (
     <div className="bg-card/95 backdrop-blur-md border-t border-white/10 p-4">
-      {/* HTML5 audio element only used when not on native iOS AVPlayer path */}
-      {!useNative && <audio ref={audioRef} />}
+      {/* HTML5 audio element kept mounted always so we can fall back at runtime */}
+      <audio ref={audioRef} style={{ display: useNative ? 'none' : undefined }} preload="auto" />
       
       <div className="flex items-center justify-between max-w-screen-xl mx-auto">
         <div className="flex items-center space-x-4 min-w-0 flex-1">

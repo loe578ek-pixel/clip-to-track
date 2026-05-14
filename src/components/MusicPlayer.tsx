@@ -118,6 +118,19 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
 
   // Load track when it changes
   useEffect(() => {
+    // Reset native-failure flag whenever the track identity changes
+    setNativeFailed(false);
+
+    console.log('[MusicPlayer] Loading track:', {
+      id: track.id,
+      title: track.title,
+      hasLocalPath,
+      localFilePath: track.localFilePath,
+      audioUrl: track.audioUrl ? track.audioUrl.slice(0, 60) + '...' : '(none)',
+      useNative,
+      platform: Capacitor.getPlatform(),
+    });
+
     if (useNative) {
       // Native AVPlayer: load via Swift plugin
       NowPlayingNative.loadTrack({
@@ -129,13 +142,12 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         autoPlay,
       }).then(() => {
         if (autoPlay) setIsPlaying(true);
-        // Apply current volume
         const finalVolume = isMuted ? 0 : (volume[0] / 100) * (masterVolume / 100);
         NowPlayingNative.setVolumeNative({ volume: finalVolume }).catch(() => {});
       }).catch(err => {
-        console.error('Native loadTrack failed:', err);
+        console.error('[MusicPlayer] Native loadTrack failed, falling back to HTML5:', err);
+        setNativeFailed(true);
       });
-      // Also push Now Playing metadata (in case loadTrack metadata path differs)
       nativeMediaControls.updateTrack({
         title: track.title,
         artist: track.originalFileName,
@@ -145,13 +157,35 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       return;
     }
 
-    // HTML5 audio path (web / Android / iOS without localFilePath)
-    if (audioRef.current) {
-      audioRef.current.src = track.audioUrl;
+    // HTML5 audio path (web / Android / iOS without localFilePath / native fallback)
+    let cancelled = false;
+    const setupHtml5 = async () => {
+      if (!audioRef.current) {
+        console.error('[MusicPlayer] HTML5 audio element not mounted');
+        return;
+      }
+
+      // Resolve a usable src: prefer existing audioUrl, otherwise pull from local storage
+      let src = track.audioUrl;
+      if ((!src || src === '') && track.localFilePath) {
+        try {
+          src = await storageService.getAudioFile(track.localFilePath);
+          console.log('[MusicPlayer] Resolved HTML5 src from localFilePath');
+        } catch (err) {
+          console.error('[MusicPlayer] Failed to resolve audio from localFilePath:', err);
+        }
+      }
+
+      if (!src) {
+        console.error('[MusicPlayer] No playable source for track', track.id);
+        return;
+      }
+      if (cancelled || !audioRef.current) return;
+
+      audioRef.current.src = src;
       audioRef.current.load();
-      
+
       const isNative = Capacitor.isNativePlatform();
-      
       if (isNative) {
         nativeMediaControls.updateTrack({
           title: track.title,
@@ -166,33 +200,21 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
           duration: track.duration
         }, playlistName);
       }
-      
+
       if (autoPlay) {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            setIsPlaying(true);
-            if (isNative) {
-              nativeMediaControls.updatePlaybackState(true, currentTime);
-            } else {
-              mediaSession.updatePlaybackState(true, currentTime);
-            }
-          }).catch(error => {
-            console.error('Error playing audio:', error);
-            setTimeout(() => {
-              if (audioRef.current) {
-                audioRef.current.play().then(() => {
-                  setIsPlaying(true);
-                }).catch(retryError => {
-                  console.error('Retry failed:', retryError);
-                });
-              }
-            }, 100);
-          });
+        try {
+          await audioRef.current.play();
+          setIsPlaying(true);
+          if (isNative) nativeMediaControls.updatePlaybackState(true, currentTime);
+          else mediaSession.updatePlaybackState(true, currentTime);
+        } catch (error) {
+          console.error('[MusicPlayer] Error playing audio:', error);
         }
       }
-    }
-  }, [track.audioUrl, track.localFilePath, track.playbackKey, autoPlay, playlistName, useNative]);
+    };
+    setupHtml5();
+    return () => { cancelled = true; };
+  }, [track.id, track.audioUrl, track.localFilePath, track.playbackKey, autoPlay, playlistName, useNative, hasLocalPath]);
 
   // HTML5 audio element listeners (skipped on native iOS path)
   useEffect(() => {

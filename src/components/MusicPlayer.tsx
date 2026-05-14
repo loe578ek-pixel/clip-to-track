@@ -7,6 +7,7 @@ import { useVolume } from "@/contexts/VolumeContext";
 import { mediaSession } from "@/lib/mediaSession";
 import { nativeMediaControls } from "@/lib/nativeMediaControls";
 import { NowPlayingNative } from "@/lib/iosNowPlaying";
+import { storageService } from "@/lib/storageService";
 import { Capacitor } from "@capacitor/core";
 
 interface MusicPlayerProps {

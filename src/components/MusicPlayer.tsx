@@ -292,10 +292,12 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         } else {
           await NowPlayingNative.playNative();
         }
+        return;
       } catch (e) {
-        console.error('Native toggle error:', e);
+        console.error('[MusicPlayer] Native toggle failed, falling back to HTML5:', e);
+        setNativeFailed(true);
+        // fall through to HTML5 path below
       }
-      return;
     }
 
     if (!audioRef.current) return;

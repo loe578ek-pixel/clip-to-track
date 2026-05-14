@@ -35,8 +35,11 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
   const audioRef = useRef<HTMLAudioElement>(null);
 
   // Decide whether to use native AVPlayer for the current track.
-  // We need a file URI (Capacitor Filesystem) for AVPlayer; if missing, fall back to HTML5.
-  const useNative = IS_IOS_NATIVE && !!track.localFilePath;
+  // We need a non-empty file URI (Capacitor Filesystem) for AVPlayer; if missing OR if it
+  // failed at load time, fall back to HTML5.
+  const [nativeFailed, setNativeFailed] = useState(false);
+  const hasLocalPath = !!(track.localFilePath && track.localFilePath.trim() !== '');
+  const useNative = IS_IOS_NATIVE && hasLocalPath && !nativeFailed;
 
   // ---- Native AVPlayer event listener (iOS only) ----
   useEffect(() => {

@@ -3,6 +3,7 @@ import Capacitor
 import AVFoundation
 import MediaPlayer
 import UIKit
+import WebKit
 
 /**
  * NowPlayingPlugin
@@ -34,6 +35,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     private var commandsRegistered = false
     private var cachedArtwork: MPMediaItemArtwork?
     private var commandSequence = 0
+    private var mediaPlaybackSuspended = false
 
     // MARK: - Lifecycle
 
@@ -207,15 +209,22 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     private func nativePauseAudio() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            let js = """
-            (function(){
-              try {
-                var els = document.querySelectorAll('audio');
-                for (var i = 0; i < els.length; i++) { try { els[i].pause(); } catch(e){} }
-              } catch(e){}
-            })();
-            """
-            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+
+            if #available(iOS 15.0, *) {
+                self.bridge?.webView?.pauseAllMediaPlayback(completionHandler: nil)
+                self.bridge?.webView?.setAllMediaPlaybackSuspended(true, completionHandler: nil)
+                self.mediaPlaybackSuspended = true
+            } else {
+                let js = """
+                (function(){
+                  try {
+                    var els = document.querySelectorAll('audio');
+                    for (var i = 0; i < els.length; i++) { try { els[i].pause(); } catch(e){} }
+                  } catch(e){}
+                })();
+                """
+                self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+            }
 
             // Reflect paused state in lockscreen UI immediately
             var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
@@ -234,6 +243,12 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
             } catch {
                 // ignore
             }
+
+            if #available(iOS 15.0, *), self.mediaPlaybackSuspended {
+                self.bridge?.webView?.setAllMediaPlaybackSuspended(false, completionHandler: nil)
+                self.mediaPlaybackSuspended = false
+            }
+
             let js = """
             (function(){
               try {
@@ -256,6 +271,12 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     private func nativeToggleAudio() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
+
+            if #available(iOS 15.0, *), self.mediaPlaybackSuspended {
+                self.bridge?.webView?.setAllMediaPlaybackSuspended(false, completionHandler: nil)
+                self.mediaPlaybackSuspended = false
+            }
+
             let js = """
             (function(){
               try {

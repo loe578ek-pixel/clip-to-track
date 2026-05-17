@@ -3,6 +3,7 @@ import Capacitor
 import AVFoundation
 import MediaPlayer
 import UIKit
+import WebKit
 
 /**
  * NowPlayingPlugin
@@ -34,6 +35,8 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     private var commandsRegistered = false
     private var cachedArtwork: MPMediaItemArtwork?
     private var commandSequence = 0
+    private var mediaPlaybackSuspended = false
+    private var nativeIsPlaying = false
 
     // MARK: - Lifecycle
 
@@ -73,6 +76,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        nativeIsPlaying = isPlaying
 
         // Make sure session is active so lockscreen shows our app
         do {
@@ -92,6 +96,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        nativeIsPlaying = isPlaying
 
         call.resolve()
     }
@@ -207,20 +212,28 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     private func nativePauseAudio() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            let js = """
-            (function(){
-              try {
-                var els = document.querySelectorAll('audio');
-                for (var i = 0; i < els.length; i++) { try { els[i].pause(); } catch(e){} }
-              } catch(e){}
-            })();
-            """
-            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+
+            if #available(iOS 15.0, *) {
+                self.bridge?.webView?.pauseAllMediaPlayback(completionHandler: nil)
+                self.bridge?.webView?.setAllMediaPlaybackSuspended(true, completionHandler: nil)
+                self.mediaPlaybackSuspended = true
+            } else {
+                let js = """
+                (function(){
+                  try {
+                    var els = document.querySelectorAll('audio');
+                    for (var i = 0; i < els.length; i++) { try { els[i].pause(); } catch(e){} }
+                  } catch(e){}
+                })();
+                """
+                self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+            }
 
             // Reflect paused state in lockscreen UI immediately
             var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
             info[MPNowPlayingInfoPropertyPlaybackRate] = 0.0
             MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+            self.nativeIsPlaying = false
         }
     }
 
@@ -234,6 +247,12 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
             } catch {
                 // ignore
             }
+
+            if #available(iOS 15.0, *), self.mediaPlaybackSuspended {
+                self.bridge?.webView?.setAllMediaPlaybackSuspended(false, completionHandler: nil)
+                self.mediaPlaybackSuspended = false
+            }
+
             let js = """
             (function(){
               try {
@@ -249,30 +268,21 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
             var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
             info[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
             MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+            self.nativeIsPlaying = true
         }
     }
 
-    /// Toggles the first non-paused / paused HTML5 <audio> element.
+    /// Toggles playback using the native playback state instead of relying on
+    /// JavaScript state that may be stale while the app is backgrounded.
     private func nativeToggleAudio() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            let js = """
-            (function(){
-              try {
-                var els = document.querySelectorAll('audio');
-                if (!els.length) return 'none';
-                var a = els[0];
-                if (a.paused) {
-                  var p = a.play(); if (p && p.catch) p.catch(function(){});
-                  return 'play';
-                } else {
-                  a.pause();
-                  return 'pause';
-                }
-              } catch(e){ return 'err'; }
-            })();
-            """
-            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
+
+            if self.nativeIsPlaying {
+                self.nativePauseAudio()
+            } else {
+                self.nativePlayAudio()
+            }
         }
     }
 

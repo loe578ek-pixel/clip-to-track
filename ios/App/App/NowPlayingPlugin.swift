@@ -3,16 +3,17 @@ import Capacitor
 import AVFoundation
 import MediaPlayer
 import UIKit
-import WebKit
 
 /**
  * NowPlayingPlugin
  *
  * Custom Capacitor plugin to drive the iOS lockscreen / Control Center
- * "Now Playing" widget. Handles:
- *  - AVAudioSession activation (.playback) so audio keeps playing in background
- *    and lockscreen controls are routed to this app.
+ * "Now Playing" widget. Handles ONLY:
+ *  - AVAudioSession activation (.playback) so HTML5 <audio> keeps playing in
+ *    background and lockscreen controls are routed to this app.
  *  - MPRemoteCommandCenter handlers for play / pause / next / previous / seek.
+ *    These ONLY forward the command to JS via emitRemoteCommand — they do NOT
+ *    control playback natively.
  *  - MPNowPlayingInfoCenter metadata + artwork (uses AppIcon from the bundle).
  *
  * IMPORTANT: this plugin is auto-registered by Capacitor as long as the .swift
@@ -35,8 +36,6 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     private var commandsRegistered = false
     private var cachedArtwork: MPMediaItemArtwork?
     private var commandSequence = 0
-    private var mediaPlaybackSuspended = false
-    private var nativeIsPlaying = false
 
     // MARK: - Lifecycle
 
@@ -76,9 +75,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-        nativeIsPlaying = isPlaying
 
-        // Make sure session is active so lockscreen shows our app
         do {
             try AVAudioSession.sharedInstance().setActive(true, options: [])
         } catch {
@@ -96,7 +93,6 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-        nativeIsPlaying = isPlaying
 
         call.resolve()
     }
@@ -126,21 +122,18 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
         center.playCommand.isEnabled = true
         center.playCommand.addTarget { [weak self] _ in
-            self?.nativePlayAudio()
             self?.emitRemoteCommand(action: "play")
             return .success
         }
 
         center.pauseCommand.isEnabled = true
         center.pauseCommand.addTarget { [weak self] _ in
-            self?.nativePauseAudio()
             self?.emitRemoteCommand(action: "pause")
             return .success
         }
 
         center.togglePlayPauseCommand.isEnabled = true
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
-            self?.nativeToggleAudio()
             self?.emitRemoteCommand(action: "toggle")
             return .success
         }
@@ -166,7 +159,6 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
             return .success
         }
 
-        // Disable +10/-10 so iOS shows previous/next instead
         center.skipForwardCommand.isEnabled = false
         center.skipBackwardCommand.isEnabled = false
 
@@ -204,90 +196,6 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    // MARK: - Native audio control (works even when JS event loop is throttled in background)
-
-    /// Pauses the HTML5 <audio> element directly via WKWebView, then deactivates
-    /// AVAudioSession. This guarantees the audio actually stops on lockscreen
-    /// pause, even if the JS callback is delayed by background throttling.
-    private func nativePauseAudio() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-
-            if #available(iOS 15.0, *) {
-                self.bridge?.webView?.pauseAllMediaPlayback(completionHandler: nil)
-                self.bridge?.webView?.setAllMediaPlaybackSuspended(true, completionHandler: nil)
-                self.mediaPlaybackSuspended = true
-            } else {
-                let js = """
-                (function(){
-                  try {
-                    var els = document.querySelectorAll('audio');
-                    for (var i = 0; i < els.length; i++) { try { els[i].pause(); } catch(e){} }
-                  } catch(e){}
-                })();
-                """
-                self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
-            }
-
-            // Reflect paused state in lockscreen UI immediately
-            var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
-            info[MPNowPlayingInfoPropertyPlaybackRate] = 0.0
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-            self.nativeIsPlaying = false
-        }
-    }
-
-    /// Resumes the HTML5 <audio> element directly via WKWebView, after making
-    /// sure AVAudioSession is active so audio is actually routed.
-    private func nativePlayAudio() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            do {
-                try AVAudioSession.sharedInstance().setActive(true, options: [])
-            } catch {
-                // ignore
-            }
-
-            if #available(iOS 15.0, *), self.mediaPlaybackSuspended {
-                self.bridge?.webView?.setAllMediaPlaybackSuspended(false, completionHandler: nil)
-                self.mediaPlaybackSuspended = false
-            }
-
-            let js = """
-            (function(){
-              try {
-                var els = document.querySelectorAll('audio');
-                for (var i = 0; i < els.length; i++) {
-                  try { var p = els[i].play(); if (p && p.catch) p.catch(function(){}); } catch(e){}
-                }
-              } catch(e){}
-            })();
-            """
-            self.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
-
-            var info = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
-            info[MPNowPlayingInfoPropertyPlaybackRate] = 1.0
-            MPNowPlayingInfoCenter.default().nowPlayingInfo = info
-            self.nativeIsPlaying = true
-        }
-    }
-
-    /// Toggles playback using the native playback state instead of relying on
-    /// JavaScript state that may be stale while the app is backgrounded.
-    private func nativeToggleAudio() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-
-            if self.nativeIsPlaying {
-                self.nativePauseAudio()
-            } else {
-                self.nativePlayAudio()
-            }
-        }
-    }
-
-    /// Loads the app icon from the asset catalog (AppIcon) and wraps it as
-    /// MPMediaItemArtwork. Falls back to nil if the icon can't be loaded.
     private func buildArtwork() -> MPMediaItemArtwork? {
         if let image = loadAppIconImage() {
             return MPMediaItemArtwork(boundsSize: image.size) { _ in image }
@@ -296,7 +204,6 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     private func loadAppIconImage() -> UIImage? {
-        // Try Info.plist CFBundleIcons (primary AppIcon set)
         if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
            let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
            let files = primary["CFBundleIconFiles"] as? [String],
@@ -304,7 +211,6 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
            let img = UIImage(named: last) {
             return img
         }
-        // Fallbacks
         if let img = UIImage(named: "AppIcon") { return img }
         if let img = UIImage(named: "AppIcon60x60") { return img }
         return nil

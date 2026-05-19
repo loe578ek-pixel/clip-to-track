@@ -63,6 +63,10 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     
     if (isNative) {
       nativeMediaControls.setCallbacks(callbacks);
+      // CRITICAL on iOS: also register navigator.mediaSession handlers so iOS
+      // keeps the JS thread alive in the background and forwards lockscreen
+      // play/pause to JS (where the HTML5 <audio> actually lives).
+      mediaSession.setCallbacks(callbacks);
     } else {
       mediaSession.setCallbacks(callbacks);
     }
@@ -77,14 +81,20 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       const isNative = Capacitor.isNativePlatform();
       
       if (isNative) {
-        // Use native media controls for mobile
+        // Native plugin for lockscreen metadata
         nativeMediaControls.updateTrack({
           title: track.title,
           artist: track.originalFileName,
           duration: track.duration
         }, playlistName);
+        // ALSO declare the track via navigator.mediaSession so iOS keeps the
+        // JS thread responsive to lockscreen play/pause in background.
+        mediaSession.updateTrack({
+          title: track.title,
+          artist: track.originalFileName,
+          duration: track.duration
+        }, playlistName);
       } else {
-        // Use web media session for web
         mediaSession.enableBackgroundPlayback();
         mediaSession.updateTrack({
           title: track.title,

@@ -81,14 +81,20 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       const isNative = Capacitor.isNativePlatform();
       
       if (isNative) {
-        // Use native media controls for mobile
+        // Native plugin for lockscreen metadata
         nativeMediaControls.updateTrack({
           title: track.title,
           artist: track.originalFileName,
           duration: track.duration
         }, playlistName);
+        // ALSO declare the track via navigator.mediaSession so iOS keeps the
+        // JS thread responsive to lockscreen play/pause in background.
+        mediaSession.updateTrack({
+          title: track.title,
+          artist: track.originalFileName,
+          duration: track.duration
+        }, playlistName);
       } else {
-        // Use web media session for web
         mediaSession.enableBackgroundPlayback();
         mediaSession.updateTrack({
           title: track.title,

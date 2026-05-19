@@ -63,6 +63,10 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     
     if (isNative) {
       nativeMediaControls.setCallbacks(callbacks);
+      // CRITICAL on iOS: also register navigator.mediaSession handlers so iOS
+      // keeps the JS thread alive in the background and forwards lockscreen
+      // play/pause to JS (where the HTML5 <audio> actually lives).
+      mediaSession.setCallbacks(callbacks);
     } else {
       mediaSession.setCallbacks(callbacks);
     }

@@ -129,14 +129,16 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
         center.pauseCommand.isEnabled = true
         center.pauseCommand.addTarget { [weak self] _ in
-            self?.pauseWebViewMediaPlayback()
+            print("NowPlayingPlugin: pauseCommand received from lock screen")
+            self?.pauseWebViewMediaPlayback(source: "pauseCommand")
             self?.emitRemoteCommand(action: "pause")
             return .success
         }
 
         center.togglePlayPauseCommand.isEnabled = true
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
-            self?.pauseWebViewMediaPlayback()
+            print("NowPlayingPlugin: togglePlayPauseCommand received from lock screen")
+            self?.pauseWebViewMediaPlayback(source: "togglePlayPauseCommand")
             self?.emitRemoteCommand(action: "toggle")
             return .success
         }
@@ -172,18 +174,51 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         cachedArtwork = buildArtwork()
     }
 
-    private func pauseWebViewMediaPlayback() {
+    private func pauseWebViewMediaPlayback(source: String) {
         DispatchQueue.main.async { [weak self] in
-            guard let self = self,
-                  let webView = self.bridge?.webView as? WKWebView else {
+            print("NowPlayingPlugin: pauseWebViewMediaPlayback triggered by \(source)")
+
+            guard let self = self else {
+                print("NowPlayingPlugin: self is nil while handling \(source)")
+                return
+            }
+
+            guard let bridge = self.bridge else {
+                print("NowPlayingPlugin: bridge is nil while handling \(source)")
+                self.deactivateAudioSession(reason: "bridge_missing_\(source)")
+                return
+            }
+
+            print("NowPlayingPlugin: bridge.webView runtime type = \(String(describing: type(of: bridge.webView)))")
+
+            guard let webView = bridge.webView as? WKWebView else {
+                print("NowPlayingPlugin: bridge.webView is not WKWebView, falling back to AVAudioSession deactivation")
+                self.deactivateAudioSession(reason: "webview_cast_failed_\(source)")
                 return
             }
 
             if #available(iOS 15.0, *) {
+                print("NowPlayingPlugin: calling pauseAllMediaPlayback for \(source)")
                 webView.pauseAllMediaPlayback {
+                    print("NowPlayingPlugin: pauseAllMediaPlayback completion fired for \(source)")
                     webView.setAllMediaPlaybackSuspended(true)
+                    print("NowPlayingPlugin: setAllMediaPlaybackSuspended(true) applied for \(source)")
+                    self.deactivateAudioSession(reason: "post_pause_completion_\(source)")
                 }
+            } else {
+                print("NowPlayingPlugin: iOS < 15, cannot use pauseAllMediaPlayback; using AVAudioSession fallback")
+                self.deactivateAudioSession(reason: "ios_unsupported_\(source)")
             }
+        }
+    }
+
+    private func deactivateAudioSession(reason: String) {
+        do {
+            print("NowPlayingPlugin: attempting AVAudioSession.setActive(false) because \(reason)")
+            try AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
+            print("NowPlayingPlugin: AVAudioSession.setActive(false) succeeded for \(reason)")
+        } catch {
+            print("NowPlayingPlugin: AVAudioSession.setActive(false) failed for \(reason): \(error)")
         }
     }
 

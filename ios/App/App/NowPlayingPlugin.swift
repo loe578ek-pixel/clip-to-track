@@ -3,6 +3,7 @@ import Capacitor
 import AVFoundation
 import MediaPlayer
 import UIKit
+import WebKit
 
 /**
  * NowPlayingPlugin
@@ -128,12 +129,14 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
         center.pauseCommand.isEnabled = true
         center.pauseCommand.addTarget { [weak self] _ in
+            self?.pauseWebViewMediaPlayback()
             self?.emitRemoteCommand(action: "pause")
             return .success
         }
 
         center.togglePlayPauseCommand.isEnabled = true
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
+            self?.pauseWebViewMediaPlayback()
             self?.emitRemoteCommand(action: "toggle")
             return .success
         }
@@ -167,6 +170,21 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private func prepareArtwork() {
         cachedArtwork = buildArtwork()
+    }
+
+    private func pauseWebViewMediaPlayback() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self,
+                  let webView = self.bridge?.webView as? WKWebView else {
+                return
+            }
+
+            if #available(iOS 15.0, *) {
+                webView.pauseAllMediaPlayback {
+                    webView.setAllMediaPlaybackSuspended(true)
+                }
+            }
+        }
     }
 
     private func emitRemoteCommand(action: String, position: Double? = nil) {

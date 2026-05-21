@@ -6,6 +6,7 @@ import { Track } from "@/pages/Index";
 import { useVolume } from "@/contexts/VolumeContext";
 import { mediaSession } from "@/lib/mediaSession";
 import { nativeMediaControls } from "@/lib/nativeMediaControls";
+import { NowPlayingNative } from "@/lib/iosNowPlaying";
 import { Capacitor } from "@capacitor/core";
 
 interface MusicPlayerProps {
@@ -71,6 +72,76 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       mediaSession.setCallbacks(callbacks);
     }
   }, [onNext, onPrevious]);
+
+  useEffect(() => {
+    const isIosNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+    let remotePauseListener: { remove: () => Promise<void> } | null = null;
+
+    const pauseAudioImmediately = (source: string) => {
+      const audio = audioRef.current;
+      if (!audio) {
+        console.log(`🍎 Direct pause bridge ignored (${source}) - audioRef unavailable`);
+        return;
+      }
+
+      console.log(`🍎 Direct pause bridge triggered from ${source}`, {
+        paused: audio.paused,
+        currentTime: audio.currentTime,
+        readyState: audio.readyState,
+      });
+
+      audio.pause();
+      setIsPlaying(false);
+
+      if (isIosNative) {
+        nativeMediaControls.updatePlaybackState(false, audio.currentTime);
+      } else {
+        mediaSession.updatePlaybackState(false, audio.currentTime);
+      }
+    };
+
+    if ('mediaSession' in navigator) {
+      try {
+        navigator.mediaSession.setActionHandler('pause', () => {
+          pauseAudioImmediately('navigator.mediaSession.pause');
+        });
+        console.log('🍎 navigator.mediaSession pause handler registered in MusicPlayer');
+      } catch (error) {
+        console.error('❌ Failed to register navigator.mediaSession pause handler:', error);
+      }
+    }
+
+    if (isIosNative) {
+      NowPlayingNative.addListener('remoteCommand', (event) => {
+        if (event.action === 'pause') {
+          pauseAudioImmediately('NowPlayingNative.remoteCommand.pause');
+        }
+      })
+        .then((listener) => {
+          remotePauseListener = listener;
+          console.log('🍎 Direct iOS remoteCommand pause listener registered in MusicPlayer');
+        })
+        .catch((error) => {
+          console.error('❌ Failed to register direct iOS remoteCommand pause listener:', error);
+        });
+    }
+
+    return () => {
+      if ('mediaSession' in navigator) {
+        try {
+          navigator.mediaSession.setActionHandler('pause', null);
+        } catch (error) {
+          console.warn('⚠️ Failed to clear navigator.mediaSession pause handler:', error);
+        }
+      }
+
+      if (remotePauseListener) {
+        remotePauseListener.remove().catch((error) => {
+          console.warn('⚠️ Failed to remove direct iOS remoteCommand pause listener:', error);
+        });
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (audioRef.current) {

@@ -21,8 +21,9 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
       } else {
         toast.error("Purchase failed or was cancelled.");
       }
-    } catch {
-      toast.error("An error occurred. Please try again.");
+    } catch (err: any) {
+      console.error("Purchase error:", err);
+      toast.error(err?.message || "An error occurred. Please try again.");
     } finally {
       setPurchasing(false);
     }

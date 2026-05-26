@@ -90,10 +90,10 @@ class RevenueCatService {
     } catch (error: any) {
       if (error?.code === "1" || error?.userCancelled) {
         console.log("Purchase cancelled by user");
-      } else {
-        console.error("❌ Purchase error:", error);
+        return false;
       }
-      return false;
+      console.error("❌ Purchase error:", error);
+      throw error;
     }
   }
 

@@ -64,13 +64,25 @@ class RevenueCatService {
 
     try {
       const { offerings } = await this.Purchases.getOfferings();
+      console.log("📦 RevenueCat offerings:", JSON.stringify(offerings, null, 2));
 
-      if (!offerings.current || offerings.current.availablePackages.length === 0) {
-        console.error("No offerings available");
-        return false;
+      // Try current offering first, fallback to "default", then first available
+      let offering = offerings.current;
+      if (!offering || offering.availablePackages.length === 0) {
+        offering = offerings.all?.["default"];
+      }
+      if (!offering || offering.availablePackages.length === 0) {
+        const allKeys = Object.keys(offerings.all || {});
+        if (allKeys.length > 0) offering = offerings.all[allKeys[0]];
       }
 
-      const packageToPurchase = offerings.current.availablePackages[0];
+      if (!offering || offering.availablePackages.length === 0) {
+        console.error("❌ No offerings/packages available. Check RevenueCat dashboard: Offering must be marked 'Current' and contain a package linked to an approved App Store Connect product.");
+        throw new Error("No subscription products available. Please try again later.");
+      }
+
+      const packageToPurchase = offering.availablePackages[0];
+      console.log("🛒 Purchasing package:", packageToPurchase.identifier, packageToPurchase.product?.identifier);
       const { customerInfo } = await this.Purchases.purchasePackage({ aPackage: packageToPurchase });
 
       const entitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];

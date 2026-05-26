@@ -18,6 +18,7 @@ import { MusicManagementDialog } from "@/components/MusicManagementDialog";
 import { Track } from "@/pages/Index";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { Capacitor } from "@capacitor/core";
 import { syncUserProfile, type UserProfile } from "@/lib/cloudSync";
 import type { User } from "@supabase/supabase-js";
 interface SettingsTabProps {

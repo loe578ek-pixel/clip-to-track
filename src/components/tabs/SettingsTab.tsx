@@ -171,12 +171,47 @@ export const SettingsTab = ({
   const handleSignInWithApple = async () => {
     setIsAuthLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("apple", {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) console.error('Apple sign in error:', result.error);
-    } catch (error) {
-      console.error('Apple sign in error:', error);
+      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
+        // Native Apple Sign In on iOS
+        const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
+        const rawNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+
+        const response = await SignInWithApple.authorize({
+          clientId: 'app.lovable.cliptotrack',
+          redirectURI: 'https://bveunrzlfoinerjkzqzh.supabase.co/auth/v1/callback',
+          scopes: 'email name',
+          nonce: rawNonce,
+        });
+
+        const idToken = response?.response?.identityToken;
+        if (!idToken) throw new Error('No identity token from Apple');
+
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: idToken,
+          nonce: rawNonce,
+        });
+        if (error) {
+          console.error('Supabase Apple sign in error:', error);
+          toast.error(error.message);
+        } else {
+          toast.success('Signed in with Apple');
+        }
+      } else {
+        // Web fallback
+        const result = await lovable.auth.signInWithOAuth("apple", {
+          redirect_uri: window.location.origin,
+        });
+        if (result.error) console.error('Apple sign in error:', result.error);
+      }
+    } catch (error: any) {
+      if (error?.code === '1001' || /cancel/i.test(error?.message || '')) {
+        // user cancelled
+      } else {
+        console.error('Apple sign in error:', error);
+        toast.error(error?.message || 'Apple sign in failed');
+      }
     } finally {
       setIsAuthLoading(false);
     }

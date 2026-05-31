@@ -403,9 +403,8 @@ export const SettingsTab = ({
                 size="lg"
                 className="w-full text-base font-semibold"
                 onClick={async () => {
-                  const { Capacitor } = await import("@capacitor/core");
                   if (!Capacitor.isNativePlatform()) {
-                    toast.info("Subscription is only available in the mobile app.");
+                    toast.info("Premium purchases are only available in the TKPlaylist mobile app. Install it from the App Store or Play Store to subscribe.");
                     return;
                   }
                   setIsPurchasing(true);
@@ -413,14 +412,42 @@ export const SettingsTab = ({
                     const success = await onPurchase();
                     if (success) toast.success("Welcome to Premium! 🎉");
                     else toast.error("Purchase failed or was cancelled.");
-                  } catch { toast.error("An error occurred."); }
-                  finally { setIsPurchasing(false); }
+                  } catch (err: any) {
+                    console.error('Purchase error:', err);
+                    toast.error(err?.message || "An error occurred during purchase.");
+                  } finally {
+                    setIsPurchasing(false);
+                  }
                 }}
                 disabled={isPurchasing}
               >
                 <Crown className="h-5 w-5 mr-2" />
                 {isPurchasing ? "Loading..." : "Subscribe to Premium"}
               </Button>
+
+              {Capacitor.isNativePlatform() && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => {
+                    setIsRestoring(true);
+                    try {
+                      const success = await onRestore();
+                      if (success) toast.success("Purchases restored — Premium active!");
+                      else toast.info("No previous purchases found.");
+                    } catch (err: any) {
+                      console.error('Restore error:', err);
+                      toast.error(err?.message || "Could not restore purchases.");
+                    } finally {
+                      setIsRestoring(false);
+                    }
+                  }}
+                  disabled={isRestoring}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  {isRestoring ? "Restoring..." : "Restore Purchases"}
+                </Button>
+              )}
             </div>
           )}
         </CardContent>

@@ -160,9 +160,15 @@ export const SettingsTab = ({
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
-      if (result.error) console.error('Google sign in error:', result.error);
-    } catch (error) {
+      if (result?.error) {
+        console.error('Google sign in error:', result.error);
+        toast.error(result.error.message || 'Google sign-in failed');
+      } else if (!result?.redirected) {
+        toast.success('Signed in with Google');
+      }
+    } catch (error: any) {
       console.error('Google sign in error:', error);
+      toast.error(error?.message || 'Google sign-in failed');
     } finally {
       setIsAuthLoading(false);
     }
@@ -172,7 +178,6 @@ export const SettingsTab = ({
     setIsAuthLoading(true);
     try {
       if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
-        // Native Apple Sign In on iOS
         const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
         const rawNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
           .map(b => b.toString(16).padStart(2, '0')).join('');
@@ -199,18 +204,22 @@ export const SettingsTab = ({
           toast.success('Signed in with Apple');
         }
       } else {
-        // Web fallback
         const result = await lovable.auth.signInWithOAuth("apple", {
           redirect_uri: window.location.origin,
         });
-        if (result.error) console.error('Apple sign in error:', result.error);
+        if (result?.error) {
+          console.error('Apple sign in error:', result.error);
+          toast.error(result.error.message || 'Apple sign-in failed');
+        } else if (!result?.redirected) {
+          toast.success('Signed in with Apple');
+        }
       }
     } catch (error: any) {
       if (error?.code === '1001' || /cancel/i.test(error?.message || '')) {
-        // user cancelled
+        // user cancelled — silent
       } else {
         console.error('Apple sign in error:', error);
-        toast.error(error?.message || 'Apple sign in failed');
+        toast.error(error?.message || 'Apple sign-in failed');
       }
     } finally {
       setIsAuthLoading(false);
@@ -320,17 +329,15 @@ export const SettingsTab = ({
             </div> : <div className="space-y-3">
               <p className="text-sm text-muted-foreground mb-4">Sign in to sync your music across devices</p>
 
-              {!Capacitor.isNativePlatform() && (
-                <Button onClick={handleSignInWithGoogle} disabled={isAuthLoading} variant="outline" className="w-full bg-white hover:bg-gray-50 text-gray-900 border-gray-300">
-                  <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                  </svg>
-                  Continue with Google
-                </Button>
-              )}
+              <Button onClick={handleSignInWithGoogle} disabled={isAuthLoading} variant="outline" className="w-full bg-white hover:bg-gray-50 text-gray-900 border-gray-300">
+                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                {isAuthLoading ? 'Loading...' : 'Continue with Google'}
+              </Button>
 
               <Button onClick={handleSignInWithApple} disabled={isAuthLoading} variant="outline" className="w-full bg-black hover:bg-gray-900 text-white border-gray-700">
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -396,9 +403,8 @@ export const SettingsTab = ({
                 size="lg"
                 className="w-full text-base font-semibold"
                 onClick={async () => {
-                  const { Capacitor } = await import("@capacitor/core");
                   if (!Capacitor.isNativePlatform()) {
-                    toast.info("Subscription is only available in the mobile app.");
+                    toast.info("Premium purchases are only available in the TKPlaylist mobile app. Install it from the App Store or Play Store to subscribe.");
                     return;
                   }
                   setIsPurchasing(true);
@@ -406,14 +412,42 @@ export const SettingsTab = ({
                     const success = await onPurchase();
                     if (success) toast.success("Welcome to Premium! 🎉");
                     else toast.error("Purchase failed or was cancelled.");
-                  } catch { toast.error("An error occurred."); }
-                  finally { setIsPurchasing(false); }
+                  } catch (err: any) {
+                    console.error('Purchase error:', err);
+                    toast.error(err?.message || "An error occurred during purchase.");
+                  } finally {
+                    setIsPurchasing(false);
+                  }
                 }}
                 disabled={isPurchasing}
               >
                 <Crown className="h-5 w-5 mr-2" />
                 {isPurchasing ? "Loading..." : "Subscribe to Premium"}
               </Button>
+
+              {Capacitor.isNativePlatform() && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => {
+                    setIsRestoring(true);
+                    try {
+                      const success = await onRestore();
+                      if (success) toast.success("Purchases restored — Premium active!");
+                      else toast.info("No previous purchases found.");
+                    } catch (err: any) {
+                      console.error('Restore error:', err);
+                      toast.error(err?.message || "Could not restore purchases.");
+                    } finally {
+                      setIsRestoring(false);
+                    }
+                  }}
+                  disabled={isRestoring}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  {isRestoring ? "Restoring..." : "Restore Purchases"}
+                </Button>
+              )}
             </div>
           )}
         </CardContent>

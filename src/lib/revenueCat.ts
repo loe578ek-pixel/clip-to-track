@@ -16,8 +16,14 @@ class RevenueCatService {
   private initializationPromise: Promise<void> | null = null;
 
   async initialize(): Promise<void> {
-    if (!Capacitor.isNativePlatform()) return;
-    if (this.initialized) return;
+    if (!Capacitor.isNativePlatform()) {
+      console.log("ℹ️ RevenueCat skipped: not on native platform");
+      return;
+    }
+    if (this.initialized && this.Purchases) {
+      console.log("ℹ️ RevenueCat already initialized");
+      return;
+    }
     
     if (this.initializationPromise) {
       return this.initializationPromise;
@@ -25,7 +31,9 @@ class RevenueCatService {
 
     this.initializationPromise = (async () => {
       try {
-        console.log("🚀 Initializing RevenueCat...");
+        console.log("🚀 Initializing RevenueCat...", {
+          platform: Capacitor.getPlatform(),
+        });
         const { Purchases } = await import("@revenuecat/purchases-capacitor");
         this.Purchases = Purchases;
 
@@ -37,6 +45,8 @@ class RevenueCatService {
         console.log("✅ RevenueCat initialized successfully");
       } catch (error) {
         console.error("❌ RevenueCat init error:", error);
+        this.Purchases = null;
+        this.initialized = false;
         this.initializationPromise = null; // Allow retry
         throw error;
       }
@@ -74,6 +84,12 @@ class RevenueCatService {
 
   async purchasePremium(): Promise<boolean> {
     try {
+      console.log("🛒 purchasePremium called", {
+        native: Capacitor.isNativePlatform(),
+        platform: Capacitor.getPlatform(),
+        initialized: this.initialized,
+      });
+
       if (!this.initialized) {
         await this.initialize();
       }
@@ -119,6 +135,12 @@ class RevenueCatService {
 
   async restorePurchases(): Promise<boolean> {
     try {
+      console.log("🔄 restorePurchases called", {
+        native: Capacitor.isNativePlatform(),
+        platform: Capacitor.getPlatform(),
+        initialized: this.initialized,
+      });
+
       if (!this.initialized) {
         await this.initialize();
       }

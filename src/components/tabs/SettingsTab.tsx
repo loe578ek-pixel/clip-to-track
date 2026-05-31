@@ -158,7 +158,7 @@ export const SettingsTab = ({
     setIsAuthLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: Capacitor.isNativePlatform() ? "cliptotrack://app.lovable.cliptotrack" : window.location.origin,
       });
       if (result?.error) {
         console.error('Google sign in error:', result.error);
@@ -205,7 +205,7 @@ export const SettingsTab = ({
         }
       } else {
         const result = await lovable.auth.signInWithOAuth("apple", {
-          redirect_uri: window.location.origin,
+          redirect_uri: Capacitor.isNativePlatform() ? "cliptotrack://app.lovable.cliptotrack" : window.location.origin,
         });
         if (result?.error) {
           console.error('Apple sign in error:', result.error);

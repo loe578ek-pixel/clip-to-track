@@ -160,9 +160,15 @@ export const SettingsTab = ({
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
-      if (result.error) console.error('Google sign in error:', result.error);
-    } catch (error) {
+      if (result?.error) {
+        console.error('Google sign in error:', result.error);
+        toast.error(result.error.message || 'Google sign-in failed');
+      } else if (!result?.redirected) {
+        toast.success('Signed in with Google');
+      }
+    } catch (error: any) {
       console.error('Google sign in error:', error);
+      toast.error(error?.message || 'Google sign-in failed');
     } finally {
       setIsAuthLoading(false);
     }
@@ -172,7 +178,6 @@ export const SettingsTab = ({
     setIsAuthLoading(true);
     try {
       if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
-        // Native Apple Sign In on iOS
         const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
         const rawNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
           .map(b => b.toString(16).padStart(2, '0')).join('');
@@ -199,18 +204,22 @@ export const SettingsTab = ({
           toast.success('Signed in with Apple');
         }
       } else {
-        // Web fallback
         const result = await lovable.auth.signInWithOAuth("apple", {
           redirect_uri: window.location.origin,
         });
-        if (result.error) console.error('Apple sign in error:', result.error);
+        if (result?.error) {
+          console.error('Apple sign in error:', result.error);
+          toast.error(result.error.message || 'Apple sign-in failed');
+        } else if (!result?.redirected) {
+          toast.success('Signed in with Apple');
+        }
       }
     } catch (error: any) {
       if (error?.code === '1001' || /cancel/i.test(error?.message || '')) {
-        // user cancelled
+        // user cancelled — silent
       } else {
         console.error('Apple sign in error:', error);
-        toast.error(error?.message || 'Apple sign in failed');
+        toast.error(error?.message || 'Apple sign-in failed');
       }
     } finally {
       setIsAuthLoading(false);

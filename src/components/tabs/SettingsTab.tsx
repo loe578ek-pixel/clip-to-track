@@ -73,6 +73,7 @@ export const SettingsTab = ({
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const isNativeIOS = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
 
   // Check authentication state
   useEffect(() => {
@@ -155,10 +156,21 @@ export const SettingsTab = ({
     }
   };
   const handleSignInWithGoogle = async () => {
+    if (isNativeIOS) {
+      console.log('🚫 Google sign-in disabled on native iOS');
+      toast.info('Use Sign in with Apple on mobile. Google sign-in is disabled in the iOS app.');
+      return;
+    }
+
     setIsAuthLoading(true);
     try {
+      console.log('🔐 Starting Google sign-in', {
+        native: Capacitor.isNativePlatform(),
+        platform: Capacitor.getPlatform(),
+      });
+
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: Capacitor.isNativePlatform() ? "cliptotrack://app.lovable.cliptotrack" : window.location.origin,
       });
       if (result?.error) {
         console.error('Google sign in error:', result.error);
@@ -177,7 +189,8 @@ export const SettingsTab = ({
   const handleSignInWithApple = async () => {
     setIsAuthLoading(true);
     try {
-      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
+      if (isNativeIOS) {
+        console.log('🍎 Starting native Apple sign-in');
         const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
         const rawNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
           .map(b => b.toString(16).padStart(2, '0')).join('');
@@ -187,6 +200,11 @@ export const SettingsTab = ({
           redirectURI: 'https://bveunrzlfoinerjkzqzh.supabase.co/auth/v1/callback',
           scopes: 'email name',
           nonce: rawNonce,
+        });
+
+        console.log('🍎 Native Apple response received', {
+          hasIdentityToken: Boolean(response?.response?.identityToken),
+          hasEmail: Boolean(response?.response?.email),
         });
 
         const idToken = response?.response?.identityToken;
@@ -205,7 +223,7 @@ export const SettingsTab = ({
         }
       } else {
         const result = await lovable.auth.signInWithOAuth("apple", {
-          redirect_uri: window.location.origin,
+          redirect_uri: Capacitor.isNativePlatform() ? "cliptotrack://app.lovable.cliptotrack" : window.location.origin,
         });
         if (result?.error) {
           console.error('Apple sign in error:', result.error);
@@ -216,7 +234,7 @@ export const SettingsTab = ({
       }
     } catch (error: any) {
       if (error?.code === '1001' || /cancel/i.test(error?.message || '')) {
-        // user cancelled — silent
+        console.log('ℹ️ Apple sign-in cancelled by user');
       } else {
         console.error('Apple sign in error:', error);
         toast.error(error?.message || 'Apple sign-in failed');
@@ -336,8 +354,12 @@ export const SettingsTab = ({
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
-                {isAuthLoading ? 'Loading...' : 'Continue with Google'}
+                {isAuthLoading ? 'Loading...' : isNativeIOS ? 'Use Apple Sign-In on iPhone' : 'Continue with Google'}
               </Button>
+
+              {isNativeIOS && <p className="text-xs text-muted-foreground px-1">
+                  On iPhone and iPad, only Apple Sign-In is supported to avoid the blank-screen sign-in flow.
+                </p>}
 
               <Button onClick={handleSignInWithApple} disabled={isAuthLoading} variant="outline" className="w-full bg-black hover:bg-gray-900 text-white border-gray-700">
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
@@ -407,9 +429,14 @@ export const SettingsTab = ({
                     toast.info("Premium purchases are only available in the TKPlaylist mobile app. Install it from the App Store or Play Store to subscribe.");
                     return;
                   }
+                  console.log('🛒 Subscribe button tapped', {
+                    native: Capacitor.isNativePlatform(),
+                    platform: Capacitor.getPlatform(),
+                  });
                   setIsPurchasing(true);
                   try {
                     const success = await onPurchase();
+                    console.log('🛒 Purchase result', { success });
                     if (success) toast.success("Welcome to Premium! 🎉");
                     else toast.error("Purchase failed or was cancelled.");
                   } catch (err: any) {

@@ -5,7 +5,9 @@ const config: CapacitorConfig = {
   appName: 'TKPlaylist',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    iosScheme: 'cliptotrack',
+    hostname: 'app.lovable.cliptotrack'
   },
   plugins: {
     SplashScreen: {

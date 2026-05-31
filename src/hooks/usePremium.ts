@@ -38,7 +38,6 @@ export const usePremium = (): PremiumState => {
   const evaluateLocalTrial = useCallback(() => {
     const firstPlay = localStorage.getItem(TRIAL_KEY);
     if (!firstPlay) {
-      // Trial not started yet — no restrictions
       setTrialStarted(false);
       setTrialExpired(false);
       setDaysRemaining(null);
@@ -61,7 +60,6 @@ export const usePremium = (): PremiumState => {
 
   const checkStatus = useCallback(async () => {
     try {
-      // On web (non-native), use local trial only
       if (!Capacitor.isNativePlatform()) {
         setIsPremium(false);
         evaluateLocalTrial();
@@ -69,8 +67,16 @@ export const usePremium = (): PremiumState => {
         return;
       }
 
-      // 1. Check RevenueCat on native platforms
-      await revenueCatService.initialize();
+      // Initialize with timeout to prevent hanging the whole app
+      const initPromise = revenueCatService.initialize();
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Init timeout")), 5000));
+      
+      try {
+        await Promise.race([initPromise, timeoutPromise]);
+      } catch (e) {
+        console.warn("RevenueCat initialization slow or failed:", e);
+      }
+
       const rcStatus = await revenueCatService.checkPremiumStatus();
       if (rcStatus.isPremium) {
         setIsPremium(true);
@@ -80,7 +86,6 @@ export const usePremium = (): PremiumState => {
         return;
       }
 
-      // 2. Check Supabase profile for premium
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
@@ -97,7 +102,6 @@ export const usePremium = (): PremiumState => {
         }
       }
 
-      // 3. Always use local trial (based on first play)
       evaluateLocalTrial();
     } catch (err) {
       console.error("Premium check error:", err);
@@ -107,7 +111,6 @@ export const usePremium = (): PremiumState => {
     }
   }, [syncPremiumToSupabase, evaluateLocalTrial]);
 
-  // Called on the very first play — starts the 30-day countdown
   const startTrial = useCallback(() => {
     const existing = localStorage.getItem(TRIAL_KEY);
     if (!existing) {
@@ -117,7 +120,6 @@ export const usePremium = (): PremiumState => {
       setDaysRemaining(TRIAL_DAYS);
       setTrialExpired(false);
 
-      // Also sync to Supabase profile if signed in
       (async () => {
         try {
           const { data: { user } } = await supabase.auth.getUser();

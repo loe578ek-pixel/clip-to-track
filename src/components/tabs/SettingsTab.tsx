@@ -73,6 +73,7 @@ export const SettingsTab = ({
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const isNativeIOS = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
 
   // Check authentication state
   useEffect(() => {
@@ -155,8 +156,19 @@ export const SettingsTab = ({
     }
   };
   const handleSignInWithGoogle = async () => {
+    if (isNativeIOS) {
+      console.log('🚫 Google sign-in disabled on native iOS');
+      toast.info('Use Sign in with Apple on mobile. Google sign-in is disabled in the iOS app.');
+      return;
+    }
+
     setIsAuthLoading(true);
     try {
+      console.log('🔐 Starting Google sign-in', {
+        native: Capacitor.isNativePlatform(),
+        platform: Capacitor.getPlatform(),
+      });
+
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: Capacitor.isNativePlatform() ? "cliptotrack://app.lovable.cliptotrack" : window.location.origin,
       });
@@ -177,7 +189,8 @@ export const SettingsTab = ({
   const handleSignInWithApple = async () => {
     setIsAuthLoading(true);
     try {
-      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
+      if (isNativeIOS) {
+        console.log('🍎 Starting native Apple sign-in');
         const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
         const rawNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
           .map(b => b.toString(16).padStart(2, '0')).join('');
@@ -187,6 +200,11 @@ export const SettingsTab = ({
           redirectURI: 'https://bveunrzlfoinerjkzqzh.supabase.co/auth/v1/callback',
           scopes: 'email name',
           nonce: rawNonce,
+        });
+
+        console.log('🍎 Native Apple response received', {
+          hasIdentityToken: Boolean(response?.response?.identityToken),
+          hasEmail: Boolean(response?.response?.email),
         });
 
         const idToken = response?.response?.identityToken;
@@ -216,7 +234,7 @@ export const SettingsTab = ({
       }
     } catch (error: any) {
       if (error?.code === '1001' || /cancel/i.test(error?.message || '')) {
-        // user cancelled — silent
+        console.log('ℹ️ Apple sign-in cancelled by user');
       } else {
         console.error('Apple sign in error:', error);
         toast.error(error?.message || 'Apple sign-in failed');

@@ -423,25 +423,26 @@ export const SettingsTab = ({
 
               <Button
                 size="lg"
+                type="button"
                 className="w-full text-base font-semibold"
                 onClick={async () => {
+                  // IMMEDIATE feedback — proves the click is registered before any logic
+                  console.log('👆 Subscribe button TAPPED (immediate)');
+                  toast.info("Tap detected — starting purchase…", { duration: 6000 });
+
                   if (!Capacitor.isNativePlatform()) {
-                    toast.info("Premium purchases are only available in the TKPlaylist mobile app. Install it from the App Store or Play Store to subscribe.");
+                    toast.info("Premium purchases are only available in the TKPlaylist mobile app.");
                     return;
                   }
-                  console.log('🛒 Subscribe button tapped', {
-                    native: Capacitor.isNativePlatform(),
-                    platform: Capacitor.getPlatform(),
-                  });
                   setIsPurchasing(true);
                   try {
                     const success = await onPurchase();
                     console.log('🛒 Purchase result', { success });
                     if (success) toast.success("Welcome to Premium! 🎉");
-                    else toast.error("Purchase failed or was cancelled.");
+                    else toast.error("Purchase failed or was cancelled.", { duration: 8000 });
                   } catch (err: any) {
                     console.error('Purchase error:', err);
-                    toast.error(err?.message || "An error occurred during purchase.");
+                    toast.error(err?.message || "An error occurred during purchase.", { duration: 20000 });
                   } finally {
                     setIsPurchasing(false);
                   }

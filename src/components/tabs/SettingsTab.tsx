@@ -253,6 +253,7 @@ export const SettingsTab = ({
   };
   const handleSubscribeTap = async () => {
     console.log('👆 Subscribe button TAPPED (immediate)');
+    window.alert('Subscribe tap detected');
     toast.info("Tap detected — starting purchase…", { duration: 6000 });
 
     if (!Capacitor.isNativePlatform()) {
@@ -446,16 +447,16 @@ export const SettingsTab = ({
                 </div>
               ) : null}
 
-              <Button
-                size="lg"
+              <button
                 type="button"
-                className="w-full text-base font-semibold"
                 onClick={handleSubscribeTap}
                 disabled={isPurchasing}
+                className="native-subscribe-button relative z-20 flex min-h-12 w-full touch-manipulation items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-base font-semibold text-primary-foreground shadow-sm active:scale-[0.99] disabled:opacity-50"
+                style={{ WebkitAppearance: 'none', appearance: 'none', WebkitTapHighlightColor: 'transparent' }}
               >
                 <Crown className="h-5 w-5 mr-2" />
                 {isPurchasing ? "Loading..." : "Subscribe to Premium"}
-              </Button>
+              </button>
 
               {Capacitor.isNativePlatform() && (
                 <Button

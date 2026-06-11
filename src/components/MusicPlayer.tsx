@@ -461,7 +461,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
             onClick={() => setIsMuted(!isMuted)}
             className="text-muted-foreground hover:text-white"
           >
-            {isMuted || volume[0] === 0 ? (
+            {isMuted || volume === 0 ? (
               <VolumeX className="h-4 w-4" />
             ) : (
               <Volume2 className="h-4 w-4" />

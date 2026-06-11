@@ -62,6 +62,12 @@ export const usePremium = (): PremiumState => {
   }, []);
 
   const checkStatus = useCallback(async () => {
+    if (TEST_BYPASS_PREMIUM) {
+      setIsPremium(true);
+      setTrialExpired(false);
+      setLoading(false);
+      return;
+    }
     try {
       if (!Capacitor.isNativePlatform()) {
         setIsPremium(false);

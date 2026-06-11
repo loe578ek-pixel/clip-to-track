@@ -18,7 +18,7 @@ interface PremiumState {
 }
 
 // ⚠️ TEST MODE: set to false before App Store release
-const TEST_BYPASS_PREMIUM = true;
+const TEST_BYPASS_PREMIUM = false;
 
 export const usePremium = (): PremiumState => {
   const [loading, setLoading] = useState(!TEST_BYPASS_PREMIUM);

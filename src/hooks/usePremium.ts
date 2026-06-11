@@ -17,9 +17,12 @@ interface PremiumState {
   startTrial: () => void;
 }
 
+// ⚠️ TEST MODE: set to false before App Store release
+const TEST_BYPASS_PREMIUM = true;
+
 export const usePremium = (): PremiumState => {
-  const [loading, setLoading] = useState(true);
-  const [isPremium, setIsPremium] = useState(false);
+  const [loading, setLoading] = useState(!TEST_BYPASS_PREMIUM);
+  const [isPremium, setIsPremium] = useState(TEST_BYPASS_PREMIUM);
   const [trialExpired, setTrialExpired] = useState(false);
   const [trialStarted, setTrialStarted] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);

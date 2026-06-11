@@ -30,8 +30,15 @@ export const VolumeRange = ({
       step={step}
       value={value}
       aria-label={ariaLabel}
+      onInput={(event) => onValueChange(Number((event.target as HTMLInputElement).value))}
       onChange={(event) => onValueChange(Number(event.target.value))}
-      className={`h-6 w-full cursor-pointer touch-manipulation accent-primary bg-transparent ${className ?? ""}`.trim()}
+      className={`volume-range h-8 w-full cursor-pointer touch-manipulation bg-transparent ${className ?? ""}`.trim()}
+      style={{
+        WebkitAppearance: 'none',
+        appearance: 'none',
+        touchAction: 'pan-x',
+        WebkitTapHighlightColor: 'transparent',
+      }}
     />
   );
 };

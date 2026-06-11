@@ -467,7 +467,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
               <Volume2 className="h-4 w-4" />
             )}
           </Button>
-          <div className="w-20">
+          <div className="relative z-20 w-28 max-w-[32vw] touch-manipulation">
             <VolumeRange
               value={volume}
               onValueChange={setVolume}

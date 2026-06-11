@@ -1,7 +1,6 @@
 import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Crown, RotateCcw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -9,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { VolumeRange } from "@/components/ui/volume-range";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useVolume } from "@/contexts/VolumeContext";
@@ -251,6 +251,31 @@ export const SettingsTab = ({
       console.error('Sign out error:', error);
     }
   };
+  const handleSubscribeTap = async () => {
+    console.log('👆 Subscribe button TAPPED (immediate)');
+    toast.info("Tap detected — starting purchase…", { duration: 6000 });
+
+    if (!Capacitor.isNativePlatform()) {
+      toast.info("Premium purchases are only available in the TKPlaylist mobile app.");
+      return;
+    }
+
+    setIsPurchasing(true);
+    try {
+      const success = await onPurchase();
+      console.log('🛒 Purchase result', { success });
+      if (success) {
+        toast.success("Welcome to Premium! 🎉");
+      } else {
+        toast.error("Purchase failed or was cancelled.", { duration: 8000 });
+      }
+    } catch (err: any) {
+      console.error('Purchase error:', err);
+      toast.error(err?.message || "An error occurred during purchase.", { duration: 20000 });
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
   const getProviderIcon = (provider?: string) => {
     if (provider === 'google') {
       return <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -425,28 +450,7 @@ export const SettingsTab = ({
                 size="lg"
                 type="button"
                 className="w-full text-base font-semibold"
-                onClick={async () => {
-                  // IMMEDIATE feedback — proves the click is registered before any logic
-                  console.log('👆 Subscribe button TAPPED (immediate)');
-                  toast.info("Tap detected — starting purchase…", { duration: 6000 });
-
-                  if (!Capacitor.isNativePlatform()) {
-                    toast.info("Premium purchases are only available in the TKPlaylist mobile app.");
-                    return;
-                  }
-                  setIsPurchasing(true);
-                  try {
-                    const success = await onPurchase();
-                    console.log('🛒 Purchase result', { success });
-                    if (success) toast.success("Welcome to Premium! 🎉");
-                    else toast.error("Purchase failed or was cancelled.", { duration: 8000 });
-                  } catch (err: any) {
-                    console.error('Purchase error:', err);
-                    toast.error(err?.message || "An error occurred during purchase.", { duration: 20000 });
-                  } finally {
-                    setIsPurchasing(false);
-                  }
-                }}
+                onClick={handleSubscribeTap}
                 disabled={isPurchasing}
               >
                 <Crown className="h-5 w-5 mr-2" />
@@ -496,7 +500,7 @@ export const SettingsTab = ({
           <div className="space-y-2">
             <Label htmlFor="volume">Master Volume</Label>
             <div className="px-3">
-              <Slider id="volume" value={[masterVolume]} onValueChange={value => setMasterVolume(value[0])} max={100} step={1} className="w-full" />
+              <VolumeRange id="volume" value={masterVolume} onValueChange={setMasterVolume} max={100} step={1} ariaLabel="Master volume" />
             </div>
             <p className="text-sm text-muted-foreground">{masterVolume}%</p>
           </div>

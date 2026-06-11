@@ -6,6 +6,7 @@ import { App as CapacitorApp } from "@capacitor/app";
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import { Toaster } from "sonner";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <Toaster richColors position="top-center" />
       </TooltipProvider>
     </QueryClientProvider>
   );

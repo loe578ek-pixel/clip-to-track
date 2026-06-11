@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Repeat, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { VolumeRange } from "@/components/ui/volume-range";
 import { Track } from "@/pages/Index";
 import { useVolume } from "@/contexts/VolumeContext";
 import { mediaSession } from "@/lib/mediaSession";
@@ -22,7 +23,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
   const { masterVolume } = useVolume();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [volume, setVolume] = useState([75]);
+  const [volume, setVolume] = useState(75);
   const [isMuted, setIsMuted] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'all'>('off');
@@ -298,7 +299,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
 
   useEffect(() => {
     if (audioRef.current) {
-      const finalVolume = isMuted ? 0 : (volume[0] / 100) * (masterVolume / 100);
+      const finalVolume = isMuted ? 0 : (volume / 100) * (masterVolume / 100);
       audioRef.current.volume = finalVolume;
     }
   }, [volume, isMuted, masterVolume]);
@@ -460,19 +461,19 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
             onClick={() => setIsMuted(!isMuted)}
             className="text-muted-foreground hover:text-white"
           >
-            {isMuted || volume[0] === 0 ? (
+            {isMuted || volume === 0 ? (
               <VolumeX className="h-4 w-4" />
             ) : (
               <Volume2 className="h-4 w-4" />
             )}
           </Button>
           <div className="w-20">
-            <Slider
+            <VolumeRange
               value={volume}
               onValueChange={setVolume}
               max={100}
               step={1}
-              className="w-full"
+              ariaLabel="Player volume"
             />
           </div>
         </div>

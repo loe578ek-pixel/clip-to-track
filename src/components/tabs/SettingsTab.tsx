@@ -253,6 +253,30 @@ export const SettingsTab = ({
       console.error('Sign out error:', error);
     }
   };
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be signed in.");
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('delete-account', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error || (data as any)?.error) {
+        throw new Error(error?.message || (data as any)?.error || 'Failed to delete account');
+      }
+      toast.success("Your account has been deleted.");
+      await supabase.auth.signOut();
+      setIsDeleteAccountDialogOpen(false);
+    } catch (err: any) {
+      console.error('Delete account error:', err);
+      toast.error(err?.message || "Failed to delete account.");
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
   const handleSubscribeTap = async () => {
     console.log('👆 Subscribe button TAPPED (immediate)');
     window.alert('Subscribe tap detected');

@@ -70,6 +70,8 @@ export const SettingsTab = ({
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
+  const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -251,6 +253,30 @@ export const SettingsTab = ({
       console.error('Sign out error:', error);
     }
   };
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be signed in.");
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('delete-account', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error || (data as any)?.error) {
+        throw new Error(error?.message || (data as any)?.error || 'Failed to delete account');
+      }
+      toast.success("Your account has been deleted.");
+      await supabase.auth.signOut();
+      setIsDeleteAccountDialogOpen(false);
+    } catch (err: any) {
+      console.error('Delete account error:', err);
+      toast.error(err?.message || "Failed to delete account.");
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
   const handleSubscribeTap = async () => {
     console.log('👆 Subscribe button TAPPED (immediate)');
     window.alert('Subscribe tap detected');
@@ -366,6 +392,31 @@ export const SettingsTab = ({
                     </Button>
                     <Button onClick={handleSignOut} className="w-full sm:w-auto">
                       Sign Out
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete My Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-card border-white/10 mx-4">
+                  <DialogHeader>
+                    <DialogTitle>Delete Account</DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
+                      This will permanently delete your account and all your data (profile, playlists, preferences). This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6">
+                    <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)} disabled={isDeletingAccount} className="w-full sm:w-auto">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleDeleteAccount} disabled={isDeletingAccount} className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      {isDeletingAccount ? 'Deleting...' : 'Delete Account'}
                     </Button>
                   </div>
                 </DialogContent>

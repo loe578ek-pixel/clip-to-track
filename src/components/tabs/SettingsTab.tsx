@@ -396,6 +396,31 @@ export const SettingsTab = ({
                   </div>
                 </DialogContent>
               </Dialog>
+
+              <Dialog open={isDeleteAccountDialogOpen} onOpenChange={setIsDeleteAccountDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete My Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-card border-white/10 mx-4">
+                  <DialogHeader>
+                    <DialogTitle>Delete Account</DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
+                      This will permanently delete your account and all your data (profile, playlists, preferences). This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col sm:flex-row justify-end gap-2 mt-6">
+                    <Button variant="outline" onClick={() => setIsDeleteAccountDialogOpen(false)} disabled={isDeletingAccount} className="w-full sm:w-auto">
+                      Cancel
+                    </Button>
+                    <Button onClick={handleDeleteAccount} disabled={isDeletingAccount} className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      {isDeletingAccount ? 'Deleting...' : 'Delete Account'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div> : <div className="space-y-3">
               <p className="text-sm text-muted-foreground mb-4">Sign in to sync your music across devices</p>
 

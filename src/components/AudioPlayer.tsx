@@ -68,16 +68,6 @@ export const AudioPlayer = ({ track, onNext, onPrevious }: AudioPlayerProps) => 
     setCurrentTime(time);
   };
 
-  const handleVolumeChange = (value: number[]) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const newVolume = value[0] / 100;
-    setVolume(newVolume);
-    audio.volume = newVolume;
-    setIsMuted(newVolume === 0);
-  };
-
   const handleTouchVolumeChange = (nextValue: number) => {
     const audio = audioRef.current;
     const newVolume = nextValue / 100;

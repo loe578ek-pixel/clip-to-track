@@ -29,14 +29,14 @@ export const VolumeRange = ({
 
   const valueFromClientX = React.useCallback((clientX: number) => {
     const slider = sliderRef.current;
-    if (!slider) return value;
+    if (!slider) return min;
 
     const rect = slider.getBoundingClientRect();
     const percent = rect.width > 0 ? (clientX - rect.left) / rect.width : 0;
     const rawValue = min + percent * (max - min);
     const steppedValue = Math.round(rawValue / step) * step;
     return clamp(steppedValue);
-  }, [clamp, max, min, step, value]);
+  }, [clamp, max, min, step]);
 
   const updateFromTouch = React.useCallback((event: TouchEvent) => {
     const touch = event.touches[0] ?? event.changedTouches[0];

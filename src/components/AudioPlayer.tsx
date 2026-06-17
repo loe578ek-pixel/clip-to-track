@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { VolumeRange } from "@/components/ui/volume-range";
 import { Track } from "@/pages/Index";
 
 interface AudioPlayerProps {
@@ -74,6 +75,15 @@ export const AudioPlayer = ({ track, onNext, onPrevious }: AudioPlayerProps) => 
     const newVolume = value[0] / 100;
     setVolume(newVolume);
     audio.volume = newVolume;
+    setIsMuted(newVolume === 0);
+  };
+
+  const handleTouchVolumeChange = (nextValue: number) => {
+    const audio = audioRef.current;
+    const newVolume = nextValue / 100;
+
+    setVolume(newVolume);
+    if (audio) audio.volume = newVolume;
     setIsMuted(newVolume === 0);
   };
 
@@ -177,12 +187,13 @@ export const AudioPlayer = ({ track, onNext, onPrevious }: AudioPlayerProps) => 
               <Volume2 className="h-4 w-4" />
             )}
           </Button>
-          <Slider
-            value={[isMuted ? 0 : volume * 100]}
-            onValueChange={handleVolumeChange}
+          <VolumeRange
+            value={isMuted ? 0 : volume * 100}
+            onValueChange={handleTouchVolumeChange}
             max={100}
             step={1}
             className="w-20"
+            ariaLabel="Player volume"
           />
         </div>
       </div>

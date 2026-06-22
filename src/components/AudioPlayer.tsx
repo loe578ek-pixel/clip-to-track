@@ -19,6 +19,9 @@ export const AudioPlayer = ({ track, onNext, onPrevious }: AudioPlayerProps) => 
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  const effectiveVolume = isMuted ? 0 : volume;
+  useAudioElementGain(audioRef, effectiveVolume);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;

@@ -9,6 +9,7 @@ import { mediaSession } from "@/lib/mediaSession";
 import { nativeMediaControls } from "@/lib/nativeMediaControls";
 import { NowPlayingNative } from "@/lib/iosNowPlaying";
 import { Capacitor } from "@capacitor/core";
+import { useAudioElementGain } from "@/hooks/useAudioElementGain";
 
 interface MusicPlayerProps {
   track: Track;
@@ -297,12 +298,14 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
     return () => clearInterval(updateInterval);
   }, [isPlaying]);
 
+  const finalVolume = isMuted ? 0 : (volume / 100) * (masterVolume / 100);
+  useAudioElementGain(audioRef, finalVolume);
   useEffect(() => {
     if (audioRef.current) {
-      const finalVolume = isMuted ? 0 : (volume / 100) * (masterVolume / 100);
+      // Keep element volume in sync as a fallback for non-iOS platforms.
       audioRef.current.volume = finalVolume;
     }
-  }, [volume, isMuted, masterVolume]);
+  }, [finalVolume]);
 
   const togglePlayPause = async () => {
     if (!audioRef.current) return;

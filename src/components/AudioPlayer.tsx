@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { VolumeRange } from "@/components/ui/volume-range";
 import { Track } from "@/pages/Index";
+import { useAudioElementGain } from "@/hooks/useAudioElementGain";
 
 interface AudioPlayerProps {
   track: Track;
@@ -17,6 +18,9 @@ export const AudioPlayer = ({ track, onNext, onPrevious }: AudioPlayerProps) => 
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const effectiveVolume = isMuted ? 0 : volume;
+  useAudioElementGain(audioRef, effectiveVolume);
 
   useEffect(() => {
     const audio = audioRef.current;

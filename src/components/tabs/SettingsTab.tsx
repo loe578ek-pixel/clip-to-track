@@ -194,14 +194,18 @@ export const SettingsTab = ({
       if (isNativeIOS) {
         console.log('🍎 Starting native Apple sign-in');
         const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
-        const rawNonce = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        const rawNonce = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+          .map(b => b.toString(16).padStart(2, '0')).join('');
+        // Apple expects a SHA-256 hash of the nonce; Supabase verifies it against the raw nonce.
+        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawNonce));
+        const hashedNonce = Array.from(new Uint8Array(hashBuffer))
           .map(b => b.toString(16).padStart(2, '0')).join('');
 
         const response = await SignInWithApple.authorize({
           clientId: 'app.lovable.cliptotrack',
           redirectURI: 'https://bveunrzlfoinerjkzqzh.supabase.co/auth/v1/callback',
           scopes: 'email name',
-          nonce: rawNonce,
+          nonce: hashedNonce,
         });
 
         console.log('🍎 Native Apple response received', {

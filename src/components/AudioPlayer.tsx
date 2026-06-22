@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { VolumeRange } from "@/components/ui/volume-range";
 import { Track } from "@/pages/Index";
+import { useAudioElementGain } from "@/hooks/useAudioElementGain";
 
 interface AudioPlayerProps {
   track: Track;

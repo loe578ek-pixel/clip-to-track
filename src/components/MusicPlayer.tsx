@@ -9,6 +9,7 @@ import { mediaSession } from "@/lib/mediaSession";
 import { nativeMediaControls } from "@/lib/nativeMediaControls";
 import { NowPlayingNative } from "@/lib/iosNowPlaying";
 import { Capacitor } from "@capacitor/core";
+import { useAudioElementGain } from "@/hooks/useAudioElementGain";
 
 interface MusicPlayerProps {
   track: Track;

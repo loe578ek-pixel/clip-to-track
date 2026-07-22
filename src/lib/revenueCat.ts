@@ -99,19 +99,32 @@ class RevenueCatService {
       }
 
       console.log("📦 Fetching offerings...");
-      const { offerings } = await this.Purchases.getOfferings();
+      let offeringsResult: any = null;
+      try {
+        offeringsResult = await this.Purchases.getOfferings();
+      } catch (e) {
+        console.error("❌ getOfferings threw:", e);
+        throw new Error("Unable to reach the App Store. Please check your connection and try again.");
+      }
+
+      const offerings = offeringsResult?.offerings ?? offeringsResult;
+      if (!offerings || typeof offerings !== "object") {
+        console.error("❌ Offerings payload missing:", offeringsResult);
+        throw new Error("No subscription products available yet. Please try again in a moment.");
+      }
       console.log("📦 RevenueCat offerings:", JSON.stringify(offerings, null, 2));
 
-      let offering = offerings.current;
-      if (!offering || offering.availablePackages.length === 0) {
-        offering = offerings.all?.["default"];
+      let offering: any = offerings?.current ?? null;
+      const all = offerings?.all ?? {};
+      if (!offering || !offering?.availablePackages?.length) {
+        offering = all?.["default"] ?? null;
       }
-      if (!offering || offering.availablePackages.length === 0) {
-        const allKeys = Object.keys(offerings.all || {});
-        if (allKeys.length > 0) offering = offerings.all[allKeys[0]];
+      if (!offering || !offering?.availablePackages?.length) {
+        const allKeys = Object.keys(all || {});
+        if (allKeys.length > 0) offering = all[allKeys[0]];
       }
 
-      if (!offering || offering.availablePackages.length === 0) {
+      if (!offering || !offering?.availablePackages?.length) {
         console.error("❌ No offerings/packages available.");
         throw new Error("No subscription products available in the App Store yet. Please ensure products are approved and the Offering is marked 'Current' in RevenueCat.");
       }

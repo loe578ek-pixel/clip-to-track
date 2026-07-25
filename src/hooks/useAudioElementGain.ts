@@ -92,6 +92,7 @@ export function useAudioElementGain(
 
   // Update gain when volume changes.
   useEffect(() => {
+    if (SKIP_WEB_AUDIO) return;
     const gain = gainRef.current;
     if (gain) {
       gain.gain.value = Math.max(0, Math.min(1, volume));

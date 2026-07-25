@@ -1,4 +1,19 @@
 import { useEffect, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
+
+/**
+ * IMPORTANT — iOS background playback:
+ * Routing an <audio> element through Web Audio (createMediaElementSource)
+ * causes iOS WKWebView to SUSPEND the AudioContext as soon as the app goes to
+ * background or the screen locks, which stops playback. AVAudioSession
+ * .playback cannot override that.
+ *
+ * So on iOS native we skip the Web Audio graph entirely and rely on
+ * HTMLAudioElement.volume (kept in sync in MusicPlayer). Background playback
+ * wins over programmatic volume control.
+ */
+const SKIP_WEB_AUDIO =
+  Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
 
 /**
  * On iOS (WebView/Safari), setting HTMLAudioElement.volume is silently ignored —
@@ -41,6 +56,7 @@ export function useAudioElementGain(
 
   // Wire up the graph once the element exists.
   useEffect(() => {
+    if (SKIP_WEB_AUDIO) return; // iOS native: skip to preserve background audio
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -76,6 +92,7 @@ export function useAudioElementGain(
 
   // Update gain when volume changes.
   useEffect(() => {
+    if (SKIP_WEB_AUDIO) return;
     const gain = gainRef.current;
     if (gain) {
       gain.gain.value = Math.max(0, Math.min(1, volume));

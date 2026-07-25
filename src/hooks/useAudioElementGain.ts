@@ -54,15 +54,9 @@ export function useAudioElementGain(
 ) {
   const gainRef = useRef<GainNode | null>(null);
 
-  if (SKIP_WEB_AUDIO) {
-    // Do nothing on iOS native — otherwise background playback breaks.
-    // MusicPlayer keeps audioRef.current.volume in sync as fallback.
-    return;
-  }
-
-
   // Wire up the graph once the element exists.
   useEffect(() => {
+    if (SKIP_WEB_AUDIO) return; // iOS native: skip to preserve background audio
     const audio = audioRef.current;
     if (!audio) return;
 

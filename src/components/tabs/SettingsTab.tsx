@@ -468,14 +468,13 @@ export const SettingsTab = ({
             <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 border border-primary/20">
               <Crown className="h-6 w-6 text-primary shrink-0" />
               <div className="flex-1">
-                <p className="font-semibold text-foreground">Premium Active</p>
-                {daysRemaining !== null && (
-                  <p className="text-sm text-muted-foreground">
-                    {daysRemaining} day{daysRemaining > 1 ? 's' : ''} remaining
-                  </p>
-                )}
+                <p className="font-semibold text-foreground">
+                  {daysRemaining !== null
+                    ? `Premium — ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} remaining`
+                    : 'Premium Active'}
+                </p>
               </div>
-              <Badge className="bg-primary/20 text-primary border-primary/30">Active</Badge>
+              <Badge className="bg-primary/20 text-primary border-primary/30">Premium</Badge>
             </div>
           ) : (
             <div className="space-y-4">

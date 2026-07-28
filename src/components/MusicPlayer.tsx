@@ -456,38 +456,9 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
           </div>
         </div>
 
-        {/* Volume Controls */}
-        <div className="flex items-center space-x-2 flex-1 justify-end">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsMuted(!isMuted)}
-            className="text-muted-foreground hover:text-white"
-          >
-            {isMuted || volume === 0 ? (
-              <VolumeX className="h-4 w-4" />
-            ) : (
-              <Volume2 className="h-4 w-4" />
-            )}
-          </Button>
-          <div
-            className="relative z-30 w-32 max-w-[36vw] py-2"
-            style={{
-              touchAction: "none",
-              pointerEvents: "auto",
-              WebkitUserSelect: "none",
-              userSelect: "none",
-            }}
-          >
-            <VolumeRange
-              value={volume}
-              onValueChange={setVolume}
-              max={100}
-              step={1}
-              ariaLabel="Player volume"
-            />
-          </div>
-        </div>
+        {/* Right spacer to keep controls centered */}
+        <div className="flex-1" />
+
       </div>
     </div>
   );

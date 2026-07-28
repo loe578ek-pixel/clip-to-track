@@ -1,4 +1,4 @@
-import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Crown, RotateCcw, Clock } from "lucide-react";
+import { Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Crown, RotateCcw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -8,10 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { VolumeRange } from "@/components/ui/volume-range";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { useVolume } from "@/contexts/VolumeContext";
+
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
 import { MusicManagementDialog } from "@/components/MusicManagementDialog";

@@ -48,10 +48,8 @@ export const SettingsTab = ({
   onPurchase,
   onRestore
 }: SettingsTabProps) => {
-  const {
-    masterVolume,
-    setMasterVolume
-  } = useVolume();
+
+
   const [autoPlay, setAutoPlay] = useState(true);
   const [crossfade, setCrossfade] = useState(false);
   const [highQuality, setHighQuality] = useState(true);

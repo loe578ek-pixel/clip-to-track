@@ -540,35 +540,8 @@ export const SettingsTab = ({
         </CardContent>
       </Card>
 
-      {/* Audio Settings */}
-      <Card className="soundwave-card border-white/10">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Volume2 className="h-5 w-5 text-primary" />
-            <span>Audio Settings</span>
-          </CardTitle>
-          <CardDescription>
-            Configure audio playback preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="volume">Master Volume</Label>
-            <div className="px-3">
-              <VolumeRange id="volume" value={masterVolume} onValueChange={setMasterVolume} max={100} step={1} ariaLabel="Master volume" />
-            </div>
-            <p className="text-sm text-muted-foreground">{masterVolume}%</p>
-          </div>
 
-          <Separator className="bg-white/10" />
 
-          
-
-          
-
-          
-        </CardContent>
-      </Card>
 
       {/* Storage & Data */}
       <Card className="soundwave-card border-white/10">

@@ -470,7 +470,15 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
               <Volume2 className="h-4 w-4" />
             )}
           </Button>
-          <div className="relative z-20 w-28 max-w-[32vw] touch-manipulation">
+          <div
+            className="relative z-30 w-32 max-w-[36vw] py-2"
+            style={{
+              touchAction: "none",
+              pointerEvents: "auto",
+              WebkitUserSelect: "none",
+              userSelect: "none",
+            }}
+          >
             <VolumeRange
               value={volume}
               onValueChange={setVolume}

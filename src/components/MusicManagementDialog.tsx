@@ -162,18 +162,19 @@ export const MusicManagementDialog = ({
                       size="sm"
                     />
                     
-                    {/* Delete Button */}
+                    {/* Delete Button - shifted left for easier tap */}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="w-8 h-8 hover:bg-destructive/20 text-destructive"
+                          className="w-8 h-8 mr-2 hover:bg-destructive/20 text-destructive"
                           disabled={deletingTrackId === track.id}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
+
                       <AlertDialogContent className="bg-card border-white/10 mx-4">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Are you sure you want to delete this song?</AlertDialogTitle>

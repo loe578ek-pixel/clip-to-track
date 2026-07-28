@@ -1,4 +1,4 @@
-import { Volume2, Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Crown, RotateCcw, Clock } from "lucide-react";
+import { Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Crown, RotateCcw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -8,10 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { VolumeRange } from "@/components/ui/volume-range";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { useVolume } from "@/contexts/VolumeContext";
+
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
 import { MusicManagementDialog } from "@/components/MusicManagementDialog";
@@ -49,10 +48,8 @@ export const SettingsTab = ({
   onPurchase,
   onRestore
 }: SettingsTabProps) => {
-  const {
-    masterVolume,
-    setMasterVolume
-  } = useVolume();
+
+
   const [autoPlay, setAutoPlay] = useState(true);
   const [crossfade, setCrossfade] = useState(false);
   const [highQuality, setHighQuality] = useState(true);
@@ -468,14 +465,13 @@ export const SettingsTab = ({
             <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 border border-primary/20">
               <Crown className="h-6 w-6 text-primary shrink-0" />
               <div className="flex-1">
-                <p className="font-semibold text-foreground">Premium Active</p>
-                {daysRemaining !== null && (
-                  <p className="text-sm text-muted-foreground">
-                    {daysRemaining} day{daysRemaining > 1 ? 's' : ''} remaining
-                  </p>
-                )}
+                <p className="font-semibold text-foreground">
+                  {daysRemaining !== null
+                    ? `Premium — ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} remaining`
+                    : 'Premium Active'}
+                </p>
               </div>
-              <Badge className="bg-primary/20 text-primary border-primary/30">Active</Badge>
+              <Badge className="bg-primary/20 text-primary border-primary/30">Premium</Badge>
             </div>
           ) : (
             <div className="space-y-4">
@@ -541,35 +537,8 @@ export const SettingsTab = ({
         </CardContent>
       </Card>
 
-      {/* Audio Settings */}
-      <Card className="soundwave-card border-white/10">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Volume2 className="h-5 w-5 text-primary" />
-            <span>Audio Settings</span>
-          </CardTitle>
-          <CardDescription>
-            Configure audio playback preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="volume">Master Volume</Label>
-            <div className="px-3">
-              <VolumeRange id="volume" value={masterVolume} onValueChange={setMasterVolume} max={100} step={1} ariaLabel="Master volume" />
-            </div>
-            <p className="text-sm text-muted-foreground">{masterVolume}%</p>
-          </div>
 
-          <Separator className="bg-white/10" />
 
-          
-
-          
-
-          
-        </CardContent>
-      </Card>
 
       {/* Storage & Data */}
       <Card className="soundwave-card border-white/10">

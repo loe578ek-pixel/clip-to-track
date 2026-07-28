@@ -90,6 +90,10 @@ export const usePremium = (): PremiumState => {
       if (rcStatus.isPremium) {
         setIsPremium(true);
         setTrialExpired(false);
+        if (rcStatus.expirationDate) {
+          const diffMs = new Date(rcStatus.expirationDate).getTime() - Date.now();
+          setDaysRemaining(Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24))));
+        }
         setLoading(false);
         await syncPremiumToSupabase(true);
         return;

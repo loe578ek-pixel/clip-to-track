@@ -425,6 +425,7 @@ export const SettingsTab = ({
             </div> : <div className="space-y-3">
               <p className="text-sm text-muted-foreground mb-4">Sign in to sync your music across devices</p>
 
+              {/* Google sign-in temporarily hidden — keep code intact to re-enable later.
               <Button onClick={handleSignInWithGoogle} disabled={isAuthLoading} variant="outline" className="w-full bg-white hover:bg-gray-50 text-gray-900 border-gray-300">
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -438,6 +439,8 @@ export const SettingsTab = ({
               {isNativeIOS && <p className="text-xs text-muted-foreground px-1">
                   On iPhone and iPad, only Apple Sign-In is supported to avoid the blank-screen sign-in flow.
                 </p>}
+              */}
+
 
               <Button onClick={handleSignInWithApple} disabled={isAuthLoading} variant="outline" className="w-full bg-black hover:bg-gray-900 text-white border-gray-700">
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">

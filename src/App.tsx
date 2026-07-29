@@ -41,7 +41,7 @@ const App = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        <Toaster richColors position="top-center" />
+        <Toaster richColors position="top-center" offset={60} toastOptions={{ style: { marginTop: 'env(safe-area-inset-top, 0px)' } }} />
       </TooltipProvider>
     </QueryClientProvider>
   );

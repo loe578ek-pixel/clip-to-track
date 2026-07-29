@@ -78,11 +78,11 @@ export const AddTab = ({
               <div key={track.id} className="soundwave-card p-4">
                 <div className="flex items-center gap-3">
                   {/* Track Info */}
-                  <div className="flex-1 min-w-0 mr-4 overflow-hidden">
+                  <div className="flex-1 min-w-0 w-0 mr-4 overflow-hidden">
                     <EditableTitle
                       title={track.title}
                       onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
-                      className="font-medium truncate text-base block"
+                      className="font-medium truncate text-base block max-w-full"
                       inputClassName="h-8"
                       showButton={false}
                     />
@@ -97,6 +97,7 @@ export const AddTab = ({
                       </span>
                     </div>
                   </div>
+
 
                   {/* Actions - All buttons inline */}
                   <div className="flex items-center gap-1 flex-shrink-0">

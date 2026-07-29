@@ -82,6 +82,46 @@ class RevenueCatService {
     }
   }
 
+  /**
+   * Returns a trial anchor date tied to the RevenueCat / App Store receipt
+   * for this Apple ID. Survives account deletion & re-signup because it is
+   * derived from `customerInfo.firstSeen` (fallback to `originalPurchaseDate`
+   * or `originalApplicationVersion` install time).
+   * Returns null if not available (e.g. web / plugin missing).
+   */
+  async getTrialAnchorDate(): Promise<Date | null> {
+    try {
+      if (!Capacitor.isNativePlatform()) return null;
+      if (!this.initialized) {
+        await this.initialize();
+      }
+      if (!this.Purchases) return null;
+
+      const { customerInfo } = await this.Purchases.getCustomerInfo();
+
+      // Prefer firstSeen — the first time this Apple ID was ever seen by
+      // RevenueCat for this app. Bound to the store receipt, not our DB.
+      const firstSeen = customerInfo?.firstSeen;
+      if (firstSeen) {
+        const d = new Date(firstSeen);
+        if (!isNaN(d.getTime())) return d;
+      }
+
+      // Fallback: originalPurchaseDate (first ever transaction, incl. free)
+      const originalPurchase = customerInfo?.originalPurchaseDate;
+      if (originalPurchase) {
+        const d = new Date(originalPurchase);
+        if (!isNaN(d.getTime())) return d;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("❌ Trial anchor fetch error:", error);
+      return null;
+    }
+  }
+
+
   async purchasePremium(): Promise<boolean> {
     try {
       console.log("🛒 purchasePremium called", {

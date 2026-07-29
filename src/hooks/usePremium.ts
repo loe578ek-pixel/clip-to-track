@@ -38,18 +38,11 @@ export const usePremium = (): PremiumState => {
     }
   }, []);
 
-  const evaluateLocalTrial = useCallback(() => {
-    const firstPlay = localStorage.getItem(TRIAL_KEY);
-    if (!firstPlay) {
-      setTrialStarted(false);
-      setTrialExpired(false);
-      setDaysRemaining(null);
-      return;
-    }
+  const evaluateTrialFromAnchor = useCallback((anchorIso: string) => {
     setTrialStarted(true);
-    const firstPlayDate = new Date(firstPlay);
+    const anchorDate = new Date(anchorIso);
     const now = new Date();
-    const diffMs = now.getTime() - firstPlayDate.getTime();
+    const diffMs = now.getTime() - anchorDate.getTime();
     const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (daysPassed >= TRIAL_DAYS) {
@@ -60,6 +53,18 @@ export const usePremium = (): PremiumState => {
       setDaysRemaining(TRIAL_DAYS - daysPassed);
     }
   }, []);
+
+  const evaluateLocalTrial = useCallback(() => {
+    const firstPlay = localStorage.getItem(TRIAL_KEY);
+    if (!firstPlay) {
+      setTrialStarted(false);
+      setTrialExpired(false);
+      setDaysRemaining(null);
+      return;
+    }
+    evaluateTrialFromAnchor(firstPlay);
+  }, [evaluateTrialFromAnchor]);
+
 
   const checkStatus = useCallback(async () => {
     if (TEST_BYPASS_PREMIUM) {
@@ -115,6 +120,24 @@ export const usePremium = (): PremiumState => {
         }
       }
 
+      // Not premium — anchor the trial to the RevenueCat / App Store receipt.
+      // This survives account deletion + re-signup because it is tied to
+      // the Apple ID's store receipt, not to a Supabase row the user
+      // could wipe by deleting their account.
+      const rcAnchor = await revenueCatService.getTrialAnchorDate();
+      if (rcAnchor) {
+        const anchorIso = rcAnchor.toISOString();
+        // Mirror to localStorage so evaluation still works if RC is slow later.
+        // Only overwrite if local is missing OR later than the RC anchor
+        // (RC anchor always wins when it's older — prevents "reset by reinstall").
+        const local = localStorage.getItem(TRIAL_KEY);
+        if (!local || new Date(local).getTime() > rcAnchor.getTime()) {
+          localStorage.setItem(TRIAL_KEY, anchorIso);
+        }
+        evaluateTrialFromAnchor(anchorIso);
+        return;
+      }
+
       evaluateLocalTrial();
     } catch (err) {
       console.error("Premium check error:", err);
@@ -122,32 +145,51 @@ export const usePremium = (): PremiumState => {
     } finally {
       setLoading(false);
     }
-  }, [syncPremiumToSupabase, evaluateLocalTrial]);
+  }, [syncPremiumToSupabase, evaluateLocalTrial, evaluateTrialFromAnchor]);
 
   const startTrial = useCallback(() => {
-    const existing = localStorage.getItem(TRIAL_KEY);
-    if (!existing) {
-      const now = new Date().toISOString();
-      localStorage.setItem(TRIAL_KEY, now);
-      setTrialStarted(true);
-      setDaysRemaining(TRIAL_DAYS);
-      setTrialExpired(false);
+    // On native, prefer the RC receipt-anchored date so users can't reset
+    // the trial by deleting their app account and re-signing up.
+    (async () => {
+      let anchorIso: string | null = null;
 
-      (async () => {
+      if (Capacitor.isNativePlatform()) {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            await supabase.from("profiles").update({
-              trial_start: now,
-              trial_ends_at: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
-            }).eq("id", user.id);
-          }
-        } catch (err) {
-          console.error("Error syncing trial start:", err);
+          const rcAnchor = await revenueCatService.getTrialAnchorDate();
+          if (rcAnchor) anchorIso = rcAnchor.toISOString();
+        } catch (e) {
+          console.warn("Could not fetch RC trial anchor at startTrial:", e);
         }
-      })();
-    }
-  }, []);
+      }
+
+      const existing = localStorage.getItem(TRIAL_KEY);
+      // Use, in order: RC anchor > existing local > now.
+      // If both exist, keep the older one (can't restart trial).
+      const candidate = anchorIso ?? existing ?? new Date().toISOString();
+      const finalAnchor =
+        existing && new Date(existing).getTime() < new Date(candidate).getTime()
+          ? existing
+          : candidate;
+
+      localStorage.setItem(TRIAL_KEY, finalAnchor);
+      evaluateTrialFromAnchor(finalAnchor);
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("profiles").update({
+            trial_start: finalAnchor,
+            trial_ends_at: new Date(
+              new Date(finalAnchor).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000
+            ).toISOString(),
+          }).eq("id", user.id);
+        }
+      } catch (err) {
+        console.error("Error syncing trial start:", err);
+      }
+    })();
+  }, [evaluateTrialFromAnchor]);
+
 
   useEffect(() => {
     checkStatus();

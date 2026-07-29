@@ -128,11 +128,11 @@ export const MusicManagementDialog = ({
                   className="group flex items-center gap-2 p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
                 >
                   {/* Track Info */}
-                  <div className="flex-1 min-w-0 mr-3 overflow-hidden">
+                  <div className="flex-1 min-w-0 w-0 mr-3 overflow-hidden">
                     <EditableTitle
                       title={track.title}
                       onSave={(newTitle) => onRenameTrack(track.id, newTitle)}
-                      className="font-medium truncate text-sm block"
+                      className="font-medium truncate text-sm block max-w-full"
                       inputClassName="h-7 text-sm"
                       showButton={false}
                     />
@@ -142,6 +142,7 @@ export const MusicManagementDialog = ({
                       <span>{formatFileSize(track.fileSize)}</span>
                     </div>
                   </div>
+
 
                   {/* All Action Buttons - Inline with tight spacing */}
                   <div className="flex items-center gap-1 shrink-0">

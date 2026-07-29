@@ -38,18 +38,11 @@ export const usePremium = (): PremiumState => {
     }
   }, []);
 
-  const evaluateLocalTrial = useCallback(() => {
-    const firstPlay = localStorage.getItem(TRIAL_KEY);
-    if (!firstPlay) {
-      setTrialStarted(false);
-      setTrialExpired(false);
-      setDaysRemaining(null);
-      return;
-    }
+  const evaluateTrialFromAnchor = useCallback((anchorIso: string) => {
     setTrialStarted(true);
-    const firstPlayDate = new Date(firstPlay);
+    const anchorDate = new Date(anchorIso);
     const now = new Date();
-    const diffMs = now.getTime() - firstPlayDate.getTime();
+    const diffMs = now.getTime() - anchorDate.getTime();
     const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (daysPassed >= TRIAL_DAYS) {
@@ -60,6 +53,18 @@ export const usePremium = (): PremiumState => {
       setDaysRemaining(TRIAL_DAYS - daysPassed);
     }
   }, []);
+
+  const evaluateLocalTrial = useCallback(() => {
+    const firstPlay = localStorage.getItem(TRIAL_KEY);
+    if (!firstPlay) {
+      setTrialStarted(false);
+      setTrialExpired(false);
+      setDaysRemaining(null);
+      return;
+    }
+    evaluateTrialFromAnchor(firstPlay);
+  }, [evaluateTrialFromAnchor]);
+
 
   const checkStatus = useCallback(async () => {
     if (TEST_BYPASS_PREMIUM) {

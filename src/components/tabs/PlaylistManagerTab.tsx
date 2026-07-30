@@ -233,7 +233,7 @@ export const PlaylistManagerTab = ({
                     <SortableContext items={playlist.tracks.map((id, i) => `${id}__${i}`)} strategy={verticalListSortingStrategy}>
                       {playlistTracks.map((track, index) => (
                         <PlaylistSortableTrackItem
-                          manageMode={managingPlaylists.has(playlist.id)}
+                          manageMode={false}
                           key={`${track.id}__${index}`}
                           sortableId={`${track.id}__${index}`}
                           track={track}

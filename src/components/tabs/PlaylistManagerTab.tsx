@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { HeartButton } from "@/components/HeartButton";
 import { PlaylistSortableTrackItem } from "@/components/PlaylistSortableTrackItem";
+import { ManagePlaylistDialog } from "@/components/ManagePlaylistDialog";
 import {
   DndContext,
   closestCenter,

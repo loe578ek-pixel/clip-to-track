@@ -318,7 +318,12 @@ const Index = () => {
     
     // Handle liked music playlist
     if (currentPlaylistId === 'liked-music') {
-      const likedTracksList = tracks.filter(track => likedTracks.has(track.id));
+      const orderedLiked = likedTracksOrder
+        .map(id => tracks.find(t => t.id === id))
+        .filter((t): t is Track => !!t && likedTracks.has(t.id));
+      const likedTracksList = orderedLiked.concat(
+        tracks.filter(t => likedTracks.has(t.id) && !likedTracksOrder.includes(t.id))
+      );
       const currentIndex = likedTracksList.findIndex(track => track.id === currentTrack.id);
       
       if (currentIndex !== -1) {

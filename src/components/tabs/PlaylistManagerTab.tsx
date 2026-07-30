@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { HeartButton } from "@/components/HeartButton";
 import { PlaylistSortableTrackItem } from "@/components/PlaylistSortableTrackItem";
+import { ManagePlaylistDialog } from "@/components/ManagePlaylistDialog";
 import {
   DndContext,
   closestCenter,
@@ -55,17 +56,10 @@ export const PlaylistManagerTab = ({
 }: PlaylistManagerTabProps) => {
   const [editingPlaylist, setEditingPlaylist] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [managingPlaylists, setManagingPlaylists] = useState<Set<string>>(new Set());
+  const [managingPlaylistId, setManagingPlaylistId] = useState<string | null>(null);
   const [expandedPlaylists, setExpandedPlaylists] = useState<Set<string>>(new Set());
 
-  const toggleManage = (playlistId: string) => {
-    setManagingPlaylists(prev => {
-      const next = new Set(prev);
-      if (next.has(playlistId)) next.delete(playlistId);
-      else next.add(playlistId);
-      return next;
-    });
-  };
+  const managingPlaylist = playlists.find(p => p.id === managingPlaylistId) || null;
 
   const handleRenamePlaylist = (playlistId: string) => {
     if (editName.trim()) {
@@ -168,14 +162,14 @@ export const PlaylistManagerTab = ({
 
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
-                    onClick={() => toggleManage(playlist.id)}
+                    onClick={() => setManagingPlaylistId(playlist.id)}
                     size="sm"
                     variant="ghost"
-                    className={`h-8 px-3 rounded-full text-xs font-medium bg-transparent hover:bg-primary/10 text-primary ${managingPlaylists.has(playlist.id) ? 'bg-primary/15' : ''}`}
+                    className="h-8 px-3 rounded-full text-xs font-medium bg-transparent hover:bg-primary/10 text-primary"
                     disabled={playlist.tracks.length === 0}
                   >
                     <Cog className="h-3.5 w-3.5 mr-1" />
-                    {managingPlaylists.has(playlist.id) ? 'Done' : 'Manage'}
+                    Manage
                   </Button>
                   <Button
                     onClick={() => onPlayPlaylist(playlist.id)}
@@ -240,7 +234,7 @@ export const PlaylistManagerTab = ({
                     <SortableContext items={playlist.tracks.map((id, i) => `${id}__${i}`)} strategy={verticalListSortingStrategy}>
                       {playlistTracks.map((track, index) => (
                         <PlaylistSortableTrackItem
-                          manageMode={managingPlaylists.has(playlist.id)}
+                          manageMode={false}
                           key={`${track.id}__${index}`}
                           sortableId={`${track.id}__${index}`}
                           track={track}
@@ -266,6 +260,20 @@ export const PlaylistManagerTab = ({
           );
         })}
       </div>
+
+      {managingPlaylist && (
+        <ManagePlaylistDialog
+          playlist={managingPlaylist}
+          tracks={tracks}
+          likedTracks={likedTracks}
+          onToggleLike={onToggleLike}
+          onPlayTrack={onPlayTrack}
+          onUpdateTrackRepeat={(trackId, count) => onUpdatePlaylistTrackRepeat(managingPlaylist.id, trackId, count)}
+          onRemoveFromPlaylist={(index) => onRemoveFromPlaylist(managingPlaylist.id, index)}
+          onReorderTracks={(trackIds) => onReorderPlaylistTracks(managingPlaylist.id, trackIds)}
+          onBack={() => setManagingPlaylistId(null)}
+        />
+      )}
     </div>
   );
 };

@@ -259,6 +259,20 @@ export const PlaylistManagerTab = ({
           );
         })}
       </div>
+
+      {managingPlaylist && (
+        <ManagePlaylistDialog
+          playlist={managingPlaylist}
+          tracks={tracks}
+          likedTracks={likedTracks}
+          onToggleLike={onToggleLike}
+          onPlayTrack={onPlayTrack}
+          onUpdateTrackRepeat={(trackId, count) => onUpdatePlaylistTrackRepeat(managingPlaylist.id, trackId, count)}
+          onRemoveFromPlaylist={(index) => onRemoveFromPlaylist(managingPlaylist.id, index)}
+          onReorderTracks={(trackIds) => onReorderPlaylistTracks(managingPlaylist.id, trackIds)}
+          onBack={() => setManagingPlaylistId(null)}
+        />
+      )}
     </div>
   );
 };

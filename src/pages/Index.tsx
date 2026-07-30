@@ -279,10 +279,12 @@ const Index = () => {
 
   const handleTrackEnded = () => {
     if (!currentTrack || !currentPlaylistId) return;
-    
-    // Get playlist-specific repeat count
+
+    // Liked music uses the global repeat counts, playlists use their own
     const playlist = playlists.find(p => p.id === currentPlaylistId);
-    const savedRepeatCount = playlist?.repeatCounts?.[currentTrack.id] || 1;
+    const savedRepeatCount = currentPlaylistId === 'liked-music'
+      ? (trackRepeatCounts[currentTrack.id] || 1)
+      : (playlist?.repeatCounts?.[currentTrack.id] || 1);
     const currentPlayCount = currentTrackPlayCount[currentTrack.id] || 0;
     
     if (currentPlayCount + 1 < savedRepeatCount) {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Crown, RotateCcw, Music, Sparkles, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SubscriptionLegal from "@/components/SubscriptionLegal";
 import { toast } from "sonner";
 
 interface SubscriptionRequiredProps {
@@ -74,6 +75,15 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
           </div>
         </div>
         <div className="w-full space-y-3 mt-2">
+          <div className="rounded-lg border border-border/50 bg-secondary/20 p-3 text-left">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-sm font-semibold text-foreground">TKPlaylist Premium</p>
+              <p className="text-sm font-semibold text-primary">3,99€ / month</p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Duration: 1 month — auto-renewing, cancel anytime.
+            </p>
+          </div>
           <Button
             size="lg"
             className="w-full text-base font-semibold bg-primary hover:bg-primary/90"
@@ -82,6 +92,7 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
           >
             {purchasing ? "Loading..." : "Subscribe"}
           </Button>
+          <SubscriptionLegal showPlanDetails={false} />
           <Button
             variant="ghost"
             size="sm"

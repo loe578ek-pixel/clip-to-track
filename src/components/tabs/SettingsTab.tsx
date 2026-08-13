@@ -512,6 +512,8 @@ export const SettingsTab = ({
                 {isPurchasing ? "Loading..." : "Subscribe to Premium"}
               </button>
 
+              <SubscriptionLegal />
+
               {Capacitor.isNativePlatform() && (
                 <Button
                   variant="outline"

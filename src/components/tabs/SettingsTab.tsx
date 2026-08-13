@@ -1,5 +1,6 @@
 import { Headphones, Download, Info, Trash2, RefreshCw, HardDrive, Music, FileMusic, User as UserIcon, LogOut, Crown, RotateCcw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SubscriptionLegal from "@/components/SubscriptionLegal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";

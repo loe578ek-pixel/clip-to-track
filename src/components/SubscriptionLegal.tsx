@@ -3,8 +3,7 @@ import { Capacitor } from "@capacitor/core";
 export const PRIVACY_POLICY_URL =
   "https://sudden-squash-dff.notion.site/Privacy-Policy-TKPlaylist-34ff1f011f93805895d";
 
-// Update this constant if you host the EULA externally (e.g. a Notion page).
-export const TERMS_OF_USE_URL = "/terms";
+export const TERMS_OF_USE_URL = "https://clip-to-track.lovable.app/terms";
 
 const openExternal = (url: string) => {
   const absolute = url.startsWith("http")

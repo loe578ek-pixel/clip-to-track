@@ -643,5 +643,10 @@ export const SettingsTab = ({
 
       {/* Music Management Dialog */}
       <MusicManagementDialog isOpen={isMusicManagementOpen} onClose={() => setIsMusicManagementOpen(false)} tracks={tracks} onDeleteTrack={handleDeleteIndividualTrack} likedTracks={likedTracks} onToggleLike={onToggleLike} onRenameTrack={onRenameTrack} />
+
+      {/* Support */}
+      <div className="pt-2 pb-4 text-center">
+        <p className="text-sm text-muted-foreground/60">gkg742075@gmail.com</p>
+      </div>
     </div>;
 };

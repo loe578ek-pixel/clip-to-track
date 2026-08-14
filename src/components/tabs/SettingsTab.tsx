@@ -646,7 +646,7 @@ export const SettingsTab = ({
 
       {/* Support */}
       <div className="pt-2 pb-4 text-center">
-        <p className="text-sm text-muted-foreground/60">gkg742075@gmail.com</p>
+        <p className="text-sm text-muted-foreground/60">Contact us: tkplaylist.suport@gmail.com</p>
       </div>
     </div>;
 };

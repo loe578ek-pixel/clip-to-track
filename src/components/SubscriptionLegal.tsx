@@ -1,7 +1,8 @@
 import { Capacitor } from "@capacitor/core";
 
 export const PRIVACY_POLICY_URL =
-  "https://sudden-squash-dff.notion.site/Privacy-Policy-TKPlaylist-34ff1f011f93805895d";
+  "https://sudden-squash-dff.notion.site/Privacy-Policy-TKPlaylist-34ff1f011f93805895d6e388b5edf46e";
+
 
 export const TERMS_OF_USE_URL = "https://clip-to-track.lovable.app/terms";
 

@@ -56,6 +56,9 @@ export const extractAudioFromVideo = async (
         }
       } catch (error) {
         reject(error);
+      } finally {
+        // Release decoded audio memory (critical on iOS WKWebView)
+        try { await audioContext.close(); } catch { /* noop */ }
       }
     };
     

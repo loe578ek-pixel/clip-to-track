@@ -1,10 +1,14 @@
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, Film, Loader2 } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { FilePicker } from "@capawesome/capacitor-file-picker";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { extractAudioFromVideo } from "@/lib/audioProcessor";
 import { Track } from "@/pages/Index";
+
+const isNative = Capacitor.isNativePlatform();
 
 interface FileUploadProps {
   onTrackExtracted: (track: Track) => void;
@@ -34,6 +38,8 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
       } catch (error) {
         console.error('Error processing video:', file.name, error);
       }
+      // Give the WebView a beat to release memory between videos (iOS)
+      await new Promise((r) => setTimeout(r, 300));
     }
 
     setIsProcessing(false);
@@ -41,6 +47,31 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
     setCurrentFileName("");
     setQueueTotal(0);
     setQueueIndex(0);
+  };
+
+  // Native (iOS/Android): use the system video picker (gallery only, no camera)
+  const pickNativeVideo = async () => {
+    if (isProcessing) return;
+    try {
+      const result = await FilePicker.pickVideos({ readData: false, limit: 1 });
+      const picked = result.files?.[0];
+      if (!picked) return;
+
+      const src = picked.path ? Capacitor.convertFileSrc(picked.path) : null;
+      if (!src) throw new Error('No file path returned');
+
+      const response = await fetch(src);
+      const blob = await response.blob();
+      const file = new File([blob], picked.name || 'video.mp4', {
+        type: picked.mimeType || 'video/mp4',
+      });
+
+      await processQueue([file]);
+    } catch (error: any) {
+      const msg = String(error?.message || error);
+      if (msg.toLowerCase().includes('cancel')) return;
+      console.error('Native video picker error:', error);
+    }
   };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -55,8 +86,12 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
       'video/*': ['.mp4', '.avi', '.mov', '.mkv', '.webm', '.m4v']
     },
     multiple: true,
-    disabled: isProcessing
+    disabled: isProcessing || isNative
   });
+
+  const rootProps = isNative
+    ? { onClick: pickNativeVideo }
+    : getRootProps();
 
   return (
     <div className="w-full">

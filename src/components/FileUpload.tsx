@@ -96,7 +96,7 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
   return (
     <div className="w-full">
       <div
-        {...getRootProps()}
+        {...rootProps}
         className={`
           relative overflow-hidden rounded-2xl p-10 text-center cursor-pointer
           transition-all duration-300

@@ -111,7 +111,7 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
         {/* Decorative glow */}
         <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 rounded-full bg-primary/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-primary/10 blur-3xl" />
-        <input {...getInputProps()} />
+        {!isNative && <input {...getInputProps()} />}
         
         <div className="flex flex-col items-center space-y-4">
           {isProcessing ? (

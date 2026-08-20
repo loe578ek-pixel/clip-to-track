@@ -538,7 +538,12 @@ export const SettingsTab = ({
                 style={{ WebkitAppearance: 'none', appearance: 'none', WebkitTapHighlightColor: 'transparent' }}
               >
                 <Crown className="h-5 w-5 mr-2" />
-                {isPurchasing ? "Loading..." : "Subscribe to Premium"}
+                {isPurchasing
+                  ? "Processing…"
+                  : !offeringsReady
+                    ? "Loading subscription options…"
+                    : "Subscribe to Premium"}
+
               </button>
 
               <SubscriptionLegal />

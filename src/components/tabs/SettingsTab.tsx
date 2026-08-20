@@ -75,7 +75,21 @@ export const SettingsTab = ({
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [offeringsReady, setOfferingsReady] = useState(!Capacitor.isNativePlatform());
   const isNativeIOS = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+
+  // Preload RevenueCat offerings as soon as Settings mounts so the Subscribe
+  // button is never tapped before StoreKit products are available.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let cancelled = false;
+    (async () => {
+      const offering = await revenueCatService.loadOfferings();
+      if (!cancelled) setOfferingsReady(!!offering);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
 
   // Check authentication state
   useEffect(() => {

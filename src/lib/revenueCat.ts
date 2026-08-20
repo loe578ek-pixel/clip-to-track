@@ -46,6 +46,10 @@ class RevenueCatService {
         await Purchases.configure({ apiKey });
         this.initialized = true;
         console.log("✅ RevenueCat initialized successfully");
+        // Warm the offerings cache immediately so the Subscribe button is
+        // ready before the user can reach it.
+        void this.loadOfferings();
+
       } catch (error) {
         console.error("❌ RevenueCat init error:", error);
         this.Purchases = null;

@@ -20,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Capacitor } from "@capacitor/core";
 import { syncUserProfile, type UserProfile } from "@/lib/cloudSync";
+import { revenueCatService } from "@/lib/revenueCat";
+
 import type { User } from "@supabase/supabase-js";
 interface SettingsTabProps {
   onClearAllData: () => void;
@@ -73,7 +75,21 @@ export const SettingsTab = ({
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [offeringsReady, setOfferingsReady] = useState(!Capacitor.isNativePlatform());
   const isNativeIOS = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+
+  // Preload RevenueCat offerings as soon as Settings mounts so the Subscribe
+  // button is never tapped before StoreKit products are available.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let cancelled = false;
+    (async () => {
+      const offering = await revenueCatService.loadOfferings();
+      if (!cancelled) setOfferingsReady(!!offering);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
 
   // Check authentication state
   useEffect(() => {
@@ -280,9 +296,7 @@ export const SettingsTab = ({
     }
   };
   const handleSubscribeTap = async () => {
-    console.log('👆 Subscribe button TAPPED (immediate)');
-    window.alert('Subscribe tap detected');
-    toast.info("Tap detected — starting purchase…", { duration: 6000 });
+    console.log('👆 Subscribe button TAPPED');
 
     if (!Capacitor.isNativePlatform()) {
       toast.info("Premium purchases are only available in the TKPlaylist mobile app.");
@@ -291,6 +305,16 @@ export const SettingsTab = ({
 
     setIsPurchasing(true);
     try {
+      if (!offeringsReady) {
+        toast.info("Loading subscription options…", { duration: 4000 });
+        const offering = await revenueCatService.loadOfferings();
+        setOfferingsReady(!!offering);
+        if (!offering) {
+          toast.error("Loading subscription options, please try again in a moment.", { duration: 10000 });
+          return;
+        }
+      }
+
       const success = await onPurchase();
       console.log('🛒 Purchase result', { success });
       if (success) {
@@ -514,7 +538,12 @@ export const SettingsTab = ({
                 style={{ WebkitAppearance: 'none', appearance: 'none', WebkitTapHighlightColor: 'transparent' }}
               >
                 <Crown className="h-5 w-5 mr-2" />
-                {isPurchasing ? "Loading..." : "Subscribe to Premium"}
+                {isPurchasing
+                  ? "Processing…"
+                  : !offeringsReady
+                    ? "Loading subscription options…"
+                    : "Subscribe to Premium"}
+
               </button>
 
               <SubscriptionLegal />

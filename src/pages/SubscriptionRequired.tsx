@@ -30,7 +30,17 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
+      if (Capacitor.isNativePlatform() && !offeringsReady) {
+        toast.info("Loading subscription options…");
+        const offering = await revenueCatService.loadOfferings();
+        setOfferingsReady(!!offering);
+        if (!offering) {
+          toast.error("Loading subscription options, please try again in a moment.", { duration: 10000 });
+          return;
+        }
+      }
       const success = await onPurchase();
+
       if (success) {
         toast.success("Welcome to Premium! 🎉");
       } else {

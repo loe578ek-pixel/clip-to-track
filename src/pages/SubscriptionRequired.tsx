@@ -114,7 +114,7 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
             onClick={handlePurchase}
             disabled={purchasing}
           >
-            {purchasing ? "Loading..." : "Subscribe"}
+            {purchasing ? "Processing…" : !offeringsReady ? "Loading subscription options…" : "Subscribe"}
           </Button>
           <SubscriptionLegal showPlanDetails={false} />
           <Button

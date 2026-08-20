@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Crown, RotateCcw, Music, Sparkles, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SubscriptionLegal from "@/components/SubscriptionLegal";
 import { toast } from "sonner";
+import { Capacitor } from "@capacitor/core";
+import { revenueCatService } from "@/lib/revenueCat";
 
 interface SubscriptionRequiredProps {
   onPurchase: () => Promise<boolean>;
@@ -12,6 +14,18 @@ interface SubscriptionRequiredProps {
 const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredProps) => {
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [offeringsReady, setOfferingsReady] = useState(!Capacitor.isNativePlatform());
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let cancelled = false;
+    (async () => {
+      const offering = await revenueCatService.loadOfferings();
+      if (!cancelled) setOfferingsReady(!!offering);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
 
   const handlePurchase = async () => {
     setPurchasing(true);

@@ -296,9 +296,7 @@ export const SettingsTab = ({
     }
   };
   const handleSubscribeTap = async () => {
-    console.log('👆 Subscribe button TAPPED (immediate)');
-    window.alert('Subscribe tap detected');
-    toast.info("Tap detected — starting purchase…", { duration: 6000 });
+    console.log('👆 Subscribe button TAPPED');
 
     if (!Capacitor.isNativePlatform()) {
       toast.info("Premium purchases are only available in the TKPlaylist mobile app.");
@@ -307,6 +305,16 @@ export const SettingsTab = ({
 
     setIsPurchasing(true);
     try {
+      if (!offeringsReady) {
+        toast.info("Loading subscription options…", { duration: 4000 });
+        const offering = await revenueCatService.loadOfferings();
+        setOfferingsReady(!!offering);
+        if (!offering) {
+          toast.error("Loading subscription options, please try again in a moment.", { duration: 10000 });
+          return;
+        }
+      }
+
       const success = await onPurchase();
       console.log('🛒 Purchase result', { success });
       if (success) {

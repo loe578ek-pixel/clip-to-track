@@ -122,12 +122,84 @@ class RevenueCatService {
   }
 
 
+  /**
+   * Loads offerings with retries. StoreKit can take a few seconds on a fresh
+   * install / brand-new Apple ID (exactly the Apple reviewer scenario), so we
+   * retry with backoff instead of failing with a generic network error.
+   */
+  async loadOfferings(attempts = 4): Promise<any | null> {
+    if (!Capacitor.isNativePlatform()) return null;
+    if (!this.initialized) {
+      try {
+        await this.initialize();
+      } catch (e) {
+        console.error("❌ Cannot load offerings, init failed:", e);
+        return null;
+      }
+    }
+    if (!this.Purchases) return null;
+
+    if (this.cachedOffering?.availablePackages?.length) return this.cachedOffering;
+
+    if (this.offeringsPromise) return this.offeringsPromise;
+
+    this.offeringsPromise = (async () => {
+      let lastError: any = null;
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const result: any = await this.Purchases.getOfferings();
+          const offerings = result?.offerings ?? result;
+          const offering = this.pickOffering(offerings);
+          if (offering?.availablePackages?.length) {
+            this.cachedOffering = offering;
+            console.log("✅ Offerings loaded:", offering.identifier, offering.availablePackages.map((p: any) => p.product?.identifier));
+            return offering;
+          }
+          console.warn(`⚠️ Offerings empty (attempt ${i + 1}/${attempts})`);
+        } catch (e) {
+          lastError = e;
+          console.warn(`⚠️ getOfferings failed (attempt ${i + 1}/${attempts}):`, e);
+        }
+        await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+      }
+      if (lastError) console.error("❌ Offerings never loaded:", lastError);
+      return null;
+    })();
+
+    const res = await this.offeringsPromise;
+    this.offeringsPromise = null;
+    return res;
+  }
+
+  private pickOffering(offerings: any): any | null {
+    if (!offerings || typeof offerings !== "object") return null;
+    const all = offerings?.all ?? {};
+    let offering = offerings?.current ?? null;
+    if (!offering?.availablePackages?.length) offering = all?.["default"] ?? null;
+    if (!offering?.availablePackages?.length) {
+      const keys = Object.keys(all || {});
+      for (const k of keys) {
+        if (all[k]?.availablePackages?.length) {
+          offering = all[k];
+          break;
+        }
+      }
+    }
+    return offering?.availablePackages?.length ? offering : null;
+  }
+
+  /** True when at least one purchasable package is cached and ready. */
+  isOfferingsReady(): boolean {
+    return !!this.cachedOffering?.availablePackages?.length;
+  }
+
   async purchasePremium(): Promise<boolean> {
     try {
       console.log("🛒 purchasePremium called", {
         native: Capacitor.isNativePlatform(),
         platform: Capacitor.getPlatform(),
         initialized: this.initialized,
+        offeringsReady: this.isOfferingsReady(),
       });
 
       if (!this.initialized) {
@@ -138,40 +210,21 @@ class RevenueCatService {
         throw new Error("RevenueCat plugin not available. Please ensure you are on a native device.");
       }
 
-      console.log("📦 Fetching offerings...");
-      let offeringsResult: any = null;
-      try {
-        offeringsResult = await this.Purchases.getOfferings();
-      } catch (e) {
-        console.error("❌ getOfferings threw:", e);
-        throw new Error("Unable to reach the App Store. Please check your connection and try again.");
+      const offering = await this.loadOfferings();
+
+      if (!offering) {
+        throw new Error("Loading subscription options, please try again in a moment.");
       }
 
-      const offerings = offeringsResult?.offerings ?? offeringsResult;
-      if (!offerings || typeof offerings !== "object") {
-        console.error("❌ Offerings payload missing:", offeringsResult);
-        throw new Error("No subscription products available yet. Please try again in a moment.");
-      }
-      console.log("📦 RevenueCat offerings:", JSON.stringify(offerings, null, 2));
+      // Prefer the monthly package / premium_monthly product if present.
+      const packages = offering.availablePackages;
+      const packageToPurchase =
+        packages.find((p: any) => p.product?.identifier === "premium_monthly") ||
+        packages.find((p: any) => p.identifier === "$rc_monthly") ||
+        packages[0];
 
-      let offering: any = offerings?.current ?? null;
-      const all = offerings?.all ?? {};
-      if (!offering || !offering?.availablePackages?.length) {
-        offering = all?.["default"] ?? null;
-      }
-      if (!offering || !offering?.availablePackages?.length) {
-        const allKeys = Object.keys(all || {});
-        if (allKeys.length > 0) offering = all[allKeys[0]];
-      }
-
-      if (!offering || !offering?.availablePackages?.length) {
-        console.error("❌ No offerings/packages available.");
-        throw new Error("No subscription products available in the App Store yet. Please ensure products are approved and the Offering is marked 'Current' in RevenueCat.");
-      }
-
-      const packageToPurchase = offering.availablePackages[0];
       console.log("🛒 Purchasing package:", packageToPurchase.identifier, packageToPurchase.product?.identifier);
-      
+
       const { customerInfo } = await this.Purchases.purchasePackage({ aPackage: packageToPurchase });
 
       const entitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];
@@ -181,10 +234,17 @@ class RevenueCatService {
         console.log("Purchase cancelled by user");
         return false;
       }
-      console.error("❌ Purchase error:", error);
-      throw error;
+      console.error("❌ Purchase error:", JSON.stringify({
+        code: error?.code,
+        message: error?.message,
+        underlying: error?.underlyingErrorMessage,
+        readable: error?.readableErrorCode,
+      }));
+      const detail = error?.underlyingErrorMessage || error?.message || "Unknown StoreKit error";
+      throw new Error(detail);
     }
   }
+
 
   async restorePurchases(): Promise<boolean> {
     try {

@@ -14,6 +14,9 @@ class RevenueCatService {
   private initialized = false;
   private Purchases: any = null;
   private initializationPromise: Promise<void> | null = null;
+  private cachedOffering: any = null;
+  private offeringsPromise: Promise<any | null> | null = null;
+
 
   async initialize(): Promise<void> {
     if (!Capacitor.isNativePlatform()) {

@@ -20,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Capacitor } from "@capacitor/core";
 import { syncUserProfile, type UserProfile } from "@/lib/cloudSync";
+import { revenueCatService } from "@/lib/revenueCat";
+
 import type { User } from "@supabase/supabase-js";
 interface SettingsTabProps {
   onClearAllData: () => void;

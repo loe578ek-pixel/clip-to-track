@@ -195,25 +195,42 @@ export const usePremium = (): PremiumState => {
     checkStatus();
   }, [checkStatus]);
 
+  const refreshPremiumDays = useCallback(async () => {
+    try {
+      const rcStatus = await revenueCatService.checkPremiumStatus();
+      if (rcStatus.expirationDate) {
+        const diffMs = new Date(rcStatus.expirationDate).getTime() - Date.now();
+        setDaysRemaining(Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24))));
+      } else {
+        setDaysRemaining(null);
+      }
+    } catch {
+      setDaysRemaining(null);
+    }
+  }, []);
+
   const purchase = useCallback(async (): Promise<boolean> => {
     const success = await revenueCatService.purchasePremium();
     if (success) {
       setIsPremium(true);
       setTrialExpired(false);
+      await refreshPremiumDays();
       await syncPremiumToSupabase(true);
     }
     return success;
-  }, [syncPremiumToSupabase]);
+  }, [syncPremiumToSupabase, refreshPremiumDays]);
 
   const restore = useCallback(async (): Promise<boolean> => {
     const success = await revenueCatService.restorePurchases();
     if (success) {
       setIsPremium(true);
       setTrialExpired(false);
+      await refreshPremiumDays();
       await syncPremiumToSupabase(true);
     }
     return success;
-  }, [syncPremiumToSupabase]);
+  }, [syncPremiumToSupabase, refreshPremiumDays]);
+
 
   return { loading, isPremium, trialExpired, trialStarted, daysRemaining, purchase, restore, startTrial };
 };

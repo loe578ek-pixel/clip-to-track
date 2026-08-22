@@ -496,7 +496,7 @@ export const SettingsTab = ({
                 <div className="flex-1">
                   <p className="font-semibold text-foreground">
                     {daysRemaining !== null
-                      ? `Premium — ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} remaining`
+                      ? `Premium — renews in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}`
                       : 'Premium Active'}
                   </p>
                 </div>

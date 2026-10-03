@@ -146,7 +146,7 @@ class NativeMediaControlsService {
       try {
         await NowPlayingNative.setNowPlaying({
           title: track.title,
-          artist: track.artist,
+          artist: "TKPlaylist",
           album: playlistName || track.album || '',
           duration: track.duration,
           elapsed: track.elapsed || 0,
@@ -164,7 +164,7 @@ class NativeMediaControlsService {
       const cover = track.artwork || `${window.location.origin}/app-icon.png`;
       await MusicControls.create({
         track: track.title,
-        artist: track.artist,
+        artist: "TKPlaylist",
         album: playlistName || track.album || '',
         cover,
         isPlaying: this.isPlaying,

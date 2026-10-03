@@ -403,7 +403,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
 
             <Button
               onClick={togglePlayPause}
-              className="w-8 h-8 rounded-full bg-white hover:bg-white/90 text-black hover:scale-105 transition-all"
+              className="w-8 h-8 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground hover:scale-105 transition-all"
               size="icon"
             >
               {isPlaying ? (

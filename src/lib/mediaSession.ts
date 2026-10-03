@@ -77,7 +77,7 @@ class MediaSessionService {
     const artworkUrl = `${window.location.origin}/app-icon.png`;
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title,
-      artist: playlistName ? `${track.artist} • ${playlistName}` : track.artist,
+      artist: "TKPlaylist",
       album: track.album || '',
       artwork: [
         { src: artworkUrl, sizes: '96x96', type: 'image/png' },

@@ -64,7 +64,8 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
         var info: [String: Any] = [:]
         info[MPMediaItemPropertyTitle] = title
-        info[MPMediaItemPropertyArtist] = artist
+        info[MPMediaItemPropertyArtist] = "TKPlaylist"
+        _ = artist
         info[MPMediaItemPropertyAlbumTitle] = album
         info[MPMediaItemPropertyPlaybackDuration] = duration
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
@@ -123,6 +124,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
         center.playCommand.isEnabled = true
         center.playCommand.addTarget { [weak self] _ in
+            self?.resumeWebViewMediaPlayback()
             self?.emitRemoteCommand(action: "play")
             return .success
         }
@@ -138,8 +140,14 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         center.togglePlayPauseCommand.isEnabled = true
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
             print("NowPlayingPlugin: togglePlayPauseCommand received from lock screen")
-            self?.pauseWebViewMediaPlayback(source: "togglePlayPauseCommand")
-            self?.emitRemoteCommand(action: "toggle")
+            let rate = (MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPNowPlayingInfoPropertyPlaybackRate] as? Double) ?? 0
+            if rate > 0 {
+                self?.pauseWebViewMediaPlayback(source: "togglePlayPauseCommand")
+                self?.emitRemoteCommand(action: "pause")
+            } else {
+                self?.resumeWebViewMediaPlayback()
+                self?.emitRemoteCommand(action: "play")
+            }
             return .success
         }
 
@@ -164,8 +172,13 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
             return .success
         }
 
+        // Remove the +10s / -10s buttons so iOS shows previous / next track.
         center.skipForwardCommand.isEnabled = false
         center.skipBackwardCommand.isEnabled = false
+        center.skipForwardCommand.removeTarget(nil)
+        center.skipBackwardCommand.removeTarget(nil)
+        center.seekForwardCommand.isEnabled = false
+        center.seekBackwardCommand.isEnabled = false
 
         UIApplication.shared.beginReceivingRemoteControlEvents()
     }
@@ -201,13 +214,22 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
                 print("NowPlayingPlugin: calling pauseAllMediaPlayback for \(source)")
                 webView.pauseAllMediaPlayback {
                     print("NowPlayingPlugin: pauseAllMediaPlayback completion fired for \(source)")
-                    webView.setAllMediaPlaybackSuspended(true)
-                    print("NowPlayingPlugin: setAllMediaPlaybackSuspended(true) applied for \(source)")
-                    self.deactivateAudioSession(reason: "post_pause_completion_\(source)")
+                    // Keep the audio session ACTIVE and media NOT suspended so the
+                    // lock screen Play button can resume playback later.
                 }
             } else {
                 print("NowPlayingPlugin: iOS < 15, cannot use pauseAllMediaPlayback; using AVAudioSession fallback")
                 self.deactivateAudioSession(reason: "ios_unsupported_\(source)")
+            }
+        }
+    }
+
+    private func resumeWebViewMediaPlayback() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.configureAudioSession()
+            if #available(iOS 15.0, *), let webView = self.bridge?.webView as? WKWebView {
+                webView.setAllMediaPlaybackSuspended(false)
             }
         }
     }

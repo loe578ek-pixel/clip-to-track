@@ -200,7 +200,12 @@ class RevenueCatService {
     return !!this.cachedOffering?.availablePackages?.length;
   }
 
-  async purchasePremium(): Promise<boolean> {
+  /** Returns the cached purchasable packages (empty array if none loaded). */
+  getPackages(): any[] {
+    return this.cachedOffering?.availablePackages ?? [];
+  }
+
+  async purchasePremium(plan: "monthly" | "yearly" = "monthly"): Promise<boolean> {
     try {
       console.log("🛒 purchasePremium called", {
         native: Capacitor.isNativePlatform(),

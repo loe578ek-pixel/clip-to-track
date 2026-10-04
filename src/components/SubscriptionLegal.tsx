@@ -24,13 +24,17 @@ interface SubscriptionLegalProps {
 const SubscriptionLegal = ({ showPlanDetails = true }: SubscriptionLegalProps) => (
   <div className="space-y-3">
     {showPlanDetails && (
-      <div className="rounded-lg border border-border/50 bg-secondary/20 p-3">
+      <div className="rounded-lg border border-border/50 bg-secondary/20 p-3 space-y-2">
         <div className="flex items-baseline justify-between gap-2">
-          <p className="text-sm font-semibold text-foreground">TKPlaylist Premium</p>
+          <p className="text-sm font-semibold text-foreground">TKPlaylist Premium — Yearly</p>
+          <p className="text-sm font-semibold text-primary">34,99€ / year</p>
+        </div>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-sm font-semibold text-foreground">TKPlaylist Premium — Monthly</p>
           <p className="text-sm font-semibold text-primary">3,99€ / month</p>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
-          Duration: 1 month — auto-renewing subscription, cancel anytime in your
+          Auto-renewing subscriptions, cancel anytime in your
           App Store account settings.
         </p>
       </div>

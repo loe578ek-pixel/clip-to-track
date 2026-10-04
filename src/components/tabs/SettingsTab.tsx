@@ -34,7 +34,7 @@ interface SettingsTabProps {
   isPremium: boolean;
   daysRemaining: number | null;
   trialExpired: boolean;
-  onPurchase: () => Promise<boolean>;
+  onPurchase: (plan: "monthly" | "yearly") => Promise<boolean>;
   onRestore: () => Promise<boolean>;
 }
 export const SettingsTab = ({
@@ -76,6 +76,7 @@ export const SettingsTab = ({
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [offeringsReady, setOfferingsReady] = useState(!Capacitor.isNativePlatform());
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
   const isNativeIOS = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
 
   // Preload RevenueCat offerings as soon as Settings mounts so the Subscribe
@@ -315,7 +316,7 @@ export const SettingsTab = ({
         }
       }
 
-      const success = await onPurchase();
+      const success = await onPurchase(selectedPlan);
       console.log('🛒 Purchase result', { success });
       if (success) {
         toast.success("Welcome to Premium! 🎉");
@@ -529,6 +530,40 @@ export const SettingsTab = ({
                   </p>
                 </div>
               ) : null}
+
+              {/* Plan selection */}
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan("yearly")}
+                  className={`w-full flex items-center justify-between gap-2 p-3 rounded-lg border text-left transition-colors ${
+                    selectedPlan === "yearly"
+                      ? "border-primary bg-primary/10"
+                      : "border-border/50 bg-secondary/20"
+                  }`}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Yearly</p>
+                    <p className="text-xs text-muted-foreground">12 months — best value</p>
+                  </div>
+                  <p className="text-sm font-semibold text-primary">34,99€ / year</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan("monthly")}
+                  className={`w-full flex items-center justify-between gap-2 p-3 rounded-lg border text-left transition-colors ${
+                    selectedPlan === "monthly"
+                      ? "border-primary bg-primary/10"
+                      : "border-border/50 bg-secondary/20"
+                  }`}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Monthly</p>
+                    <p className="text-xs text-muted-foreground">1 month — flexible</p>
+                  </div>
+                  <p className="text-sm font-semibold text-primary">3,99€ / month</p>
+                </button>
+              </div>
 
               <button
                 type="button"

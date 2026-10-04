@@ -200,7 +200,12 @@ class RevenueCatService {
     return !!this.cachedOffering?.availablePackages?.length;
   }
 
-  async purchasePremium(): Promise<boolean> {
+  /** Returns the cached purchasable packages (empty array if none loaded). */
+  getPackages(): any[] {
+    return this.cachedOffering?.availablePackages ?? [];
+  }
+
+  async purchasePremium(plan: "monthly" | "yearly" = "monthly"): Promise<boolean> {
     try {
       console.log("🛒 purchasePremium called", {
         native: Capacitor.isNativePlatform(),
@@ -223,11 +228,18 @@ class RevenueCatService {
         throw new Error("Loading subscription options, please try again in a moment.");
       }
 
-      // Prefer the monthly package / premium_monthly product if present.
+      // Pick the package matching the selected plan (monthly or yearly).
       const packages = offering.availablePackages;
-      const packageToPurchase =
+      const yearlyPkg =
+        packages.find((p: any) => p.product?.identifier === "premium_yearly") ||
+        packages.find((p: any) => p.identifier === "$rc_annual");
+      const monthlyPkg =
         packages.find((p: any) => p.product?.identifier === "premium_monthly") ||
-        packages.find((p: any) => p.identifier === "$rc_monthly") ||
+        packages.find((p: any) => p.identifier === "$rc_monthly");
+      const packageToPurchase =
+        (plan === "yearly" ? yearlyPkg : monthlyPkg) ||
+        monthlyPkg ||
+        yearlyPkg ||
         packages[0];
 
       console.log("🛒 Purchasing package:", packageToPurchase.identifier, packageToPurchase.product?.identifier);

@@ -7,7 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import { revenueCatService } from "@/lib/revenueCat";
 
 interface SubscriptionRequiredProps {
-  onPurchase: () => Promise<boolean>;
+  onPurchase: (plan: "monthly" | "yearly") => Promise<boolean>;
   onRestore: () => Promise<boolean>;
 }
 
@@ -15,6 +15,7 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [offeringsReady, setOfferingsReady] = useState(!Capacitor.isNativePlatform());
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("yearly");
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -39,7 +40,7 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
           return;
         }
       }
-      const success = await onPurchase();
+      const success = await onPurchase(selectedPlan);
 
       if (success) {
         toast.success("Welcome to Premium! 🎉");
@@ -99,14 +100,37 @@ const SubscriptionRequired = ({ onPurchase, onRestore }: SubscriptionRequiredPro
           </div>
         </div>
         <div className="w-full space-y-3 mt-2">
-          <div className="rounded-lg border border-border/50 bg-secondary/20 p-3 text-left">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="text-sm font-semibold text-foreground">TKPlaylist Premium</p>
-              <p className="text-sm font-semibold text-primary">3,99€ / month</p>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Duration: 1 month — auto-renewing, cancel anytime.
-            </p>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => setSelectedPlan("yearly")}
+              className={`w-full flex items-center justify-between gap-2 p-3 rounded-lg border text-left transition-colors ${
+                selectedPlan === "yearly"
+                  ? "border-primary bg-primary/10"
+                  : "border-border/50 bg-secondary/20"
+              }`}
+            >
+              <div>
+                <p className="text-sm font-semibold text-foreground">TKPlaylist Premium — Yearly</p>
+                <p className="text-xs text-muted-foreground">Duration: 12 months — auto-renewing, cancel anytime.</p>
+              </div>
+              <p className="text-sm font-semibold text-primary shrink-0">34,99€ / year</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedPlan("monthly")}
+              className={`w-full flex items-center justify-between gap-2 p-3 rounded-lg border text-left transition-colors ${
+                selectedPlan === "monthly"
+                  ? "border-primary bg-primary/10"
+                  : "border-border/50 bg-secondary/20"
+              }`}
+            >
+              <div>
+                <p className="text-sm font-semibold text-foreground">TKPlaylist Premium — Monthly</p>
+                <p className="text-xs text-muted-foreground">Duration: 1 month — auto-renewing, cancel anytime.</p>
+              </div>
+              <p className="text-sm font-semibold text-primary shrink-0">3,99€ / month</p>
+            </button>
           </div>
           <Button
             size="lg"

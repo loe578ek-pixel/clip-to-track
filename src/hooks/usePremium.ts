@@ -12,7 +12,7 @@ interface PremiumState {
   trialExpired: boolean;
   trialStarted: boolean;
   daysRemaining: number | null;
-  purchase: () => Promise<boolean>;
+  purchase: (plan?: "monthly" | "yearly") => Promise<boolean>;
   restore: () => Promise<boolean>;
   startTrial: () => void;
 }
@@ -209,8 +209,8 @@ export const usePremium = (): PremiumState => {
     }
   }, []);
 
-  const purchase = useCallback(async (): Promise<boolean> => {
-    const success = await revenueCatService.purchasePremium();
+  const purchase = useCallback(async (plan: "monthly" | "yearly" = "monthly"): Promise<boolean> => {
+    const success = await revenueCatService.purchasePremium(plan);
     if (success) {
       setIsPremium(true);
       setTrialExpired(false);

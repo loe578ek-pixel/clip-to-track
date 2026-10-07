@@ -15,8 +15,8 @@ export const extractAudioFromVideo = async (
         const arrayBuffer = e.target?.result as ArrayBuffer;
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
         
-        // Remove last 4.2 seconds from audio (app requirement)
-        const trimmedBuffer = trimAudioBuffer(audioContext, audioBuffer, 4.2);
+        // Remove last 4.5 seconds from audio (app requirement)
+        const trimmedBuffer = trimAudioBuffer(audioContext, audioBuffer, 4.5);
         
         // Create WAV blob from trimmed audio buffer
         const wavBlob = audioBufferToWav(trimmedBuffer);

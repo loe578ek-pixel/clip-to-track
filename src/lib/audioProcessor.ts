@@ -15,8 +15,9 @@ export const extractAudioFromVideo = async (
         const arrayBuffer = e.target?.result as ArrayBuffer;
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
         
-        // Remove last 4.5 seconds from audio (app requirement)
-        const trimmedBuffer = trimAudioBuffer(audioContext, audioBuffer, 4.5);
+        // Detect TikTok end watermark (beep followed by silence) and cut just before it.
+        // No watermark detected -> keep the full track.
+        const trimmedBuffer = trimAudioBuffer(audioContext, audioBuffer, detectTikTokOutroSeconds(audioBuffer));
         
         // Create WAV blob from trimmed audio buffer
         const wavBlob = audioBufferToWav(trimmedBuffer);
@@ -77,6 +78,25 @@ export const extractAudioFromVideo = async (
     fileReader.readAsArrayBuffer(videoFile);
   });
 };
+
+// TikTok outro = short beep then ~2-3 s of near silence at the very end.
+// Returns how many seconds to remove from the end (0 if no outro found).
+function detectTikTokOutroSeconds(buffer: AudioBuffer): number {
+  const sr = buffer.sampleRate;
+  const win = Math.floor(sr * 0.05);
+  const data = buffer.getChannelData(0);
+  const total = buffer.length;
+  let silentEnd = 0; // seconds of trailing silence
+  for (let end = total; end - win >= 0; end -= win) {
+    let sum = 0;
+    for (let i = end - win; i < end; i++) sum += data[i] * data[i];
+    if (Math.sqrt(sum / win) > 0.03) break;
+    silentEnd += 0.05;
+  }
+  if (silentEnd < 1.5) return 0; // no watermark outro
+  // Cut the silence plus the beep (~0.5 s) with a safety margin.
+  return Math.min(silentEnd + 0.8, buffer.duration - 0.5);
+}
 
 // Trim audio buffer by removing specified seconds from the end
 function trimAudioBuffer(audioContext: AudioContext, buffer: AudioBuffer, secondsToRemove: number): AudioBuffer {

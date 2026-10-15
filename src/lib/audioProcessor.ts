@@ -98,7 +98,7 @@ function detectTikTokOutroSeconds(buffer: AudioBuffer): number {
   // 1. Trailing silence
   let silenceStart = n;
   while (silenceStart > 0 && rms[silenceStart - 1] <= 0.03) silenceStart--;
-  if ((n - silenceStart) * winSec < 1.5) return 0; // no watermark outro
+  if ((n - silenceStart) * winSec < 1.0) return 0; // no watermark outro
   // 2. Beep peak in the 1.2 s before the silence
   const searchFrom = Math.max(0, silenceStart - Math.round(1.2 / winSec));
   let peak = searchFrom;

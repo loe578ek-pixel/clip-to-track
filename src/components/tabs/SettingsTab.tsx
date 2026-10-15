@@ -504,6 +504,16 @@ export const SettingsTab = ({
                 <Badge className="bg-primary/20 text-primary border-primary/30">Premium</Badge>
               </div>
 
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  window.open("https://apps.apple.com/account/subscriptions", "_system");
+                }}
+              >
+                Manage / Change plan
+              </Button>
+
               <SubscriptionLegal />
             </div>
           ) : (

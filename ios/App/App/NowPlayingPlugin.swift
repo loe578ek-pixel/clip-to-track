@@ -77,6 +77,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        enforceTrackButtons()
 
         do {
             try AVAudioSession.sharedInstance().setActive(true, options: [])
@@ -95,6 +96,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+        enforceTrackButtons()
 
         call.resolve()
     }
@@ -181,6 +183,20 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         center.seekBackwardCommand.isEnabled = false
 
         UIApplication.shared.beginReceivingRemoteControlEvents()
+    }
+
+    // WebKit re-enables the +/-10 s buttons whenever the <audio> element
+    // starts playing, so we force previous/next on every update.
+    private func enforceTrackButtons() {
+        DispatchQueue.main.async {
+            let center = MPRemoteCommandCenter.shared()
+            center.skipForwardCommand.isEnabled = false
+            center.skipBackwardCommand.isEnabled = false
+            center.seekForwardCommand.isEnabled = false
+            center.seekBackwardCommand.isEnabled = false
+            center.nextTrackCommand.isEnabled = true
+            center.previousTrackCommand.isEnabled = true
+        }
     }
 
     private func prepareArtwork() {

@@ -79,23 +79,40 @@ export const extractAudioFromVideo = async (
   });
 };
 
-// TikTok outro = short beep then ~2-3 s of near silence at the very end.
-// Returns how many seconds to remove from the end (0 if no outro found).
+// TikTok outro = loud beep (~0.85 s incl. tail) then ~2-3 s of digital silence.
+// Finds the exact beep onset and cuts 0.1 s before it. Returns seconds to remove.
 function detectTikTokOutroSeconds(buffer: AudioBuffer): number {
   const sr = buffer.sampleRate;
-  const win = Math.floor(sr * 0.05);
+  const winSec = 0.05;
+  const win = Math.floor(sr * winSec);
   const data = buffer.getChannelData(0);
-  const total = buffer.length;
-  let silentEnd = 0; // seconds of trailing silence
-  for (let end = total; end - win >= 0; end -= win) {
+  const n = Math.floor(buffer.length / win);
+  if (n < 10) return 0;
+  const rms = new Float32Array(n);
+  for (let w = 0; w < n; w++) {
     let sum = 0;
-    for (let i = end - win; i < end; i++) sum += data[i] * data[i];
-    if (Math.sqrt(sum / win) > 0.03) break;
-    silentEnd += 0.05;
+    const s = w * win;
+    for (let i = s; i < s + win; i++) sum += data[i] * data[i];
+    rms[w] = Math.sqrt(sum / win);
   }
-  if (silentEnd < 1.5) return 0; // no watermark outro
-  // Cut the silence plus the beep (~0.5 s) with a safety margin.
-  return Math.min(silentEnd + 0.8, buffer.duration - 0.5);
+  // 1. Trailing silence
+  let silenceStart = n;
+  while (silenceStart > 0 && rms[silenceStart - 1] <= 0.03) silenceStart--;
+  if ((n - silenceStart) * winSec < 1.0) return 0; // no watermark outro
+  // 2. Beep peak in the 1.2 s before the silence
+  const searchFrom = Math.max(0, silenceStart - Math.round(1.2 / winSec));
+  let peak = searchFrom;
+  for (let w = searchFrom; w < silenceStart; w++) if (rms[w] > rms[peak]) peak = w;
+  if (rms[peak] < 0.15) return 0; // silence without beep: natural ending, keep it
+  // 3. Onset = first window within 0.3 s before peak above 60% of peak
+  let onset = peak;
+  for (let w = Math.max(0, peak - 6); w <= peak; w++) {
+    if (rms[w] > rms[peak] * 0.6) { onset = w; break; }
+  }
+  // Safety: the beep always lasts ~0.85 s before the silence
+  onset = Math.min(onset, silenceStart - Math.round(0.85 / winSec));
+  const cutAt = Math.max(0.5, onset * winSec - 0.1);
+  return Math.max(0, buffer.duration - cutAt);
 }
 
 // Trim audio buffer by removing specified seconds from the end

@@ -738,18 +738,18 @@ const Index = () => {
       ) : (
         <div className={`app-shell h-full max-h-screen bg-background text-foreground overflow-hidden ${isGlass ? 'glass-shell' : ''} ${isGlass && interfaceHidden ? 'interface-hidden' : ''}`} style={{ paddingBottom: '4.5rem' }}>
           {isGlass && <BackgroundVideo track={currentTrack} audio={audioElement} />}
-          <div className="app-interface app-tab-content h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20" inert={isGlass && interfaceHidden ? '' : undefined}>
+          <div className="app-interface app-tab-content h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20" aria-hidden={isGlass && interfaceHidden}>
             {renderActiveTab()}
           </div>
           
           {/* Bottom Navigation - Always Visible */}
-          <div className="app-interface" inert={isGlass && interfaceHidden ? '' : undefined}>
+          <div className="app-interface" aria-hidden={isGlass && interfaceHidden}>
             <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
           
           {/* Audio Player - Above Bottom Navigation */}
           {currentTrack && (
-            <div className="app-interface player-dock fixed bottom-16 left-0 right-0 z-40" inert={isGlass && interfaceHidden ? '' : undefined}>
+            <div className="app-interface player-dock fixed bottom-16 left-0 right-0 z-40" aria-hidden={isGlass && interfaceHidden}>
               <MusicPlayer 
                 track={currentTrack} 
                 onNext={handleNextTrack} 

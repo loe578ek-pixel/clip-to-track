@@ -2,6 +2,7 @@
 - [ ] Retain original imported videos offline without breaking legacy audio tracks.
 - [ ] Add remembered Classic/Glass display choice and synchronized muted full-screen video across all tabs.
 - [ ] Add hide/show interface control, track titles and mobile-safe Glass styling.
-- [ ] Explain TikTok link download provider and reliability; await approval before integration.
-- [ ] Implement approved TikTok import with progress and clear errors (blocked pending provider approval/access).
+- [ ] Defer TikTok link import; do not add or change it in this update.
+- [ ] Explain current ending-cut heuristic before coding and propose conservative reference-based TikTok jingle detection.
+- [ ] Implement precise shared audio/video endpoint only for confidently detected jingles; preserve complete audio when absent/uncertain and leave existing tracks untouched (reference sample needed).
 - [ ] Verify import/playback/display and report changed files plus native configuration/testing requirements.

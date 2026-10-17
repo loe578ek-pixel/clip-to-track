@@ -1,119 +1,53 @@
 import { Track } from "@/pages/Index";
 import { audioStorageService } from "./audioStorage";
+import { videoStorage } from "./videoStorage";
+import { getImportEndTime } from "./trackMedia";
 
 export const extractAudioFromVideo = async (
   videoFile: File,
-  onProgress: (progress: number) => void
+  onProgress: (progress: number) => void,
+  nativeSourcePath?: string,
 ): Promise<Track> => {
-  return new Promise((resolve, reject) => {
-    // Create audio context
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const fileReader = new FileReader();
-    
-    fileReader.onload = async (e) => {
-      try {
-        const arrayBuffer = e.target?.result as ArrayBuffer;
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        
-        // Detect TikTok end watermark (beep followed by silence) and cut just before it.
-        // No watermark detected -> keep the full track.
-        const trimmedBuffer = trimAudioBuffer(audioContext, audioBuffer, detectTikTokOutroSeconds(audioBuffer));
-        
-        // Create WAV blob from trimmed audio buffer
-        const wavBlob = audioBufferToWav(trimmedBuffer);
-        
-        try {
-          // Create basic track data (without thumbnailUrl)
-          const trackData = {
-            id: crypto.randomUUID(),
-            title: videoFile.name.replace(/\.[^/.]+$/, ""), // Remove extension
-            duration: trimmedBuffer.duration,
-            originalFileName: videoFile.name,
-            fileSize: wavBlob.size,
-            createdAt: new Date()
-          };
-          
-          // Save audio file to local storage and get complete track
-          const track = await audioStorageService.saveAudioTrack(wavBlob, trackData);
-          
-          onProgress(100);
-          resolve(track);
-        } catch (error) {
-          // Fallback: create track with blob URL only (no persistence)
-          const audioUrl = URL.createObjectURL(wavBlob);
-          
-          const track: Track = {
-            id: crypto.randomUUID(),
-            title: videoFile.name.replace(/\.[^/.]+$/, ""),
-            duration: trimmedBuffer.duration,
-            audioUrl,
-            originalFileName: videoFile.name,
-            fileSize: wavBlob.size,
-            createdAt: new Date()
-          };
-          
-          onProgress(100);
-          resolve(track);
-        }
-      } catch (error) {
-        reject(error);
-      } finally {
-        // Release decoded audio memory (critical on iOS WKWebView)
-        try { await audioContext.close(); } catch { /* noop */ }
-      }
-    };
-    
-    fileReader.onerror = () => reject(new Error('File reading failed'));
-    
-    // Simulate progress
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-      progress += 10;
-      onProgress(Math.min(progress, 90));
-      if (progress >= 90) {
-        clearInterval(progressInterval);
-      }
-    }, 200);
-    
-    fileReader.readAsArrayBuffer(videoFile);
-  });
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  let savedVideoPath: string | undefined;
+  let savedTrack: Track | undefined;
+  try {
+    onProgress(5);
+    const arrayBuffer = await videoFile.arrayBuffer();
+    onProgress(20);
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    // No ending is removed until a reference-based recognizer has been validated.
+    const endTime = getImportEndTime(audioBuffer.duration);
+    const outputBuffer = endTime === audioBuffer.duration
+      ? audioBuffer
+      : trimAudioBuffer(audioContext, audioBuffer, audioBuffer.duration - endTime);
+    onProgress(55);
+    const wavBlob = audioBufferToWav(outputBuffer);
+    const id = crypto.randomUUID();
+    savedVideoPath = await videoStorage.save(videoFile, id, nativeSourcePath);
+    onProgress(75);
+    savedTrack = await audioStorageService.saveAudioTrack(wavBlob, {
+      id,
+      title: videoFile.name.replace(/\.[^/.]+$/, ''),
+      duration: outputBuffer.duration,
+      originalFileName: videoFile.name,
+      fileSize: wavBlob.size,
+      videoFilePath: savedVideoPath,
+      videoMimeType: videoFile.type || 'video/mp4',
+      videoFileSize: videoFile.size,
+      createdAt: new Date(),
+    });
+    if (!savedTrack.localFilePath) throw new Error('Could not save audio for offline playback. Please free some storage and try again.');
+    onProgress(100);
+    return savedTrack;
+  } catch (error) {
+    if (savedVideoPath) await videoStorage.delete(savedVideoPath).catch(() => {});
+    if (savedTrack) await audioStorageService.deleteAudioTrack(savedTrack);
+    throw error;
+  } finally {
+    try { await audioContext.close(); } catch { /* release decoded memory */ }
+  }
 };
-
-// TikTok outro = loud beep (~0.85 s incl. tail) then ~2-3 s of digital silence.
-// Finds the exact beep onset and cuts 0.1 s before it. Returns seconds to remove.
-function detectTikTokOutroSeconds(buffer: AudioBuffer): number {
-  const sr = buffer.sampleRate;
-  const winSec = 0.05;
-  const win = Math.floor(sr * winSec);
-  const data = buffer.getChannelData(0);
-  const n = Math.floor(buffer.length / win);
-  if (n < 10) return 0;
-  const rms = new Float32Array(n);
-  for (let w = 0; w < n; w++) {
-    let sum = 0;
-    const s = w * win;
-    for (let i = s; i < s + win; i++) sum += data[i] * data[i];
-    rms[w] = Math.sqrt(sum / win);
-  }
-  // 1. Trailing silence
-  let silenceStart = n;
-  while (silenceStart > 0 && rms[silenceStart - 1] <= 0.03) silenceStart--;
-  if ((n - silenceStart) * winSec < 1.0) return 0; // no watermark outro
-  // 2. Beep peak in the 1.2 s before the silence
-  const searchFrom = Math.max(0, silenceStart - Math.round(1.2 / winSec));
-  let peak = searchFrom;
-  for (let w = searchFrom; w < silenceStart; w++) if (rms[w] > rms[peak]) peak = w;
-  if (rms[peak] < 0.15) return 0; // silence without beep: natural ending, keep it
-  // 3. Onset = first window within 0.3 s before peak above 60% of peak
-  let onset = peak;
-  for (let w = Math.max(0, peak - 6); w <= peak; w++) {
-    if (rms[w] > rms[peak] * 0.6) { onset = w; break; }
-  }
-  // Safety: the beep always lasts ~0.85 s before the silence
-  onset = Math.min(onset, silenceStart - Math.round(0.85 / winSec));
-  const cutAt = Math.max(0.5, onset * winSec - 0.1);
-  return Math.max(0, buffer.duration - cutAt);
-}
 
 // Trim audio buffer by removing specified seconds from the end
 function trimAudioBuffer(audioContext: AudioContext, buffer: AudioBuffer, secondsToRemove: number): AudioBuffer {

@@ -21,9 +21,14 @@ import { lovable } from "@/integrations/lovable/index";
 import { Capacitor } from "@capacitor/core";
 import { syncUserProfile, type UserProfile } from "@/lib/cloudSync";
 import { revenueCatService } from "@/lib/revenueCat";
+import type { DisplayMode } from '@/hooks/useDisplayMode';
+import { videoStorage } from '@/lib/videoStorage';
 
 import type { User } from "@supabase/supabase-js";
 interface SettingsTabProps {
+  displayMode: DisplayMode;
+  onDisplayModeChange: (mode: DisplayMode) => Promise<void>;
+  displayModeReady: boolean;
   onClearAllData: () => void;
   onClearMusicFiles?: () => void;
   tracks: Track[];
@@ -38,6 +43,9 @@ interface SettingsTabProps {
   onRestore: () => Promise<boolean>;
 }
 export const SettingsTab = ({
+  displayMode,
+  onDisplayModeChange,
+  displayModeReady,
   onClearAllData,
   onClearMusicFiles,
   tracks,
@@ -65,6 +73,7 @@ export const SettingsTab = ({
     totalFiles: 0,
     estimatedSizeMB: 0
   });
+  const [videoStats, setVideoStats] = useState({ files: 0, bytes: 0 });
   const [isClearMusicDialogOpen, setIsClearMusicDialogOpen] = useState(false);
   const [isMusicManagementOpen, setIsMusicManagementOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -132,6 +141,7 @@ export const SettingsTab = ({
         const [storage, audio] = await Promise.all([storageService.getStorageInfo(), audioStorageService.getAudioStorageStats()]);
         setStorageInfo(storage);
         setAudioStats(audio);
+        setVideoStats(await videoStorage.stats());
       } catch (error) {
         console.error('Error loading storage info:', error);
       }
@@ -155,18 +165,14 @@ export const SettingsTab = ({
   const handleClearMusicFiles = async () => {
     try {
       // Clear only music-related data, keep app settings
-      await Promise.all([storageService.saveTracks([]), storageService.savePlaylists([]), storageService.clearAudioFiles() // We'll need to add this method
-      ]);
+      if (onClearMusicFiles) await onClearMusicFiles();
+      else await Promise.all([storageService.saveTracks([]), storageService.clearAudioFiles(), videoStorage.clear()]);
 
       // Update storage info
       const [storage, audio] = await Promise.all([storageService.getStorageInfo(), audioStorageService.getAudioStorageStats()]);
       setStorageInfo(storage);
       setAudioStats(audio);
-
-      // Call parent callback if provided
-      if (onClearMusicFiles) {
-        onClearMusicFiles();
-      }
+      setVideoStats(await videoStorage.stats());
       setIsClearMusicDialogOpen(false);
     } catch (error) {
       console.error('Error clearing music files:', error);
@@ -359,6 +365,14 @@ export const SettingsTab = ({
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-muted-foreground">Customize your music experience</p>
       </div>
+
+      <section aria-labelledby="display-mode-heading" className="space-y-3">
+        <h2 id="display-mode-heading" className="text-lg font-semibold">Display mode</h2>
+        <div className="grid grid-cols-2 gap-3" role="group" aria-label="Display mode">
+          <Button variant={displayMode === 'classic' ? 'default' : 'outline'} aria-pressed={displayMode === 'classic'} disabled={!displayModeReady} onClick={() => void onDisplayModeChange('classic')}>Classic</Button>
+          <Button variant={displayMode === 'glass' ? 'default' : 'outline'} aria-pressed={displayMode === 'glass'} disabled={!displayModeReady} onClick={() => void onDisplayModeChange('glass')}>Glass</Button>
+        </div>
+      </section>
 
       {/* Account Section */}
       <Card className="soundwave-card border-white/10">
@@ -653,13 +667,13 @@ export const SettingsTab = ({
                 <p className="text-muted-foreground">{audioStats.totalFiles} files</p>
               </div>
               <div>
+                <p className="font-medium text-primary">Video Files</p>
+                <p className="text-muted-foreground">{videoStats.files} files</p>
+              </div>
+              <div>
                 <p className="font-medium text-primary">Storage Used</p>
                 <p className="text-muted-foreground">
-                  {audioStats.estimatedSizeMB >= 1024 
-                    ? `${(audioStats.estimatedSizeMB / 1024).toFixed(2)} GB` 
-                    : audioStats.estimatedSizeMB >= 1
-                    ? `${audioStats.estimatedSizeMB.toFixed(1)} MB`
-                    : `${(audioStats.estimatedSizeMB * 1024).toFixed(1)} KB`}
+                  {((audioStats.estimatedSizeMB * 1024 * 1024 + videoStats.bytes) / (1024 * 1024)).toFixed(1)} MB
                 </p>
               </div>
             </div>

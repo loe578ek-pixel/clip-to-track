@@ -1,5 +1,6 @@
 import { storageService } from './storageService';
 import { Track } from '@/pages/Index';
+import { videoStorage } from './videoStorage';
 
 /**
  * Enhanced audio storage service for handling audio file persistence
@@ -74,6 +75,11 @@ export class AudioStorageService {
    * Delete audio track from storage
    */
   async deleteAudioTrack(track: Track): Promise<void> {
+    if (track.videoFilePath) {
+      await videoStorage.delete(track.videoFilePath).catch(error => {
+        console.warn(`Could not delete video for track ${track.id}:`, error);
+      });
+    }
     if (track.localFilePath) {
       try {
         await storageService.deleteAudioFile(track.localFilePath);

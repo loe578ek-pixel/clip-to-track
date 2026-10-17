@@ -1,6 +1,8 @@
 import { Preferences } from '@capacitor/preferences';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Track, Playlist } from '@/pages/Index';
+import { serializeTrack } from './trackMedia';
+import { videoStorage } from './videoStorage';
 
 interface StorageData {
   tracks: Track[];
@@ -26,17 +28,7 @@ class StorageService {
    */
   async saveTracks(tracks: Track[]): Promise<void> {
     try {
-      const tracksData = tracks.map(track => ({
-        id: track.id,
-        title: track.title,
-        duration: track.duration,
-        originalFileName: track.originalFileName,
-        createdAt: track.createdAt.toISOString(),
-        repeatCount: track.repeatCount,
-        localFilePath: track.localFilePath,
-        isLiked: track.isLiked
-        // Exclude audioUrl and playbackKey - they're regenerated at runtime
-      }));
+      const tracksData = tracks.map(serializeTrack);
       
       await Preferences.set({
         key: this.STORAGE_KEYS.TRACKS,
@@ -329,7 +321,7 @@ class StorageService {
       ]);
       
       // Clear audio directory
-      await this.clearAudioFiles();
+      await Promise.all([this.clearAudioFiles(), videoStorage.clear()]);
       
       console.log('All data cleared successfully');
     } catch (error) {

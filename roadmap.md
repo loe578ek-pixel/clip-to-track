@@ -4,5 +4,6 @@
 - [ ] Add hide/show interface control, track titles and mobile-safe Glass styling.
 - [ ] Defer TikTok link import; do not add or change it in this update.
 - [ ] Explain current ending-cut heuristic before coding and propose conservative reference-based TikTok jingle detection.
-- [ ] Implement precise shared audio/video endpoint only for confidently detected jingles; preserve complete audio when absent/uncertain and leave existing tracks untouched (reference sample needed).
+- [ ] Disable all ending cuts for new imports now; leave existing tracks untouched. Reference-based jingle recognition is deferred despite test videos being supplied.
+- [ ] Keep the Glass-only eye control at a stable bottom-right position beside playback controls, including while all other interface elements are hidden.
 - [ ] Verify import/playback/display and report changed files plus native configuration/testing requirements.

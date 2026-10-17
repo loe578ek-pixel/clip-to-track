@@ -5,4 +5,5 @@
 - [x] Explain current ending-cut heuristic before coding and propose conservative reference-based TikTok jingle detection.
 - [x] Disable all ending cuts for new imports now; leave existing tracks untouched. Reference-based jingle recognition is deferred despite test videos being supplied.
 - [x] Keep the Glass-only eye control at a stable bottom-right position beside playback controls, including while all other interface elements are hidden.
-- [ ] Verify import/playback/display and report changed files plus native configuration/testing requirements.
+- [x] Verify import/playback/display and report changed files plus native configuration/testing requirements.
+- [ ] Physical iPhone regression check for offline video, locked/background audio and remote controls (requires user's new native build and device).

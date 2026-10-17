@@ -86,6 +86,7 @@ export const AddTab = ({
                       inputClassName="h-8"
                       showButton={false}
                     />
+                    <p className="text-sm text-muted-foreground truncate mt-1">{track.artist || 'TKPlaylist'}</p>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
                       <span className="flex items-center">
                         <Clock className="h-3 w-3 mr-1" />

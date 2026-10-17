@@ -8,4 +8,4 @@
 - [x] Verify import/playback/display and report changed files plus native configuration/testing requirements.
 - [ ] Physical iPhone regression check for offline video, locked/background audio and remote controls (requires user's new native build and device).
 - [x] Refine Glass transparency and Apple-inspired surfaces; retain the last played video when idle and verify Classic remains unchanged.
-- [ ] Read available imported video titles/creators, persist and display them with numbered Track / TKPlaylist fallbacks.
+- [x] Read available imported video titles/creators, persist and display them with numbered Track / TKPlaylist fallbacks.

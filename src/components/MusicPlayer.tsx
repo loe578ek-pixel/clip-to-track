@@ -7,6 +7,7 @@ import { Track } from "@/pages/Index";
 import { useVolume } from "@/contexts/VolumeContext";
 import { mediaSession } from "@/lib/mediaSession";
 import { nativeMediaControls } from "@/lib/nativeMediaControls";
+import { getTrackArtwork } from "@/lib/trackArtwork";
 import { NowPlayingNative } from "@/lib/iosNowPlaying";
 import { Capacitor } from "@capacitor/core";
 import { useAudioElementGain } from "@/hooks/useAudioElementGain";
@@ -158,28 +159,29 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
       // Enable background playback and update media session
       const isNative = Capacitor.isNativePlatform();
       
-      if (isNative) {
-        // Native plugin for lockscreen metadata
-        nativeMediaControls.updateTrack({
+      // Resolve the square video thumbnail for the lockscreen notification
+      // (falls back to the app icon when the track has no video).
+      const pushMetadata = (artwork: string | null) => {
+        const meta = {
           title: track.title,
           artist: track.artist || 'TKPlaylist',
-          duration: track.duration
-        }, playlistName);
-        // ALSO declare the track via navigator.mediaSession so iOS keeps the
-        // JS thread responsive to lockscreen play/pause in background.
-        mediaSession.updateTrack({
-          title: track.title,
-          artist: track.artist || 'TKPlaylist',
-          duration: track.duration
-        }, playlistName);
-      } else {
-        mediaSession.enableBackgroundPlayback();
-        mediaSession.updateTrack({
-          title: track.title,
-          artist: track.artist || 'TKPlaylist',
-          duration: track.duration
-        }, playlistName);
-      }
+          duration: track.duration,
+          artwork: artwork || undefined,
+        };
+        if (isNative) {
+          // Native plugin for lockscreen metadata
+          nativeMediaControls.updateTrack(meta, playlistName);
+          // ALSO declare the track via navigator.mediaSession so iOS keeps the
+          // JS thread responsive to lockscreen play/pause in background.
+          mediaSession.updateTrack(meta, playlistName, artwork);
+        } else {
+          mediaSession.enableBackgroundPlayback();
+          mediaSession.updateTrack(meta, playlistName, artwork);
+        }
+      };
+      getTrackArtwork(track)
+        .then(pushMetadata)
+        .catch(() => pushMetadata(null));
       
       // Always play when autoPlay is true, regardless of current playing state
       if (autoPlay) {

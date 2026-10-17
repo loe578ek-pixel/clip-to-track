@@ -7,3 +7,4 @@
 - [x] Keep the Glass-only eye control at a stable bottom-right position beside playback controls, including while all other interface elements are hidden.
 - [x] Verify import/playback/display and report changed files plus native configuration/testing requirements.
 - [ ] Physical iPhone regression check for offline video, locked/background audio and remote controls (requires user's new native build and device).
+- [x] Refine Glass transparency and Apple-inspired surfaces; retain the last played video when idle and verify Classic remains unchanged.

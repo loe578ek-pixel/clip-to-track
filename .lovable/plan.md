@@ -15,7 +15,9 @@
 - A maintained third-party downloader is needed for arbitrary public TikTok links; official TikTok metadata/embedding interfaces are not a general video-download service.
 - A third-party provider may retrieve the caption and a watermark-free video when available, but cannot guarantee this for every link. Private/deleted/restricted videos and changes to TikTok can cause failures.
 - Do not integrate an anonymous free downloader endpoint or promise permanent reliability. Confirm the provider, its credentials, pricing and allowed use before wiring live downloads.
+- Candidate for a limited pilot: Apify's `logical_scrapers/tiktok-video-downloader`, which documents caption and MP4 output for full public TikTok links. Its advertised price is $10 per 1,000 results at the time of research; confirm current pricing before subscribing. Short share links require safe resolution to a full link. This community-maintained provider has not been tested here and is not yet a validated production choice.
 - Use imports only for videos the user owns or has permission to download. Downloading third-party media without authorization can also create App Store review risks.
+- Apple review rules 5.2.2 and 5.2.3 can require authorization from the third-party source; a user permission checkbox alone does not establish that authorization. A paid downloader account does not resolve this requirement.
 - If provider setup is deferred, finish video retention and Glass mode first; do not present a nonfunctional link import as ready.
 
 ## Protection and validation

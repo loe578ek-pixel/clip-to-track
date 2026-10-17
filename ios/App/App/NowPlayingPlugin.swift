@@ -61,6 +61,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         let duration = call.getDouble("duration") ?? 0
         let elapsed = call.getDouble("elapsed") ?? 0
         let isPlaying = call.getBool("isPlaying") ?? false
+        let artworkDataUrl = call.getString("artwork")
 
         var info: [String: Any] = [:]
         info[MPMediaItemPropertyTitle] = title
@@ -70,7 +71,12 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
 
-        if let art = cachedArtwork ?? buildArtwork() {
+        // Prefer the track's square thumbnail (sent as a JPEG data URL);
+        // fall back to the app icon when it is missing or undecodable.
+        if let dataUrl = artworkDataUrl, let art = buildArtwork(fromDataUrl: dataUrl) {
+            cachedArtwork = art
+            info[MPMediaItemPropertyArtwork] = art
+        } else if let art = cachedArtwork ?? buildArtwork() {
             cachedArtwork = art
             info[MPMediaItemPropertyArtwork] = art
         }

@@ -9,6 +9,7 @@ export function serializeTrack(track: Track) {
   return {
     id: track.id,
     title: track.title,
+    artist: track.artist,
     duration: track.duration,
     originalFileName: track.originalFileName,
     createdAt: track.createdAt.toISOString(),

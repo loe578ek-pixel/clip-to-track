@@ -64,8 +64,7 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
 
         var info: [String: Any] = [:]
         info[MPMediaItemPropertyTitle] = title
-        info[MPMediaItemPropertyArtist] = "TKPlaylist"
-        _ = artist
+        info[MPMediaItemPropertyArtist] = artist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "TKPlaylist" : artist
         info[MPMediaItemPropertyAlbumTitle] = album
         info[MPMediaItemPropertyPlaybackDuration] = duration
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsed

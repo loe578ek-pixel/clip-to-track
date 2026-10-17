@@ -17,6 +17,7 @@ import { useDisplayMode } from '@/hooks/useDisplayMode';
 import { videoStorage } from '@/lib/videoStorage';
 import { Button } from '@/components/ui/button';
 import { Eye, EyeOff } from 'lucide-react';
+import { assignImportIdentity } from '@/lib/trackIdentity';
 
 // Type definition
 type UserProfile = {
@@ -32,6 +33,7 @@ type UserProfile = {
 export interface Track {
   id: string;
   title: string;
+  artist?: string;
   duration: number;
   audioUrl: string;
   originalFileName: string;
@@ -149,26 +151,7 @@ const Index = () => {
   }, [likedTracks, isDataLoaded]);
 
   const handleTrackExtracted = (track: Track) => {
-    setTracks(prev => {
-      // Auto-rename long numeric / cryptic filenames to a friendly "Track N"
-      const looksCryptic =
-        /^[\d\W_]+$/.test(track.title) || // only digits / symbols
-        (track.title.length > 18 && !/\s/.test(track.title) && (track.title.match(/\d/g) || []).length > 8);
-      let finalTrack = track;
-      if (looksCryptic) {
-        // Find next available "Track N" number
-        const usedNumbers = new Set(
-          prev
-            .map(t => t.title.match(/^Track (\d+)$/)?.[1])
-            .filter((n): n is string => !!n)
-            .map(n => parseInt(n, 10))
-        );
-        let n = 1;
-        while (usedNumbers.has(n)) n++;
-        finalTrack = { ...track, title: `Track ${n}` };
-      }
-      return [finalTrack, ...prev];
-    });
+    setTracks(prev => [assignImportIdentity(track, prev), ...prev]);
   };
 
   // Helper to load audio before playing

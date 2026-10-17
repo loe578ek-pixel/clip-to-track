@@ -47,6 +47,13 @@
     --shadow-glow: 0 0 40px hsl(var(--primary) / 0.3);
     --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.5);
     --shadow-soft: 0 4px 16px hsl(0 0% 0% / 0.3);
+    --glass-surface: 0 0% 4%;
+    --glass-border: 0 0% 98%;
+    --glass-text: 0 0% 98%;
+    --glass-muted: 0 0% 85%;
+    --glass-overlay: 0 0% 0%;
+    --glass-accent: 218 100% 78%;
+    --glass-shadow: 0 2px 12px hsl(var(--glass-overlay) / 0.35);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -62,6 +69,74 @@
     --sidebar-border: 0 0% 15%;
     --sidebar-ring: 240 95% 40%;
   }
+}
+
+/* Optional video display; Classic styling above stays unchanged. */
+.app-shell { position: relative; isolation: isolate; }
+.app-tab-content { position: relative; z-index: 1; }
+.video-backdrop { position: fixed; inset: 0; z-index: -1; background: hsl(var(--background)); pointer-events: none; }
+.video-backdrop video { width: 100%; height: 100%; object-fit: cover; }
+.video-backdrop-shade { position: absolute; inset: 0; background: hsl(var(--glass-overlay) / 0.24); }
+.glass-shell { background: transparent; }
+.glass-shell .player-dock { bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
+.glass-shell .bottom-nav { height: calc(4.5rem + env(safe-area-inset-bottom)); }
+.glass-shell .music-player-surface { padding-right: 4rem; }
+.clear-view-button {
+  position: fixed;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: calc(4.5rem + env(safe-area-inset-bottom) + 2.25rem);
+  width: 2.5rem;
+  height: 2.5rem;
+  z-index: 70;
+  border-radius: 50%;
+  background: hsl(var(--glass-surface) / 0.45);
+  border: 1px solid hsl(var(--glass-border) / 0.3);
+  color: hsl(var(--glass-text));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.interface-hidden .app-interface { visibility: hidden; pointer-events: none; }
+.interface-hidden .video-backdrop-shade { opacity: 0; }
+html[data-display-mode="glass"] {
+  --muted-foreground: var(--glass-muted);
+}
+html[data-display-mode="glass"] .soundwave-card,
+html[data-display-mode="glass"] .bottom-nav,
+html[data-display-mode="glass"] .music-player-surface,
+html[data-display-mode="glass"] [role="dialog"],
+html[data-display-mode="glass"] [role="alertdialog"],
+html[data-display-mode="glass"] [role="menu"],
+html[data-display-mode="glass"] [class~="bg-card"],
+html[data-display-mode="glass"] [class*="bg-card/"],
+html[data-display-mode="glass"] [class*="bg-secondary/"],
+html[data-display-mode="glass"] [class*="bg-background/"],
+html[data-display-mode="glass"] .track-item,
+html[data-display-mode="glass"] button,
+html[data-display-mode="glass"] input {
+  background-color: hsl(var(--glass-surface) / 0.48);
+  background-image: none;
+  border-color: hsl(var(--glass-border) / 0.22);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: hsl(var(--glass-text));
+}
+html[data-display-mode="glass"] button { border: 1px solid hsl(var(--glass-border) / 0.22); }
+html[data-display-mode="glass"] button[aria-pressed="true"],
+html[data-display-mode="glass"] .nav-button.active { border-color: hsl(var(--primary)); background-color: hsl(var(--primary) / 0.4); }
+html[data-display-mode="glass"] .text-primary { color: hsl(var(--glass-accent)); }
+html[data-display-mode="glass"] .app-tab-content { padding-bottom: calc(12rem + env(safe-area-inset-bottom)); }
+html[data-display-mode="glass"] .music-player-surface h4 { text-shadow: var(--glass-shadow); }
+@media (max-width: 640px) {
+  .glass-shell .music-player-surface > div { display: flex; flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  .glass-shell .music-player-surface > div > div { max-width: none; }
+  .glass-shell .music-player-surface > div > div:last-child { display: none; }
+  .glass-shell .music-player-surface .space-x-4 { gap: 0.25rem; }
+  .glass-shell .music-player-surface .space-x-4 > * { margin-left: 0; }
+  .glass-shell .music-player-surface h4 { max-width: 100%; }
+  .glass-shell .music-player-surface p { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-display-mode="glass"] * { scroll-behavior: auto; }
 }
 
 @layer components {

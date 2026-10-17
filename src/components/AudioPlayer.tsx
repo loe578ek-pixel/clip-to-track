@@ -111,7 +111,7 @@ export const AudioPlayer = ({ track, onNext, onPrevious }: AudioPlayerProps) => 
           <div className="min-w-0">
             <h4 className="font-medium truncate">{track.title}</h4>
             <p className="text-sm text-muted-foreground truncate">
-              {track.originalFileName}
+              {track.artist || 'TKPlaylist'}
             </p>
           </div>
         </div>

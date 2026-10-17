@@ -162,21 +162,21 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
         // Native plugin for lockscreen metadata
         nativeMediaControls.updateTrack({
           title: track.title,
-          artist: track.originalFileName,
+          artist: track.artist || 'TKPlaylist',
           duration: track.duration
         }, playlistName);
         // ALSO declare the track via navigator.mediaSession so iOS keeps the
         // JS thread responsive to lockscreen play/pause in background.
         mediaSession.updateTrack({
           title: track.title,
-          artist: track.originalFileName,
+          artist: track.artist || 'TKPlaylist',
           duration: track.duration
         }, playlistName);
       } else {
         mediaSession.enableBackgroundPlayback();
         mediaSession.updateTrack({
           title: track.title,
-          artist: track.originalFileName,
+          artist: track.artist || 'TKPlaylist',
           duration: track.duration
         }, playlistName);
       }
@@ -379,7 +379,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
           <div className="min-w-0">
             <h4 className="font-medium truncate text-white">{track.title}</h4>
             <p className="text-sm text-muted-foreground truncate">
-              {track.originalFileName}
+              {track.artist || 'TKPlaylist'}
             </p>
           </div>
         </div>

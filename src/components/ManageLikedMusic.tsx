@@ -103,7 +103,7 @@ const SortableTrackItem = ({
         <div className="flex-1 min-w-0 ml-1">
           <h4 className="font-medium truncate text-base leading-tight">{track.title}</h4>
           <p className="text-sm text-muted-foreground truncate">
-            {track.originalFileName}
+            {track.artist || 'TKPlaylist'}
           </p>
         </div>
       </div>

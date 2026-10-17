@@ -2,6 +2,7 @@ import { Track } from "@/pages/Index";
 import { audioStorageService } from "./audioStorage";
 import { videoStorage } from "./videoStorage";
 import { getImportEndTime } from "./trackMedia";
+import { resolveImportIdentity } from './trackIdentity';
 
 export const extractAudioFromVideo = async (
   videoFile: File,
@@ -14,6 +15,16 @@ export const extractAudioFromVideo = async (
   try {
     onProgress(5);
     const arrayBuffer = await videoFile.arrayBuffer();
+    let identity = resolveImportIdentity({});
+    try {
+      const { parseBuffer } = await import('music-metadata');
+      const metadata = await parseBuffer(new Uint8Array(arrayBuffer), {
+        mimeType: videoFile.type || 'video/mp4', size: arrayBuffer.byteLength,
+      }, { skipCovers: true, duration: false });
+      identity = resolveImportIdentity(metadata.common);
+    } catch {
+      // Downloaded TikToks often have no tags; metadata must never block import.
+    }
     onProgress(20);
     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
     // No ending is removed until a reference-based recognizer has been validated.
@@ -28,7 +39,7 @@ export const extractAudioFromVideo = async (
     onProgress(75);
     savedTrack = await audioStorageService.saveAudioTrack(wavBlob, {
       id,
-      title: videoFile.name.replace(/\.[^/.]+$/, ''),
+      ...identity,
       duration: outputBuffer.duration,
       originalFileName: videoFile.name,
       fileSize: wavBlob.size,

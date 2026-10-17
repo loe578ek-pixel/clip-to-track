@@ -106,7 +106,9 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
 
   return (
     <div className="video-backdrop" aria-hidden="true">
-      {source && !failed && <video ref={videoRef} src={source} muted playsInline preload="metadata" disablePictureInPicture disableRemotePlayback onError={() => setFailed(true)} />}
+      {source && !failed && <video ref={videoRef} src={source} muted playsInline preload="auto" disablePictureInPicture disableRemotePlayback onLoadedMetadata={event => {
+        if (!audio) event.currentTarget.currentTime = Math.min(0.1, event.currentTarget.duration || 0);
+      }} onError={() => setFailed(true)} />}
       <div className="video-backdrop-shade" />
     </div>
   );

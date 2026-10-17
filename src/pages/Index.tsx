@@ -12,6 +12,7 @@ import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
 import { toast } from "sonner";
 import { BackgroundVideo } from '@/components/BackgroundVideo';
+import { useBackgroundTrack } from '@/hooks/useBackgroundTrack';
 import { useDisplayMode } from '@/hooks/useDisplayMode';
 import { videoStorage } from '@/lib/videoStorage';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,7 @@ const Index = () => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const backgroundTrack = useBackgroundTrack(currentTrack, tracks, audioElement);
   const [activeTab, setActiveTab] = useState('home');
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPlaylistId, setCurrentPlaylistId] = useState<string | null>(null);
@@ -737,7 +739,7 @@ const Index = () => {
         </div>
       ) : (
         <div className={`app-shell h-full max-h-screen bg-background text-foreground overflow-hidden ${isGlass ? 'glass-shell' : ''} ${isGlass && interfaceHidden ? 'interface-hidden' : ''}`} style={{ paddingBottom: '4.5rem' }}>
-          {isGlass && <BackgroundVideo track={currentTrack} audio={audioElement} />}
+          {isGlass && <BackgroundVideo track={backgroundTrack} audio={backgroundTrack?.id === currentTrack?.id ? audioElement : null} />}
           <div className="app-interface app-tab-content h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20" aria-hidden={isGlass && interfaceHidden}>
             {renderActiveTab()}
           </div>

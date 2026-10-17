@@ -400,6 +400,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
               variant="ghost"
               size="icon"
               onClick={onPrevious}
+              aria-label="Previous track"
               disabled={!onPrevious}
               className="text-muted-foreground hover:text-white"
             >
@@ -408,6 +409,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
 
             <Button
               onClick={togglePlayPause}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
               className="w-8 h-8 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground hover:scale-105 transition-all"
               size="icon"
             >
@@ -422,6 +424,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
               variant="ghost"
               size="icon"
               onClick={onNext}
+              aria-label="Next track"
               disabled={!onNext}
               className="text-muted-foreground hover:text-white"
             >

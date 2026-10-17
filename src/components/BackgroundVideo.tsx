@@ -68,7 +68,8 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
       synchronize();
       animationFrame = requestAnimationFrame(tick);
     };
-    const update = () => synchronize(true);
+    const update = () => synchronize();
+    const seek = () => synchronize(true);
     const visibility = () => {
       cancelAnimationFrame(animationFrame);
       synchronize(true);
@@ -76,6 +77,7 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
     };
     const events = ['play', 'playing', 'pause', 'seeking', 'seeked', 'ended', 'timeupdate', 'ratechange', 'waiting', 'emptied'];
     events.forEach(event => audio.addEventListener(event, update));
+    audio.addEventListener('seeked', seek);
     video.addEventListener('loadedmetadata', update);
     document.addEventListener('visibilitychange', visibility);
     if (Capacitor.isNativePlatform()) {
@@ -93,6 +95,7 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
       cancelAnimationFrame(animationFrame);
       video.pause();
       events.forEach(event => audio.removeEventListener(event, update));
+      audio.removeEventListener('seeked', seek);
       video.removeEventListener('loadedmetadata', update);
       document.removeEventListener('visibilitychange', visibility);
       void listener?.remove();

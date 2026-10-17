@@ -299,6 +299,16 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         return nil
     }
 
+    /// Decodes a "data:image/jpeg;base64,..." URL sent from the JS side into
+    /// lockscreen artwork. Returns nil when the payload is not a valid image.
+    private func buildArtwork(fromDataUrl dataUrl: String) -> MPMediaItemArtwork? {
+        guard let commaIndex = dataUrl.firstIndex(of: ",") else { return nil }
+        let base64 = String(dataUrl[dataUrl.index(after: commaIndex)...])
+        guard let data = Data(base64Encoded: base64, options: .ignoreUnknownCharacters),
+              let image = UIImage(data: data) else { return nil }
+        return MPMediaItemArtwork(boundsSize: image.size) { _ in image }
+    }
+
     private func loadAppIconImage() -> UIImage? {
         if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
            let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],

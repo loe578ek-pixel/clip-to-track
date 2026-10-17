@@ -127,6 +127,7 @@ html[data-display-mode="glass"] .text-primary { color: hsl(var(--glass-accent));
 html[data-display-mode="glass"] .app-tab-content { padding-bottom: calc(12rem + env(safe-area-inset-bottom)); }
 html[data-display-mode="glass"] .music-player-surface h4 { text-shadow: var(--glass-shadow); }
 @media (max-width: 640px) {
+  .clear-view-button { bottom: calc(4.5rem + env(safe-area-inset-bottom) + 3.5rem); }
   .glass-shell .music-player-surface > div { display: flex; flex-direction: column; align-items: stretch; gap: 0.5rem; }
   .glass-shell .music-player-surface > div > div { max-width: none; }
   .glass-shell .music-player-surface > div > div:last-child { display: none; }

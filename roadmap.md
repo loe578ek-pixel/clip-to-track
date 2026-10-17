@@ -1,9 +1,8 @@
-- [x] Increase end-of-track cut so TikTok watermark beep is never heard
-- [ ] Retain original imported videos offline without breaking legacy audio tracks.
-- [ ] Add remembered Classic/Glass display choice and synchronized muted full-screen video across all tabs.
-- [ ] Add hide/show interface control, track titles and mobile-safe Glass styling.
-- [ ] Defer TikTok link import; do not add or change it in this update.
-- [ ] Explain current ending-cut heuristic before coding and propose conservative reference-based TikTok jingle detection.
-- [ ] Disable all ending cuts for new imports now; leave existing tracks untouched. Reference-based jingle recognition is deferred despite test videos being supplied.
-- [ ] Keep the Glass-only eye control at a stable bottom-right position beside playback controls, including while all other interface elements are hidden.
+- [x] Retain original imported videos offline without breaking legacy audio tracks.
+- [x] Add remembered Classic/Glass display choice and synchronized muted full-screen video across all tabs.
+- [x] Add hide/show interface control, track titles and mobile-safe Glass styling.
+- [x] Defer TikTok link import; do not add or change it in this update.
+- [x] Explain current ending-cut heuristic before coding and propose conservative reference-based TikTok jingle detection.
+- [x] Disable all ending cuts for new imports now; leave existing tracks untouched. Reference-based jingle recognition is deferred despite test videos being supplied.
+- [x] Keep the Glass-only eye control at a stable bottom-right position beside playback controls, including while all other interface elements are hidden.
 - [ ] Verify import/playback/display and report changed files plus native configuration/testing requirements.

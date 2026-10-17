@@ -79,6 +79,7 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
     events.forEach(event => audio.addEventListener(event, update));
     audio.addEventListener('seeked', seek);
     video.addEventListener('loadedmetadata', update);
+    video.addEventListener('playing', update);
     document.addEventListener('visibilitychange', visibility);
     if (Capacitor.isNativePlatform()) {
       App.addListener('appStateChange', ({ isActive }) => {
@@ -97,6 +98,7 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
       events.forEach(event => audio.removeEventListener(event, update));
       audio.removeEventListener('seeked', seek);
       video.removeEventListener('loadedmetadata', update);
+      video.removeEventListener('playing', update);
       document.removeEventListener('visibilitychange', visibility);
       void listener?.remove();
     };

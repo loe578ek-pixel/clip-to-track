@@ -121,7 +121,7 @@ export const PlaylistManagerTab = ({
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)', paddingBottom: '6rem' }}>
+    <div className="playlists-tab flex flex-col absolute inset-0 overflow-hidden" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 8px)' }}>
       {/* Header */}
       <div className="px-4 pb-3 pt-1 shrink-0">
         <h1 className="text-2xl font-bold">Playlists</h1>
@@ -224,7 +224,7 @@ export const PlaylistManagerTab = ({
               </div>
 
               {/* Tracks list - scrollable within its card */}
-              <div className="flex-1 min-h-0 overflow-y-auto px-1">
+              <div className="flex-1 min-h-0 overflow-y-auto px-1 no-scrollbar">
                 {playlistTracks.length > 0 ? (
                   <DndContext
                     sensors={sensors}

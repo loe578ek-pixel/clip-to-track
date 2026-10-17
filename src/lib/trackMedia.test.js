@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { getImportEndTime, getVideoSyncTime, serializeTrack } from './trackMedia';
-import type { Track } from '@/pages/Index';
 
-const track: Track = {
+const track = {
   id: 'legacy', title: 'Existing song', duration: 18, audioUrl: 'blob:temporary',
   originalFileName: 'song.mp4', createdAt: new Date('2026-10-17T00:00:00Z'),
   localFilePath: 'soundwave-audio/song.wav', fileSize: 1234,

@@ -18,9 +18,10 @@ interface MusicPlayerProps {
   onEnded?: () => void;
   autoPlay?: boolean;
   playlistName?: string;
+  onAudioElement?: (audio: HTMLAudioElement | null) => void;
 }
 
-export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = false, playlistName }: MusicPlayerProps) => {
+export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = false, playlistName, onAudioElement }: MusicPlayerProps) => {
   const { masterVolume } = useVolume();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -29,6 +30,10 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'all'>('off');
   const audioRef = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    onAudioElement?.(audioRef.current);
+    return () => onAudioElement?.(null);
+  }, [onAudioElement]);
 
   // Set up media session callbacks FIRST before initializing controls
   useEffect(() => {
@@ -365,7 +370,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
   const progressPercentage = track.duration ? (currentTime / track.duration) * 100 : 0;
 
   return (
-    <div className="bg-card/95 backdrop-blur-md border-t border-white/10 p-4">
+    <div className="music-player-surface bg-card/95 backdrop-blur-md border-t border-white/10 p-4">
       <audio ref={audioRef} />
       
       <div className="flex items-center justify-between max-w-screen-xl mx-auto">

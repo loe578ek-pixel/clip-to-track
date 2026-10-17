@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { extractAudioFromVideo } from "@/lib/audioProcessor";
 import { Track } from "@/pages/Index";
+import { toast } from "sonner";
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -22,7 +23,7 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
   const [queueTotal, setQueueTotal] = useState(0);
   const [queueIndex, setQueueIndex] = useState(0);
 
-  const processQueue = async (files: File[]) => {
+  const processQueue = async (files: File[], nativeSourcePath?: string) => {
     if (files.length === 0) return;
     setIsProcessing(true);
     setQueueTotal(files.length);
@@ -33,10 +34,11 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
       setCurrentFileName(file.name);
       setProgress(0);
       try {
-        const track = await extractAudioFromVideo(file, (p) => setProgress(p));
+        const track = await extractAudioFromVideo(file, (p) => setProgress(p), nativeSourcePath);
         onTrackExtracted(track);
       } catch (error) {
         console.error('Error processing video:', file.name, error);
+        toast.error(error instanceof Error ? error.message : 'Could not import this video. Please try again.');
       }
       // Give the WebView a beat to release memory between videos (iOS)
       await new Promise((r) => setTimeout(r, 300));
@@ -61,16 +63,18 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
       if (!src) throw new Error('No file path returned');
 
       const response = await fetch(src);
+      if (!response.ok) throw new Error('Could not read the selected video');
       const blob = await response.blob();
       const file = new File([blob], picked.name || 'video.mp4', {
         type: picked.mimeType || 'video/mp4',
       });
 
-      await processQueue([file]);
+      await processQueue([file], picked.path);
     } catch (error: any) {
       const msg = String(error?.message || error);
       if (msg.toLowerCase().includes('cancel')) return;
       console.error('Native video picker error:', error);
+      toast.error('Could not open this video. Please try another file.');
     }
   };
 

@@ -11,6 +11,11 @@ import { usePremium } from "@/hooks/usePremium";
 import { storageService } from "@/lib/storageService";
 import { audioStorageService } from "@/lib/audioStorage";
 import { toast } from "sonner";
+import { BackgroundVideo } from '@/components/BackgroundVideo';
+import { useDisplayMode } from '@/hooks/useDisplayMode';
+import { videoStorage } from '@/lib/videoStorage';
+import { Button } from '@/components/ui/button';
+import { Eye, EyeOff } from 'lucide-react';
 
 // Type definition
 type UserProfile = {
@@ -35,6 +40,9 @@ export interface Track {
   playbackKey?: string; // Force re-render for repeats
   localFilePath?: string; // Local storage path for offline access
   isLiked?: boolean; // Like status for heart system
+  videoFilePath?: string;
+  videoMimeType?: string;
+  videoFileSize?: number;
 }
 
 export interface Playlist {
@@ -47,6 +55,11 @@ export interface Playlist {
 }
 
 const Index = () => {
+  const { displayMode, changeDisplayMode, displayModeReady } = useDisplayMode();
+  const [interfaceHidden, setInterfaceHidden] = useState(false);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const isGlass = displayMode === 'glass';
+  useEffect(() => { setInterfaceHidden(false); }, [displayMode]);
   const { loading: trialLoading, trialExpired, trialStarted, isPremium, daysRemaining, purchase, restore, startTrial } = usePremium();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
@@ -511,7 +524,8 @@ const Index = () => {
       await Promise.all([
         storageService.saveTracks([]),
         storageService.savePlaylists(emptyPlaylists),
-        storageService.clearAudioFiles()
+        storageService.clearAudioFiles(),
+        videoStorage.clear()
       ]);
       
       // Clear state (but keep the 3 playlists empty)
@@ -679,7 +693,7 @@ const Index = () => {
           />
         );
       case 'settings':
-        return <SettingsTab onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} onRenameTrack={handleRenameTrack} isPremium={isPremium} daysRemaining={daysRemaining} trialExpired={trialExpired} onPurchase={purchase} onRestore={restore} />;
+        return <SettingsTab displayMode={displayMode} onDisplayModeChange={changeDisplayMode} displayModeReady={displayModeReady} onClearAllData={handleClearAllData} onClearMusicFiles={handleClearMusicFiles} tracks={tracks} onDeleteTrack={handleDeleteTrack} likedTracks={likedTracks} onToggleLike={handleToggleLike} onRenameTrack={handleRenameTrack} isPremium={isPremium} daysRemaining={daysRemaining} trialExpired={trialExpired} onPurchase={purchase} onRestore={restore} />;
       default:
         return <HomeTab 
           tracks={tracks} 
@@ -722,17 +736,20 @@ const Index = () => {
           <p className="text-lg text-muted-foreground">Loading SoundWave...</p>
         </div>
       ) : (
-        <div className="h-full max-h-screen bg-background text-foreground overflow-hidden" style={{ paddingBottom: '4.5rem' }}>
-          <div className="h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20">
+        <div className={`app-shell h-full max-h-screen bg-background text-foreground overflow-hidden ${isGlass ? 'glass-shell' : ''} ${isGlass && interfaceHidden ? 'interface-hidden' : ''}`} style={{ paddingBottom: '4.5rem' }}>
+          {isGlass && <BackgroundVideo track={currentTrack} audio={audioElement} />}
+          <div className="app-interface app-tab-content h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20" inert={isGlass && interfaceHidden ? '' : undefined}>
             {renderActiveTab()}
           </div>
           
           {/* Bottom Navigation - Always Visible */}
-          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+          <div className="app-interface" inert={isGlass && interfaceHidden ? '' : undefined}>
+            <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+          </div>
           
           {/* Audio Player - Above Bottom Navigation */}
           {currentTrack && (
-            <div className="fixed bottom-16 left-0 right-0 z-40">
+            <div className="app-interface player-dock fixed bottom-16 left-0 right-0 z-40" inert={isGlass && interfaceHidden ? '' : undefined}>
               <MusicPlayer 
                 track={currentTrack} 
                 onNext={handleNextTrack} 
@@ -740,9 +757,21 @@ const Index = () => {
                 onEnded={handleTrackEnded}
                 autoPlay={isAutoPlaying}
                 playlistName={currentPlaylistName}
+                onAudioElement={setAudioElement}
               />
             </div>
           )}
+          {isGlass && <Button
+            variant="outline"
+            size="icon"
+            className="clear-view-button"
+            aria-label={interfaceHidden ? 'Show interface' : 'Hide interface'}
+            title={interfaceHidden ? 'Show interface' : 'Hide interface'}
+            aria-pressed={interfaceHidden}
+            onClick={() => setInterfaceHidden(hidden => !hidden)}
+          >
+            {interfaceHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </Button>}
         </div>
       )}
     </VolumeProvider>

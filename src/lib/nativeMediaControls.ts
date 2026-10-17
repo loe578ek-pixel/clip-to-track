@@ -151,6 +151,7 @@ class NativeMediaControlsService {
           duration: track.duration,
           elapsed: track.elapsed || 0,
           isPlaying: this.isPlaying,
+          artwork: track.artwork,
         });
         console.log('✅ iOS Now Playing updated:', track.title);
       } catch (error) {

@@ -7,6 +7,7 @@ export interface NowPlayingMetadata {
   duration: number;
   elapsed?: number;
   isPlaying: boolean;
+  artwork?: string;
 }
 
 export interface NowPlayingPluginShape {

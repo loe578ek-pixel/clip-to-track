@@ -67,26 +67,32 @@ class MediaSessionService {
     this.callbacks = callbacks;
   }
 
-  updateTrack(track: MediaSessionTrack, playlistName?: string) {
+  updateTrack(track: MediaSessionTrack, playlistName?: string, artworkUrl?: string | null) {
     if (!('mediaSession' in navigator)) return;
 
     this.currentTrack = track;
     this.duration = track.duration;
 
-    // Update metadata with the app icon as artwork (shown on lockscreen)
-    const artworkUrl = `${window.location.origin}/app-icon.png`;
+    // Use the track's square video thumbnail when available, otherwise the app icon.
+    const fallbackIcon = `${window.location.origin}/app-icon.png`;
+    const artwork = artworkUrl
+      ? [
+          { src: artworkUrl, sizes: '512x512', type: 'image/jpeg' },
+          { src: fallbackIcon, sizes: '512x512', type: 'image/png' },
+        ]
+      : [
+          { src: fallbackIcon, sizes: '96x96', type: 'image/png' },
+          { src: fallbackIcon, sizes: '192x192', type: 'image/png' },
+          { src: fallbackIcon, sizes: '256x256', type: 'image/png' },
+          { src: fallbackIcon, sizes: '384x384', type: 'image/png' },
+          { src: fallbackIcon, sizes: '512x512', type: 'image/png' },
+          { src: fallbackIcon, sizes: '1024x1024', type: 'image/png' },
+        ];
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title,
       artist: track.artist || 'TKPlaylist',
       album: track.album || '',
-      artwork: [
-        { src: artworkUrl, sizes: '96x96', type: 'image/png' },
-        { src: artworkUrl, sizes: '192x192', type: 'image/png' },
-        { src: artworkUrl, sizes: '256x256', type: 'image/png' },
-        { src: artworkUrl, sizes: '384x384', type: 'image/png' },
-        { src: artworkUrl, sizes: '512x512', type: 'image/png' },
-        { src: artworkUrl, sizes: '1024x1024', type: 'image/png' },
-      ],
+      artwork,
     });
 
     this.updatePositionState();

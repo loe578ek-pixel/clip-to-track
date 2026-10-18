@@ -38,14 +38,8 @@ export class AudioStorageService {
       
     } catch (error) {
       console.error('Error saving audio track:', error);
-      
-      // Fallback to blob URL only (no persistence)
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      return {
-        ...trackData,
-        audioUrl
-      };
+      // Preserve the actual filesystem error for the staged import diagnostic.
+      throw error;
     }
   }
 

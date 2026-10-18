@@ -3,18 +3,24 @@ import { audioStorageService } from "./audioStorage";
 import { videoStorage } from "./videoStorage";
 import { getImportEndTime } from "./trackMedia";
 import { resolveImportIdentity } from './trackIdentity';
+import { runImportStage, runOptionalImportStage } from './importDiagnostics';
+import { Capacitor } from '@capacitor/core';
 
 export const extractAudioFromVideo = async (
   videoFile: File,
   onProgress: (progress: number) => void,
   nativeSourcePath?: string,
 ): Promise<Track> => {
-  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  let audioContext: AudioContext | undefined;
   let savedVideoPath: string | undefined;
   let savedTrack: Track | undefined;
   try {
     onProgress(5);
-    const arrayBuffer = await videoFile.arrayBuffer();
+    const id = crypto.randomUUID();
+    // Copy the temporary picker file before decoding; video retention is never mandatory.
+    savedVideoPath = await runOptionalImportStage(Capacitor.isNativePlatform() ? 'Native video copy' : 'Video storage',
+      () => videoStorage.save(videoFile, id, nativeSourcePath));
+    const arrayBuffer = await runImportStage('Reading video for audio extraction', () => videoFile.arrayBuffer());
     let identity = resolveImportIdentity({});
     try {
       const { parseBuffer } = await import('music-metadata');
@@ -26,29 +32,32 @@ export const extractAudioFromVideo = async (
       // Downloaded TikToks often have no tags; metadata must never block import.
     }
     onProgress(20);
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    const audioBuffer = await runImportStage('Audio decoding', async () => {
+      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      return audioContext.decodeAudioData(arrayBuffer);
+    });
     // No ending is removed until a reference-based recognizer has been validated.
     const endTime = getImportEndTime(audioBuffer.duration);
     const outputBuffer = endTime === audioBuffer.duration
       ? audioBuffer
-      : trimAudioBuffer(audioContext, audioBuffer, audioBuffer.duration - endTime);
+      : trimAudioBuffer(audioContext as AudioContext, audioBuffer, audioBuffer.duration - endTime);
     onProgress(55);
-    const wavBlob = audioBufferToWav(outputBuffer);
-    const id = crypto.randomUUID();
-    savedVideoPath = await videoStorage.save(videoFile, id, nativeSourcePath);
+    const wavBlob = await runImportStage('Audio encoding', async () => audioBufferToWav(outputBuffer));
     onProgress(75);
-    savedTrack = await audioStorageService.saveAudioTrack(wavBlob, {
+    savedTrack = await runImportStage('Audio saving', () => audioStorageService.saveAudioTrack(wavBlob, {
       id,
       ...identity,
       duration: outputBuffer.duration,
       originalFileName: videoFile.name,
       fileSize: wavBlob.size,
-      videoFilePath: savedVideoPath,
-      videoMimeType: videoFile.type || 'video/mp4',
-      videoFileSize: videoFile.size,
+      ...(savedVideoPath ? {
+        videoFilePath: savedVideoPath,
+        videoMimeType: videoFile.type || 'video/mp4',
+        videoFileSize: videoFile.size,
+      } : {}),
       createdAt: new Date(),
-    });
-    if (!savedTrack.localFilePath) throw new Error('Could not save audio for offline playback. Please free some storage and try again.');
+    }));
+    if (!savedTrack.localFilePath) throw new Error('Audio saving: Could not save audio for offline playback. Please free some storage and try again.');
     onProgress(100);
     return savedTrack;
   } catch (error) {
@@ -56,7 +65,7 @@ export const extractAudioFromVideo = async (
     if (savedTrack) await audioStorageService.deleteAudioTrack(savedTrack);
     throw error;
   } finally {
-    try { await audioContext.close(); } catch { /* release decoded memory */ }
+    try { await audioContext?.close(); } catch { /* release decoded memory */ }
   }
 };
 

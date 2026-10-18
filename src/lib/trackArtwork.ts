@@ -1,4 +1,5 @@
 import { videoStorage } from './videoStorage';
+import { runOptionalImportStage } from './importDiagnostics';
 
 const ARTWORK_SIZE = 512;
 const SEEK_TIME = 0.5;
@@ -20,7 +21,7 @@ export async function getTrackArtwork(track: ArtworkTrack): Promise<string | nul
   if (!track.videoFilePath) return null;
   if (cache.has(track.id)) return cache.get(track.id) ?? null;
 
-  const artwork = await captureSquareFrame(track.videoFilePath).catch(() => null);
+  const artwork = await runOptionalImportStage('Thumbnail generation', () => captureSquareFrame(track.videoFilePath as string)) ?? null;
   cache.set(track.id, artwork);
   return artwork;
 }
@@ -31,8 +32,8 @@ export function forgetTrackArtwork(trackId: string) {
 
 async function captureSquareFrame(videoPath: string): Promise<string | null> {
   const url = await videoStorage.resolve(videoPath);
+  const video = document.createElement('video');
   try {
-    const video = document.createElement('video');
     video.muted = true;
     video.playsInline = true;
     video.preload = 'auto';
@@ -60,15 +61,18 @@ async function captureSquareFrame(videoPath: string): Promise<string | null> {
 
     return canvas.toDataURL('image/jpeg', 0.85);
   } finally {
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
     videoStorage.release(url);
   }
 }
 
 function waitForEvent(video: HTMLVideoElement, event: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timer = window.setTimeout(() => cleanup(reject), 8000);
+    const timer = window.setTimeout(() => cleanup(() => reject(new Error(`Timed out waiting for thumbnail ${event}`))), 8000);
     const onDone = () => cleanup(resolve);
-    const onError = () => cleanup(reject);
+    const onError = () => cleanup(() => reject(new Error(`Thumbnail video error ${video.error?.code ?? 'unknown'}: ${video.error?.message || event}`)));
     const cleanup = (settle: () => void) => {
       window.clearTimeout(timer);
       video.removeEventListener(event, onDone);

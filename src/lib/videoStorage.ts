@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Directory, Filesystem } from '@capacitor/filesystem';
+import { normalizeNativeFilePath } from './importDiagnostics';
 
 const VIDEO_DIRECTORY = 'tkplaylist-video';
 const DATABASE = 'tkplaylist-video';
@@ -38,9 +39,11 @@ export const videoStorage = {
       try {
         await Filesystem.mkdir({ path: VIDEO_DIRECTORY, directory: Directory.Data, recursive: true });
       } catch {
-        // mkdir rejects if the directory already exists; copy still validates the destination.
+        // Accept only an existing directory; surface real storage/permission errors.
+        const existing = await Filesystem.stat({ path: VIDEO_DIRECTORY, directory: Directory.Data });
+        if (existing.type !== 'directory') throw new Error('Video storage path is not a directory');
       }
-      await Filesystem.copy({ from: nativeSourcePath, to: path, toDirectory: Directory.Data });
+      await Filesystem.copy({ from: normalizeNativeFilePath(nativeSourcePath), to: path, toDirectory: Directory.Data });
     } else {
       await videoRequest('readwrite', store => store.put(file, path));
     }

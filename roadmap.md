@@ -9,3 +9,5 @@
 - [ ] Physical iPhone regression check for offline video, locked/background audio and remote controls (requires user's new native build and device).
 - [x] Refine Glass transparency and Apple-inspired surfaces; retain the last played video when idle and verify Classic remains unchanged.
 - [x] Read available imported video titles/creators, persist and display them with numbered Track / TKPlaylist fallbacks.
+- [ ] Diagnose native import paths and expose temporary on-screen errors with failed stages.
+- [ ] Make original video retention non-blocking for audio imports using native file copies, with regression tests.

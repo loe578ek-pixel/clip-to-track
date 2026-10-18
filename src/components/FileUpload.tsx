@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, Film, Loader2 } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
+import { Filesystem } from "@capacitor/filesystem";
 import { FilePicker } from "@capawesome/capacitor-file-picker";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";

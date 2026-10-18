@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, Film, Loader2 } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { extractAudioFromVideo } from "@/lib/audioProcessor";
 import { Track } from "@/pages/Index";
 import { toast } from "sonner";
+import { normalizeNativeFilePath, reportImportDiagnostic, runImportStage, subscribeImportDiagnostics } from '@/lib/importDiagnostics';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -22,6 +23,10 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
   const [currentFileName, setCurrentFileName] = useState("");
   const [queueTotal, setQueueTotal] = useState(0);
   const [queueIndex, setQueueIndex] = useState(0);
+  const [diagnostics, setDiagnostics] = useState<string[]>([]);
+  useEffect(() => subscribeImportDiagnostics(message => {
+    setDiagnostics(previous => [...previous.slice(-4), message]);
+  }), []);
 
   const processQueue = async (files: File[], nativeSourcePath?: string) => {
     if (files.length === 0) return;
@@ -38,7 +43,7 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
         onTrackExtracted(track);
       } catch (error) {
         console.error('Error processing video:', file.name, error);
-        toast.error(error instanceof Error ? error.message : 'Could not import this video. Please try again.');
+        toast.error(reportImportDiagnostic(error), { duration: 15000 });
       }
       // Give the WebView a beat to release memory between videos (iOS)
       await new Promise((r) => setTimeout(r, 300));
@@ -54,32 +59,38 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
   // Native (iOS/Android): use the system video picker (gallery only, no camera)
   const pickNativeVideo = async () => {
     if (isProcessing) return;
+    setDiagnostics([]);
+    setIsProcessing(true);
     try {
-      const result = await FilePicker.pickVideos({ readData: false, limit: 1 });
+      const result = await runImportStage('File selection', () => FilePicker.pickVideos({ readData: false, limit: 1 }));
       const picked = result.files?.[0];
       if (!picked) return;
 
-      const src = picked.path ? Capacitor.convertFileSrc(picked.path) : null;
-      if (!src) throw new Error('No file path returned');
-
-      const response = await fetch(src);
-      if (!response.ok) throw new Error('Could not read the selected video');
-      const blob = await response.blob();
-      const file = new File([blob], picked.name || 'video.mp4', {
-        type: picked.mimeType || 'video/mp4',
+      const file = await runImportStage('Reading video for audio extraction', async () => {
+        if (!picked.path) throw new Error('No file path returned by the video picker');
+        const src = Capacitor.convertFileSrc(normalizeNativeFilePath(picked.path));
+        const response = await fetch(src);
+        if (!response.ok) throw new Error(`Local video read failed: HTTP ${response.status} ${response.statusText}`);
+        const blob = await response.blob();
+        return new File([blob], picked.name || 'video.mp4', {
+          type: picked.mimeType || 'video/mp4',
+        });
       });
 
       await processQueue([file], picked.path);
-    } catch (error: any) {
-      const msg = String(error?.message || error);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
       if (msg.toLowerCase().includes('cancel')) return;
       console.error('Native video picker error:', error);
-      toast.error('Could not open this video. Please try another file.');
+      toast.error(reportImportDiagnostic(error), { duration: 15000 });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles.length > 0) {
+      setDiagnostics([]);
       processQueue(acceptedFiles);
     }
   }, []);
@@ -99,6 +110,12 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
 
   return (
     <div className="w-full">
+      {diagnostics.length > 0 && (
+        <div role="alert" className="mb-4 space-y-2 rounded-md border border-destructive/50 bg-card p-3 text-sm text-foreground select-text">
+          <p className="font-semibold">Import diagnostics (temporary)</p>
+          {diagnostics.map((message, index) => <p key={index} className="whitespace-pre-wrap break-words">{message}</p>)}
+        </div>
+      )}
       <div
         {...rootProps}
         className={`

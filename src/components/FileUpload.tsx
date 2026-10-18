@@ -69,13 +69,19 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
 
       const file = await runImportStage('Reading video for audio extraction', async () => {
         if (!picked.path) throw new Error('No file path returned by the video picker');
-        const src = Capacitor.convertFileSrc(normalizeNativeFilePath(picked.path));
-        const response = await fetch(src);
-        if (!response.ok) throw new Error(`Local video read failed: HTTP ${response.status} ${response.statusText}`);
-        const blob = await response.blob();
-        return new File([blob], picked.name || 'video.mp4', {
-          type: picked.mimeType || 'video/mp4',
-        });
+        const nativePath = normalizeNativeFilePath(picked.path);
+        try {
+          // iOS WKWebView rejects fetch() on convertFileSrc URLs (HTTP 0): read via the native bridge instead.
+          const { data } = await Filesystem.readFile({ path: nativePath });
+          const base64 = typeof data === 'string' ? data : await blobToBase64(data);
+          const blob = base64ToBlob(base64, picked.mimeType || 'video/mp4');
+          return new File([blob], picked.name || 'video.mp4', {
+            type: picked.mimeType || 'video/mp4',
+          });
+        } catch (error) {
+          const size = picked.size != null ? `${picked.size} bytes` : 'unknown size';
+          throw new Error(`Could not read "${nativePath}" (${size}): ${describeError(error)}`);
+        }
       });
 
       await processQueue([file], picked.path);

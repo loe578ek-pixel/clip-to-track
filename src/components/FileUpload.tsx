@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, Film, Loader2 } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
+import { Filesystem } from "@capacitor/filesystem";
 import { FilePicker } from "@capawesome/capacitor-file-picker";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -11,6 +12,31 @@ import { toast } from "sonner";
 import { normalizeNativeFilePath, reportImportDiagnostic, runImportStage, subscribeImportDiagnostics } from '@/lib/importDiagnostics';
 
 const isNative = Capacitor.isNativePlatform();
+
+function describeError(error: unknown): string {
+  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  if (typeof error === 'object' && error !== null) {
+    const detail = error as { message?: unknown; code?: unknown };
+    return `${String(detail.message ?? JSON.stringify(error))}${detail.code ? ` (code: ${String(detail.code)})` : ''}`;
+  }
+  return String(error);
+}
+
+function base64ToBlob(base64: string, mimeType: string): Blob {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mimeType });
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
+    reader.onerror = () => reject(reader.error ?? new Error('Could not convert video data'));
+    reader.readAsDataURL(blob);
+  });
+}
 
 interface FileUploadProps {
   onTrackExtracted: (track: Track) => void;
@@ -68,13 +94,19 @@ export const FileUpload = ({ onTrackExtracted, isProcessing, setIsProcessing }: 
 
       const file = await runImportStage('Reading video for audio extraction', async () => {
         if (!picked.path) throw new Error('No file path returned by the video picker');
-        const src = Capacitor.convertFileSrc(normalizeNativeFilePath(picked.path));
-        const response = await fetch(src);
-        if (!response.ok) throw new Error(`Local video read failed: HTTP ${response.status} ${response.statusText}`);
-        const blob = await response.blob();
-        return new File([blob], picked.name || 'video.mp4', {
-          type: picked.mimeType || 'video/mp4',
-        });
+        const nativePath = normalizeNativeFilePath(picked.path);
+        try {
+          // iOS WKWebView rejects fetch() on convertFileSrc URLs (HTTP 0): read via the native bridge instead.
+          const { data } = await Filesystem.readFile({ path: nativePath });
+          const base64 = typeof data === 'string' ? data : await blobToBase64(data);
+          const blob = base64ToBlob(base64, picked.mimeType || 'video/mp4');
+          return new File([blob], picked.name || 'video.mp4', {
+            type: picked.mimeType || 'video/mp4',
+          });
+        } catch (error) {
+          const size = picked.size != null ? `${picked.size} bytes` : 'unknown size';
+          throw new Error(`Could not read "${nativePath}" (${size}): ${describeError(error)}`);
+        }
       });
 
       await processQueue([file], picked.path);

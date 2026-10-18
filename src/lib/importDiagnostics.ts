@@ -47,7 +47,11 @@ export async function runOptionalImportStage<T>(stage: ImportStage, operation: (
 
 // Filesystem accepts absolute file URLs; never pass a WebView-converted URL to copy().
 export function normalizeNativeFilePath(path: string): string {
-  if (path.startsWith('/')) return new URL(`file://${path}`).href;
+  if (path.startsWith('/')) {
+    const url = new URL('file:///');
+    url.pathname = path;
+    return url.href;
+  }
   if (/^file:\/\//i.test(path)) return new URL(path).href;
   if (/^content:\/\//i.test(path)) return path;
   throw new Error('The picker did not return an absolute native file path');

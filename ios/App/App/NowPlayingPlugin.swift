@@ -188,6 +188,17 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         center.seekBackwardCommand.isEnabled = false
 
         UIApplication.shared.beginReceivingRemoteControlEvents()
+        startButtonEnforcementTimer()
+    }
+
+    // WebKit keeps re-enabling the +/-10 s skip buttons while media plays,
+    // which replaces previous/next on the lock screen. Re-enforce periodically.
+    private func startButtonEnforcementTimer() {
+        DispatchQueue.main.async {
+            Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+                self?.enforceTrackButtons()
+            }
+        }
     }
 
     // WebKit re-enables the +/-10 s buttons whenever the <audio> element
@@ -319,6 +330,11 @@ public class NowPlayingPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         if let img = UIImage(named: "AppIcon") { return img }
         if let img = UIImage(named: "AppIcon60x60") { return img }
+        // Last resort: the web app icon bundled with the Capacitor public folder.
+        if let path = Bundle.main.path(forResource: "app-icon", ofType: "png", inDirectory: "public"),
+           let img = UIImage(contentsOfFile: path) { return img }
+        if let path = Bundle.main.path(forResource: "app-icon", ofType: "png"),
+           let img = UIImage(contentsOfFile: path) { return img }
         return nil
     }
 }

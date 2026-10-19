@@ -36,8 +36,8 @@ export const extractAudioFromVideo = async (
       audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       return audioContext.decodeAudioData(arrayBuffer);
     });
-    // No ending is removed until a reference-based recognizer has been validated.
-    const endTime = getImportEndTime(audioBuffer.duration);
+    // Cut the TikTok outro (jingle/beep) when a clear music-end gap is detected.
+    const endTime = getImportEndTime(audioBuffer);
     const outputBuffer = endTime === audioBuffer.duration
       ? audioBuffer
       : trimAudioBuffer(audioContext as AudioContext, audioBuffer, audioBuffer.duration - endTime);

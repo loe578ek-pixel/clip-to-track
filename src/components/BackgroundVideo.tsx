@@ -50,7 +50,10 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
       if (stopped) return;
       const visible = nativeActive && document.visibilityState !== 'hidden';
       const duration = Number.isFinite(video.duration) ? video.duration : track.duration;
-      const target = getVideoSyncTime(audio.currentTime, track.duration, duration);
+      const endpoint = Math.min(track.duration, duration);
+      const target = audio.currentTime >= track.duration
+        ? Math.max(0, endpoint - 1 / 30)
+        : getVideoSyncTime(audio.currentTime, track.duration, duration);
       const correction = getVideoSyncCorrection(target, video.currentTime, audio.playbackRate, force);
       if (video.readyState >= 1 && !video.seeking && correction.seek) {
         try { video.currentTime = target; } catch { /* metadata is still loading */ }

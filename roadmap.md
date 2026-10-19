@@ -11,5 +11,5 @@
 - [x] Read available imported video titles/creators, persist and display them with numbered Track / TKPlaylist fallbacks.
 - [x] Diagnose native import paths and expose temporary on-screen errors with failed stages; exact device failure awaits TestFlight diagnostic.
 - [x] Make original video retention non-blocking for audio imports using native file copies, with regression tests.
-- [ ] Reduce Glass rendering/seek overhead, round Add/Settings headers, and verify audio/video synchronization and shared endpoints.
+- [x] Reduce Glass rendering/seek overhead, round Add/Settings headers, and verify audio/video synchronization and shared endpoints in browser; native device check remains separate.
 - [ ] Validate TikTok jingle recognition on representative originals (requires user's videos with and without the beep).

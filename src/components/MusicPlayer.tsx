@@ -31,6 +31,7 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'one' | 'all'>('off');
   const audioRef = useRef<HTMLAudioElement>(null);
+  const lastSkipRef = useRef(0);
   useEffect(() => {
     onAudioElement?.(audioRef.current);
     return () => onAudioElement?.(null);

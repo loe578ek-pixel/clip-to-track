@@ -86,13 +86,14 @@ function trimAudioBuffer(audioContext: AudioContext, buffer: AudioBuffer, second
     sampleRate
   );
   
-  // Copy the trimmed audio data
+  // Copy the trimmed audio data, with a short fade-out so the cut never clicks.
+  const fadeSamples = Math.min(newLength, Math.floor(0.04 * sampleRate));
   for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
     const sourceData = buffer.getChannelData(channel);
     const trimmedData = trimmedBuffer.getChannelData(channel);
-    
-    for (let i = 0; i < newLength; i++) {
-      trimmedData[i] = sourceData[i];
+    trimmedData.set(sourceData.subarray(0, newLength));
+    for (let i = 0; i < fadeSamples; i++) {
+      trimmedData[newLength - 1 - i] *= i / fadeSamples;
     }
   }
   

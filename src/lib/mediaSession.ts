@@ -29,8 +29,16 @@ class MediaSessionService {
       console.warn('Media Session API not supported');
       return;
     }
+    this.registerHandlers();
+  }
 
-    // Set up action handlers
+  /**
+   * (Re)registers every lockscreen action. On iOS the WebView owns the
+   * lockscreen widget, so previous/next only stay enabled while these
+   * handlers exist; re-registering on each track keeps them active.
+   */
+  private registerHandlers() {
+    if (!('mediaSession' in navigator)) return;
     navigator.mediaSession.setActionHandler('play', () => {
       this.callbacks?.onPlay();
     });
@@ -65,6 +73,7 @@ class MediaSessionService {
 
   setCallbacks(callbacks: MediaSessionCallbacks) {
     this.callbacks = callbacks;
+    this.registerHandlers();
   }
 
   updateTrack(track: MediaSessionTrack, playlistName?: string, artworkUrl?: string | null) {
@@ -72,6 +81,7 @@ class MediaSessionService {
 
     this.currentTrack = track;
     this.duration = track.duration;
+    this.registerHandlers();
 
     // Use the track's square video thumbnail when available, otherwise the app icon.
     const fallbackIcon = `${window.location.origin}/app-icon.png`;
@@ -112,10 +122,11 @@ class MediaSessionService {
     if (!('mediaSession' in navigator) || !this.currentTrack) return;
 
     try {
+      if (!Number.isFinite(this.duration) || this.duration <= 0) return;
       navigator.mediaSession.setPositionState({
         duration: this.duration,
         playbackRate: 1.0,
-        position: this.currentTime,
+        position: Math.min(Math.max(0, this.currentTime), this.duration),
       });
     } catch (error) {
       console.error('Error updating position state:', error);

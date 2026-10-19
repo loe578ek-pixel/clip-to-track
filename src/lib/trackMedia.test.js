@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { getImportEndTime, getVideoSyncTime, serializeTrack } from './trackMedia';
+import { getImportEndTime, getVideoSyncTime, getVideoSyncCorrection, serializeTrack } from './trackMedia';
 
 const track = {
   id: 'legacy', title: 'Existing song', duration: 18, audioUrl: 'blob:temporary',
@@ -62,6 +62,20 @@ describe('offline video metadata', () => {
 });
 
 describe('video follows audio', () => {
+  test('small clock drift adjusts speed instead of causing repeated decoder seeks', () => {
+    expect(getVideoSyncCorrection(10, 9.8, 1)).toEqual({ seek: false, playbackRate: 1.03 });
+    expect(getVideoSyncCorrection(10, 10.2, 1)).toEqual({ seek: false, playbackRate: 0.97 });
+    expect(getVideoSyncCorrection(10, 10.02, 1)).toEqual({ seek: false, playbackRate: 1 });
+  });
+  test('large drift and explicit scrubbing force synchronization', () => {
+    expect(getVideoSyncCorrection(10, 8, 1).seek).toBe(true);
+    expect(getVideoSyncCorrection(10, 9.9, 1, true).seek).toBe(true);
+  });
+  test('detected outro uses the same endpoint for video and extracted audio', () => {
+    const endpoint = getImportEndTime(fakeBuffer({ duration: 30, gapSeconds: 1, jingleSeconds: 3 }));
+    expect(endpoint).toBe(26);
+    expect(getVideoSyncTime(29, endpoint, 30)).toBe(26);
+  });
   test('seek and repeat use the audio time', () => {
     expect(getVideoSyncTime(12, 18, 23)).toBe(12);
     expect(getVideoSyncTime(0, 18, 23)).toBe(0);

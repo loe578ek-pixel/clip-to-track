@@ -1,6 +1,7 @@
 # Project architecture
 
 - The existing MusicPlayer HTMLAudioElement is the sole sound and media-session owner; decorative videos must remain muted and follow it so native background playback is not replaced.
+- Background video uses event-driven seeks for scrubbing and throttled drift correction with gentle rate adjustment; uninterrupted decoding preserves frame delivery while audio remains the clock.
 - Retained original videos use a separate videoStorage service (native filesystem copies and web IndexedDB blobs); metadata stores persistent paths rather than temporary URLs to support offline relaunch and cleanup.
 - Import operations use staged diagnostics; optional video/artwork failures are isolated from mandatory audio saving so bonus media cannot prevent playback, and native copy paths are normalized separately from WebView read URLs.
 - The shared Index shell owns the optional display mode and background video; tab changes and hiding the interface must not unmount the audio player.

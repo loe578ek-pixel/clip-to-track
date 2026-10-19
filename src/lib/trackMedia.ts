@@ -83,3 +83,12 @@ export function serializeTrack(track: Track) {
 export function getVideoSyncTime(audioTime: number, audioDuration: number, videoDuration: number): number {
   return Math.max(0, Math.min(audioTime, audioDuration, videoDuration));
 }
+
+/** Correct small clock drift without flushing the video decoder with a seek. */
+export function getVideoSyncCorrection(audioTime: number, videoTime: number, audioRate: number, force = false) {
+  const drift = audioTime - videoTime;
+  return {
+    seek: force || Math.abs(drift) > 0.75,
+    playbackRate: audioRate * (Math.abs(drift) <= 0.05 ? 1 : drift > 0 ? 1.03 : 0.97),
+  };
+}

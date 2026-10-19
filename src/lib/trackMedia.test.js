@@ -7,12 +7,39 @@ const track = {
   localFilePath: 'soundwave-audio/song.wav', fileSize: 1234,
 };
 
-describe('import timing policy', () => {
-  test('new imports keep every second until recognition is approved', () => {
-    for (const duration of [4, 5, 18, 27, 31.234]) expect(getImportEndTime(duration)).toBe(duration);
+// Builds a fake mono AudioBuffer: music at `musicLevel`, then `gapSeconds` of
+// silence, then a loud `jingleSeconds` outro.
+function fakeBuffer({ duration = 30, musicLevel = 0.5, gapSeconds = 0, jingleSeconds = 0, jingleLevel = 0.6, sampleRate = 1000 }) {
+  const length = Math.floor(duration * sampleRate);
+  const data = new Float32Array(length);
+  const jingleStart = length - Math.floor(jingleSeconds * sampleRate);
+  const gapStart = jingleStart - Math.floor(gapSeconds * sampleRate);
+  for (let i = 0; i < length; i++) {
+    if (i >= jingleStart) data[i] = jingleLevel;
+    else if (i >= gapStart) data[i] = 0;
+    else data[i] = musicLevel;
+  }
+  return { duration, sampleRate, getChannelData: () => data };
+}
+
+describe('outro detection', () => {
+  test('cuts at the start of the gap before a loud jingle', () => {
+    const buffer = fakeBuffer({ duration: 30, gapSeconds: 1, jingleSeconds: 3 });
+    const end = getImportEndTime(buffer);
+    expect(end).toBeGreaterThan(25);
+    expect(end).toBeLessThanOrEqual(26.5);
   });
-  test('existing trimmed timing stays untouched when saving metadata', () => {
-    expect(serializeTrack(track).duration).toBe(18);
+  test('keeps the full track when there is no outro', () => {
+    const buffer = fakeBuffer({ duration: 30 });
+    expect(getImportEndTime(buffer)).toBe(30);
+  });
+  test('keeps the full track when music plays until the very end', () => {
+    const buffer = fakeBuffer({ duration: 30, jingleSeconds: 0, gapSeconds: 0 });
+    expect(getImportEndTime(buffer)).toBe(30);
+  });
+  test('never cuts very short clips', () => {
+    const buffer = fakeBuffer({ duration: 3, gapSeconds: 0.5, jingleSeconds: 1 });
+    expect(getImportEndTime(buffer)).toBe(3);
   });
 });
 

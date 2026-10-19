@@ -361,7 +361,7 @@ export const SettingsTab = ({
     paddingBottom: '6rem'
   }}>
       {/* Header */}
-      <div className="sticky bg-background/80 backdrop-blur-md z-10 pb-4" style={{ top: 'calc(env(safe-area-inset-top) + 4px)' }}>
+      <div className="glass-tab-header sticky bg-background/80 backdrop-blur-md z-10 pb-4" style={{ top: 'calc(env(safe-area-inset-top) + 4px)' }}>
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-muted-foreground">Customize your music experience</p>
       </div>

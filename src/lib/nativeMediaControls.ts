@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import * as MusicControlsModule from 'capacitor-music-controls-plugin-v3';
 import { NowPlayingNative } from './iosNowPlaying';
+import { mediaSession } from './mediaSession';
 
 // Access the MusicControls object from the module (Android only)
 const MusicControls = (MusicControlsModule as any).MusicControls || MusicControlsModule;
@@ -221,6 +222,9 @@ class NativeMediaControlsService {
     this.isPlaying = isPlaying;
 
     if (this.platform === 'ios') {
+      // The WebView also publishes lockscreen state; keep it in step so iOS
+      // shows the right position and keeps previous/next enabled.
+      mediaSession.updatePlaybackState(isPlaying, currentTime);
       try {
         await NowPlayingNative.updatePlayback({ elapsed: currentTime, isPlaying });
       } catch (error) {

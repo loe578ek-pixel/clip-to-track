@@ -31,9 +31,7 @@ let cachedReference: Float64Array | null = null;
 
 function decodeReference(): Float64Array {
   if (cachedReference) return cachedReference;
-  const bin = typeof atob === 'function'
-    ? atob(OUTRO_REFERENCE_B64)
-    : Buffer.from(OUTRO_REFERENCE_B64, 'base64').toString('binary');
+  const bin = atob(OUTRO_REFERENCE_B64);
   const ref = new Float64Array(bin.length);
   let mean = 0;
   for (let i = 0; i < bin.length; i++) {

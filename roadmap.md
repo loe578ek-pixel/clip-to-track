@@ -12,4 +12,5 @@
 - [x] Diagnose native import paths and expose temporary on-screen errors with failed stages; exact device failure awaits TestFlight diagnostic.
 - [x] Make original video retention non-blocking for audio imports using native file copies, with regression tests.
 - [x] Reduce Glass rendering/seek overhead, round Add/Settings headers, and verify audio/video synchronization and shared endpoints in browser; native device check remains separate.
-- [ ] Validate TikTok jingle recognition on representative originals (requires user's videos with and without the beep).
+- [x] Compare the ten supplied originals: normalized main-jingle correlation 0.9782–1.0000; multiple visual outro layouts found. These offline measurements do not validate a production detector.
+- [ ] Implement and validate conservative reference-based recognition and shared audio/video endpoints (awaits a verified no-beep sample to check false positives; physical iPhone testing remains required).

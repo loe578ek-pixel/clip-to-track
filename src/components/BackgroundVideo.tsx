@@ -3,7 +3,7 @@ import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import type { Track } from '@/pages/Index';
 import { videoStorage } from '@/lib/videoStorage';
-import { getVideoSyncTime } from '@/lib/trackMedia';
+import { getVideoSyncTime, getVideoSyncCorrection } from '@/lib/trackMedia';
 
 interface BackgroundVideoProps {
   track: Track | null;
@@ -41,6 +41,7 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
     let animationFrame = 0;
     let listener: { remove: () => Promise<void> } | undefined;
     let starting = false;
+    let lastCorrection = 0;
     // This element must never acquire the audio session or control the audio element.
     video.muted = true;
     video.defaultMuted = true;
@@ -49,11 +50,16 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
       if (stopped) return;
       const visible = nativeActive && document.visibilityState !== 'hidden';
       const duration = Number.isFinite(video.duration) ? video.duration : track.duration;
-      const target = getVideoSyncTime(audio.currentTime, track.duration, duration);
-      if (video.readyState >= 1 && (force || Math.abs(video.currentTime - target) > 0.15)) {
+      const endpoint = Math.min(track.duration, duration);
+      const target = audio.currentTime >= track.duration
+        ? Math.max(0, endpoint - 1 / 30)
+        : getVideoSyncTime(audio.currentTime, track.duration, duration);
+      const correction = getVideoSyncCorrection(target, video.currentTime, audio.playbackRate, force);
+      if (video.readyState >= 1 && !video.seeking && correction.seek) {
         try { video.currentTime = target; } catch { /* metadata is still loading */ }
       }
-      video.playbackRate = audio.playbackRate;
+      const rate = correction.seek ? audio.playbackRate : correction.playbackRate;
+      if (video.playbackRate !== rate) video.playbackRate = rate;
       if (!visible || audio.paused || audio.ended || audio.seeking || audio.readyState < 3 || audio.currentTime >= track.duration) {
         video.pause();
       } else if (video.paused && !starting) {
@@ -64,21 +70,48 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
         });
       }
     };
-    const tick = () => {
-      synchronize();
+    const tick = (now: number) => {
+      animationFrame = 0;
+      if (stopped || !nativeActive || document.visibilityState === 'hidden' || audio.paused || audio.ended) return;
+      // Stop on the final retained frame rather than showing the removed outro.
+      const endpoint = Math.min(track.duration, Number.isFinite(video.duration) ? video.duration : track.duration);
+      if (video.currentTime >= endpoint || audio.currentTime >= track.duration) {
+        video.pause();
+        if (video.readyState >= 1 && !video.seeking) video.currentTime = Math.max(0, endpoint - 1 / 30);
+        return;
+      }
+      // The video decoder owns frame delivery. Only check clock drift four times
+      // per second; do not repeatedly seek on iOS's quantized audio clock.
+      if (now - lastCorrection >= 250) {
+        lastCorrection = now;
+        synchronize();
+      }
       animationFrame = requestAnimationFrame(tick);
     };
-    const update = () => synchronize();
-    const seek = () => synchronize(true);
+    const schedule = () => {
+      if (!stopped && nativeActive && document.visibilityState !== 'hidden' && !audio.paused && !audio.ended && !animationFrame) {
+        animationFrame = requestAnimationFrame(tick);
+      }
+    };
+    const update = () => {
+      synchronize();
+      if (audio.paused || audio.ended) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+      } else schedule();
+    };
+    const seek = () => { synchronize(true); schedule(); };
     const visibility = () => {
       cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
       synchronize(true);
-      if (nativeActive && document.visibilityState !== 'hidden') animationFrame = requestAnimationFrame(tick);
+      schedule();
     };
-    const events = ['play', 'playing', 'pause', 'seeking', 'seeked', 'ended', 'timeupdate', 'ratechange', 'waiting', 'emptied'];
+    const events = ['play', 'playing', 'pause', 'seeking', 'ended', 'ratechange', 'waiting', 'emptied'];
     events.forEach(event => audio.addEventListener(event, update));
     audio.addEventListener('seeked', seek);
-    video.addEventListener('loadedmetadata', update);
+    video.addEventListener('loadedmetadata', seek);
+    video.addEventListener('canplay', update);
     video.addEventListener('playing', update);
     document.addEventListener('visibilitychange', visibility);
     if (Capacitor.isNativePlatform()) {
@@ -97,7 +130,8 @@ export function BackgroundVideo({ track, audio }: BackgroundVideoProps) {
       video.pause();
       events.forEach(event => audio.removeEventListener(event, update));
       audio.removeEventListener('seeked', seek);
-      video.removeEventListener('loadedmetadata', update);
+      video.removeEventListener('loadedmetadata', seek);
+      video.removeEventListener('canplay', update);
       video.removeEventListener('playing', update);
       document.removeEventListener('visibilitychange', visibility);
       void listener?.remove();

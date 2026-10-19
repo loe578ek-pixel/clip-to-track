@@ -56,10 +56,18 @@ export const MusicPlayer = ({ track, onNext, onPrevious, onEnded, autoPlay = fal
           setIsPlaying(false);
         }
       },
+      // The lockscreen can deliver the same tap through both the native plugin
+      // and the WebView media session; ignore the duplicate.
       onNext: () => {
+        const now = Date.now();
+        if (now - lastSkipRef.current < 500) return;
+        lastSkipRef.current = now;
         if (onNext) onNext();
       },
       onPrevious: () => {
+        const now = Date.now();
+        if (now - lastSkipRef.current < 500) return;
+        lastSkipRef.current = now;
         if (onPrevious) onPrevious();
       },
       onSeek: (time: number) => {

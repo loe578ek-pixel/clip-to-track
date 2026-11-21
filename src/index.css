@@ -371,3 +371,26 @@ html[data-display-mode="glass"] .music-player-surface h4 { text-shadow: var(--gl
     }
   }
 }
+/* Glass without video: sober deep-blue gradient instead of a video. */
+html[data-glass-video="off"] body,
+html[data-glass-video="off"] .glass-shell {
+  background: radial-gradient(120% 70% at 50% 0%, hsl(248 70% 22%) 0%, hsl(240 45% 9%) 55%, hsl(0 0% 0%) 100%) fixed;
+}
+/* Glass with video: lighter cards so the video shows through; no blur on cards keeps frames smooth. */
+html[data-glass-video="on"] .home-playlist-card,
+html[data-glass-video="on"] .playlists-tab [class*="bg-card/"] {
+  background-color: hsl(var(--glass-surface) / 0.05);
+  background-image: linear-gradient(145deg, hsl(var(--glass-border) / 0.1), hsl(var(--glass-border) / 0.02));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html[data-glass-video="on"] .track-item,
+html[data-glass-video="on"] .soundwave-card { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.video-backdrop video { transform: translateZ(0); will-change: transform; }
+
+/* Polished motion */
+@keyframes tk-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.app-tab-content > *, .playlists-tab { animation: tk-fade-up 0.28s cubic-bezier(.2,.8,.2,1); }
+button { transition: transform 0.15s ease, background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease; }
+button:active:not(:disabled) { transform: scale(0.95); }
+@media (prefers-reduced-motion: reduce) { .app-tab-content > *, .playlists-tab { animation: none; } }

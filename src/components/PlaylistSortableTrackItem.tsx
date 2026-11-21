@@ -54,18 +54,15 @@ export const PlaylistSortableTrackItem = ({
       ref={setNodeRef}
       style={style}
       {...(manageMode ? attributes : {})}
-      className={`group relative flex items-center gap-2 px-2 py-2 my-0.5 rounded-xl touch-none transition-all
+      className={`group relative flex items-center gap-2 px-2 py-2 my-0.5 rounded-xl transition-all duration-200
         hover:bg-white/[0.04]
         ${isDragging ? 'opacity-60 shadow-2xl bg-white/[0.06] scale-[1.01]' : ''}
         ${manageMode ? 'bg-white/[0.03] ring-1 ring-primary/20' : ''}
       `}
     >
       {manageMode ? (
-        <div
-          {...listeners}
-          className="flex items-center gap-2 flex-1 min-w-0 cursor-grab active:cursor-grabbing py-1 -my-1 rounded-lg hover:bg-primary/5"
-        >
-          <div className="flex-shrink-0 text-primary">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div {...listeners} aria-label="Drag to reorder" className="flex-shrink-0 text-primary touch-none cursor-grab active:cursor-grabbing p-2 -m-2 rounded-lg">
             <GripVertical className="h-5 w-5" />
           </div>
           <div className="w-5 flex justify-center flex-shrink-0">

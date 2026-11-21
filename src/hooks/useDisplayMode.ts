@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Preferences } from '@capacitor/preferences';
 import { toast } from 'sonner';
 
-export type DisplayMode = 'classic' | 'glass';
+export type DisplayMode = 'classic' | 'glass' | 'glass-plain';
 const KEY = 'tkplaylist-display-mode';
 
 export function useDisplayMode() {
@@ -12,7 +12,7 @@ export function useDisplayMode() {
     let cancelled = false;
     Preferences.get({ key: KEY }).then(({ value }) => {
       if (!cancelled) {
-        setDisplayMode(value === 'glass' ? 'glass' : 'classic');
+        setDisplayMode(value === 'glass' || value === 'glass-plain' ? value : 'classic');
         setReady(true);
       }
     }).catch(() => { if (!cancelled) setReady(true); });
@@ -32,8 +32,10 @@ export function useDisplayMode() {
   };
 
   useEffect(() => {
-    document.documentElement.dataset.displayMode = displayMode;
-    return () => { delete document.documentElement.dataset.displayMode; };
+    const root = document.documentElement;
+    root.dataset.displayMode = displayMode === 'classic' ? 'classic' : 'glass';
+    root.dataset.glassVideo = displayMode === 'glass' ? 'on' : 'off';
+    return () => { delete root.dataset.displayMode; delete root.dataset.glassVideo; };
   }, [displayMode]);
 
   return { displayMode, changeDisplayMode, displayModeReady: ready };

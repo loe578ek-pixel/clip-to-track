@@ -61,7 +61,8 @@ const Index = () => {
   const { displayMode, changeDisplayMode, displayModeReady } = useDisplayMode();
   const [interfaceHidden, setInterfaceHidden] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-  const isGlass = displayMode === 'glass';
+  const isGlass = displayMode !== 'classic';
+  const showVideo = displayMode === 'glass';
   useEffect(() => { setInterfaceHidden(false); }, [displayMode]);
   const { loading: trialLoading, trialExpired, trialStarted, isPremium, daysRemaining, purchase, restore, startTrial } = usePremium();
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -101,11 +102,13 @@ const Index = () => {
         ]);
         
         setTracks(savedTracks);
-        setPlaylists(savedPlaylists.length > 0 ? savedPlaylists : [
-          { id: 'playlist-1', name: 'Playlist 1', tracks: [], createdAt: new Date(), repeatCounts: {} },
-          { id: 'playlist-2', name: 'Playlist 2', tracks: [], createdAt: new Date(), repeatCounts: {} },
-          { id: 'playlist-3', name: 'Playlist 3', tracks: [], createdAt: new Date(), repeatCounts: {} }
-        ]);
+        const basePlaylists = [...savedPlaylists];
+        for (let n = 1; n <= 5; n++) {
+          if (!basePlaylists.some(p => p.id === `playlist-${n}`) && basePlaylists.length < 5) {
+            basePlaylists.push({ id: `playlist-${n}`, name: `Playlist ${n}`, tracks: [], createdAt: new Date(), repeatCounts: {} });
+          }
+        }
+        setPlaylists(basePlaylists);
         setTrackRepeatCounts(savedRepeatCounts);
         setLikedTracks(new Set(savedLikedTracks));
         setLikedTracksOrder(savedLikedTracks);
@@ -722,7 +725,7 @@ const Index = () => {
         </div>
       ) : (
         <div className={`app-shell h-full max-h-screen bg-background text-foreground overflow-hidden ${isGlass ? 'glass-shell' : ''} ${isGlass && interfaceHidden ? 'interface-hidden' : ''}`} style={{ paddingBottom: '4.5rem' }}>
-          {isGlass && <BackgroundVideo track={backgroundTrack} audio={backgroundTrack?.id === currentTrack?.id ? audioElement : null} />}
+          {showVideo && <BackgroundVideo track={backgroundTrack} audio={backgroundTrack?.id === currentTrack?.id ? audioElement : null} />}
           <div className="app-interface app-tab-content h-full max-h-screen overflow-y-auto overflow-x-hidden pb-20" aria-hidden={isGlass && interfaceHidden}>
             {renderActiveTab()}
           </div>
@@ -746,7 +749,7 @@ const Index = () => {
               />
             </div>
           )}
-          {isGlass && <Button
+          {showVideo && <Button
             variant="outline"
             size="icon"
             className="clear-view-button"

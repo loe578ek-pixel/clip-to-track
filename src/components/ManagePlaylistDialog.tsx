@@ -47,7 +47,7 @@ export const ManagePlaylistDialog = ({
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { delay: 250, tolerance: 8 },
+      activationConstraint: { delay: 120, tolerance: 6 },
     }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
@@ -91,13 +91,13 @@ export const ManagePlaylistDialog = ({
           <div className="min-w-0">
             <h1 className="text-xl font-bold truncate">{playlist.name}</h1>
             <p className="text-xs text-muted-foreground">
-              {playlistTracks.length} songs • {formatTime(totalDuration)} • Hold and drag to reorder
+              {playlistTracks.length} songs • {formatTime(totalDuration)} • Drag ⋮⋮ to reorder
             </p>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-2 pt-2">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 pt-2 pb-4" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}>
         {playlistTracks.length > 0 ? (
           <DndContext
             sensors={sensors}

@@ -128,7 +128,7 @@ export const PlaylistManagerTab = ({
       </div>
 
       {/* Playlists - flex to fill remaining space equally */}
-      <div className="flex-1 flex flex-col gap-2.5 px-3 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col gap-2 px-3 min-h-0 overflow-hidden">
         {playlists.map((playlist) => {
           const playlistTracks = playlist.tracks.map(getTrackById).filter(Boolean) as Track[];
           const totalDuration = playlistTracks.reduce((sum, track) => sum + track.duration, 0);
@@ -139,7 +139,7 @@ export const PlaylistManagerTab = ({
               className="flex-1 min-h-0 flex flex-col rounded-2xl border border-white/[0.06] bg-card/60 backdrop-blur-sm overflow-hidden transition-all"
             >
               {/* Playlist header */}
-              <div className="flex items-center justify-between px-4 py-2.5 shrink-0">
+              <div className="flex items-center justify-between px-4 py-1.5 shrink-0">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   {editingPlaylist === playlist.id ? (
                     <Input

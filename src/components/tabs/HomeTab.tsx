@@ -63,11 +63,11 @@ export const HomeTab = ({
       {playlists.length > 0 && <div>
           <h2 className="text-xl font-semibold mb-4">Your Playlists</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {playlists.slice(0, 3).map(playlist => {
+            {playlists.slice(0, 5).map(playlist => {
           const playlistTracks = playlist.tracks.map(trackId => tracks.find(track => track.id === trackId)).filter(Boolean) as Track[];
           const totalDuration = playlistTracks.reduce((sum, track) => sum + track.duration, 0);
           const firstTrack = playlistTracks[0];
-          return <div key={playlist.id} className="bg-card rounded-lg p-4 border hover:bg-accent/50 transition-colors">
+          return <div key={playlist.id} className="home-playlist-card bg-card rounded-2xl p-4 border transition-all duration-300 hover:bg-accent/50 hover:-translate-y-0.5 active:scale-[0.98]">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div className="w-8 h-8 bg-primary/20 rounded-md flex items-center justify-center flex-shrink-0">

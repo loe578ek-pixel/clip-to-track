@@ -368,9 +368,10 @@ export const SettingsTab = ({
 
       <section aria-labelledby="display-mode-heading" className="space-y-3">
         <h2 id="display-mode-heading" className="text-lg font-semibold">Display mode</h2>
-        <div className="grid grid-cols-2 gap-3" role="group" aria-label="Display mode">
+        <div className="grid grid-cols-3 gap-2" role="group" aria-label="Display mode">
           <Button variant={displayMode === 'classic' ? 'default' : 'outline'} aria-pressed={displayMode === 'classic'} disabled={!displayModeReady} onClick={() => void onDisplayModeChange('classic')}>Classic</Button>
-          <Button variant={displayMode === 'glass' ? 'default' : 'outline'} aria-pressed={displayMode === 'glass'} disabled={!displayModeReady} onClick={() => void onDisplayModeChange('glass')}>Glass</Button>
+          <Button variant={displayMode === 'glass' ? 'default' : 'outline'} aria-pressed={displayMode === 'glass'} disabled={!displayModeReady} onClick={() => void onDisplayModeChange('glass')}>Glass + video</Button>
+          <Button variant={displayMode === 'glass-plain' ? 'default' : 'outline'} aria-pressed={displayMode === 'glass-plain'} disabled={!displayModeReady} onClick={() => void onDisplayModeChange('glass-plain')}>Glass</Button>
         </div>
       </section>
 

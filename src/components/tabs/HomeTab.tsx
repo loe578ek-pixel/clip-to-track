@@ -53,37 +53,34 @@ export const HomeTab = ({
   if (showManageLikedMusic) {
     return <ManageLikedMusic tracks={tracks} likedTracks={likedTracks} likedTracksOrder={likedTracksOrder} trackRepeatCounts={trackRepeatCounts} onToggleLike={onToggleLike} onPlayTrack={onPlayTrack} onUpdateTrackRepeat={onUpdateTrackRepeat} onReorderLikedTracks={onReorderLikedTracks} onBack={() => setShowManageLikedMusic(false)} />;
   }
-  return <div className="flex-1 overflow-auto p-4 space-y-6" style={{
+  return <div className="flex-1 overflow-auto p-4 space-y-5" style={{
     paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
-    paddingBottom: '6rem'
+    paddingBottom: 'calc(env(safe-area-inset-bottom) + 13rem)'
   }}>
       {/* Header */}
 
       {/* Quick Access Playlists */}
       {playlists.length > 0 && <div>
-          <h2 className="text-xl font-semibold mb-4">Your Playlists</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <h2 className="text-xl font-semibold mb-3">Your Playlists</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {playlists.slice(0, 5).map(playlist => {
           const playlistTracks = playlist.tracks.map(trackId => tracks.find(track => track.id === trackId)).filter(Boolean) as Track[];
           const totalDuration = playlistTracks.reduce((sum, track) => sum + track.duration, 0);
           const firstTrack = playlistTracks[0];
-          return <div key={playlist.id} className="home-playlist-card bg-card rounded-2xl p-4 border transition-all duration-300 hover:bg-accent/50 hover:-translate-y-0.5 active:scale-[0.98]">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className="w-8 h-8 bg-primary/20 rounded-md flex items-center justify-center flex-shrink-0">
+          return <div key={playlist.id} className="home-playlist-card bg-card rounded-2xl px-3 py-2.5 border transition-all duration-300 hover:bg-accent/50 hover:-translate-y-0.5 active:scale-[0.98]">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Play className="h-4 w-4 text-primary" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-medium truncate">{playlist.name}</h3>
+                        <h3 className="font-medium text-sm truncate leading-tight">{playlist.name}</h3>
+                        <p className="text-[11px] text-muted-foreground leading-tight tabular-nums">{playlist.tracks.length} songs • {formatTime(totalDuration)}</p>
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => onPlayPlaylist(playlist.id)} className="w-8 h-8 hover:bg-primary/20 flex-shrink-0" disabled={playlistTracks.length === 0}>
                       <Play className="h-4 w-4" />
                     </Button>
-                  </div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>{playlist.tracks.length} songs</div>
-                    <div>{formatTime(totalDuration)}</div>
                   </div>
                 </div>;
         })}
